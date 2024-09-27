@@ -1,15 +1,284 @@
-{% extends "_layout.swig" %}
-{% import '_macro/post.swig' as post_template %}
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
 
 
-{% block title %} {{ config.title }} - {{ config.description }}{% endblock %}
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
 
-{% block content %}
+
+
+
+
+
+
+
+
+
+    <link rel="alternate" href="/default" title="静静's Blog" >
+
+
+
+
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1"/>
+
+
+
+<link rel="canonical" href="https://moeleak.github.io/"/>
+
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="静静&#39;s Blog">
+<meta property="og:url" content="https://moeleak.github.io/index.html">
+<meta property="og:site_name" content="静静&#39;s Blog">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="JingJing">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1"/>
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+    
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?ef3d4cb0b64c69ddba44dfcb86c2c6d4";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1J53LZ1GGM"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1J53LZ1GGM');
+  </script>
+
+
+
+
+
+    
+
+
+
+
+
+    <title> 静静's Blog - </title>
+  <meta name="generator" content="Hexo 7.3.0"></head>
+
+  <body>
+    <div id="main-container">
+      <header id="mnh-header"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">静静's Blog</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/">
+                            
+                            
+                                Home
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/archives">
+                            
+                            
+                                Archive
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+                
+            </ul>
+        
+    </nav>
+
+</div>
+
+      </header>
+      <div id="mnh-content">
+        
     <div id="primary" class="home">
-        {% for post in page.posts %}
-            {{ post_template.render(post) }}
-        {% endfor %}
-        {% include "_partial/pagination.swig" %}
+        
+            
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/2024/09/27/My-New-Post/">My New Post</a>
+        
+      </h1>
+
+      <time class="post-time">
+          Sep 27 2024
+      </time>
+    </header>
+
+
+
+    
+        <div class="post-excerpt post-content">
+            
+            
+
+            
+          
+
+    
+  </article>
+
+        
+            
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/2024/09/27/hello-world/">Hello World</a>
+        
+      </h1>
+
+      <time class="post-time">
+          Sep 27 2024
+      </time>
+    </header>
+
+
+
+    
+        <div class="post-excerpt post-content">
+            
+            
+
+            
+          
+
+    
+  </article>
+
+        
+        
+  <nav class="pagination">
+    
+    
+  </nav>
+
     </div>
-    {% include "_partial/widget.swig" %}
-{% endblock %}
+    <div id="secondary">
+    
+
+    
+    <section id="tags" class="widget-area widget_categories">
+        <h3 class="widget-title">Categories</h3>
+        
+    </section>
+
+
+    
+    <section id="tags" class="widget-area widget_tags">
+        <h3 class="widget-title">Tags</h3>
+        
+    </section>
+
+
+</div>
+
+
+      </div>
+
+      <footer id="mnh-footer"><span class="footer-content-container">
+    <span class="footer-item">
+        
+            &copy;
+        
+            2023 -
+        
+        2024
+    </span>
+    
+        
+        <span class="footer-item footer-author">
+            developed with ❤️ by <a class="hexo-link" target="_blank" rel="noopener" href="https://github.com/meannoharm">Gao</a>.
+        </span>
+    
+    <span class="footer-item powered-by">
+        Powered by <a class="hexo-link" target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>.
+    </span>
+    
+    
+        <span class="footer-item footer-license">
+            Licensed under <a class="hexo-link" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC-BY-NC-SA 4.0</a>.
+        </span>
+    
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+    
+
+  </body>
+</html>
