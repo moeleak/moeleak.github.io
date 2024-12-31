@@ -104,4 +104,4 @@ deploy:
   type: 'git'
   repo: 'git@github.com:moeleak/moeleak.github.io.git'
   branch: master
-  message: Update Blog
+  message: Site updated: {{ now('YYYY-MM-DD HH:mm:ss') }}
