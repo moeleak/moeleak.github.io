@@ -1,7 +1,7 @@
 ---
 title: Pixel 9 Pro XL
 date: 2024-10-29 19:29:07
-tags: [tech]
+tags: [tech, android]
 ---
 
 Pixel 6 Pro 碎了，遂换了 Pixel 9 Pro XL。
