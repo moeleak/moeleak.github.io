@@ -103,4 +103,4 @@ echo "All done!"
 
 ## 0x03
 
-![SCR-20250113-nrnq.png](https://s2.loli.net/2025/01/13/XPkJE3dba1LAcxQ.png)
+![](https://s2.loli.net/2025/01/13/XPkJE3dba1LAcxQ.png)
