@@ -5,7 +5,6 @@ date: 2024-09-27 17:22:37
 
 ## About me
 你好啊，我是静静，这是我一直用的网名，启发是“The quieter you become, the more you hear”，静下心来才能听到更多，大概用了有十年？
-不相信且讨厌命理学，尤其是 MBTI 和星座
 
 ## Hobbies
 喜欢玩电脑，各种电子产品。
