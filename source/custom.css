@@ -115,3 +115,11 @@
     text-shadow: #5636ed 0 0 5px;
   }
 }
+
+/* 使聊天窗口固定在页面右侧 */
+#channelio {
+  position: fixed;
+  right: 20px;  /* 距离右侧的距离 */
+  bottom: 20px;  /* 距离底部的距离 */
+  z-index: 9999;  /* 确保它位于页面的最上层 */
+}
