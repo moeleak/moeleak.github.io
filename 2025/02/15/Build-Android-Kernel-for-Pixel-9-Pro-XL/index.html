@@ -13,7 +13,7 @@
   
   <title>
     
-      archive_a: 2024 
+      Build Android Kernel for Pixel 9 Pro XL 
       
       
       |
@@ -104,120 +104,187 @@
 
 
       <div class="flex-container">
-        <!-- 归档页，展示本站所有文章，按照年份降序归类，url形式：https://yoursite/archives/ -->
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
 
-<!-- last: 按年份把文章分组，当前遍历到的年份 -->
-<!-- now: 当前遍历到的文章的发布年份 -->
 
-<div class="container archives">
-  <div class="post-list">
-    
-        <!-- 后续文章的发布年份呈现 -->
-        <div class="content-title">
-          <h2>
-            <span>2025</span>
-          </h2>
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Build Android Kernel for Pixel 9 Pro XL</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-02-15 22:16:38
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/tech/" title="tech">
+                    #tech
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/android/" title="android">
+                    #android
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h1 id="配置环境"><a href="#配置环境" class="headerlink" title="配置环境"></a>配置环境</h1><p>macOS 下使用 orbstack 的 docker，建立镜像，建议别想着在 macOS 下编译，对于 android kernel，Google 只给了win和linux-x86平台下的工具链，如果想自己折腾的话会很麻烦，会浪费很多时间（我就是浪费了好多时间还没弄成功www）。</p>
+<p>所以用 docker 会比较方便。</p>
+<p>还有一件事，macOS 默认的 APFS 没有开启大小写敏感（case-sensitive），而内核编译需要大小写敏感的文件系统，因此你需要新加卷一个大小写敏感的文件系统。可以使用 disk unility 工具，如图所示。</p>
+<p><img src="https://s2.loli.net/2025/02/15/oUTnaryCwf53bvN.png"></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">docker run -v /Volumes/Projects:/projects --platform linux/amd64 -it ubuntu:22.04 bash</span></span><br></pre></td></tr></table></figure>
+
+<p>安装依赖：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">apt-get install git repo kmod cpio ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python3 python2 binutils-aarch64-linux-gnu pahole gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu p7zip-full p7zip-rar</span> </span><br></pre></td></tr></table></figure>
+
+<h1 id="下载-android-kernel"><a href="#下载-android-kernel" class="headerlink" title="下载 android kernel"></a>下载 android kernel</h1><p>参考<a target="_blank" rel="noopener" href="https://source.android.com/docs/setup/build/building-pixel-kernels">这里</a>查看你的 pixel 代号，在国内可以用 ustc 的源，不然下载会很慢</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">repo init -u https://mirrors.ustc.edu.cn/aosp/kernel/manifest.git -b android-gs-caimito-6.1-android14-qpr3-d1 --depth=1</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">repo <span class="built_in">sync</span> -c --no-tags</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">./build_caimito.sh</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="编译内核模块"><a href="#编译内核模块" class="headerlink" title="编译内核模块"></a>编译内核模块</h2><p>参考 KernelSU 的 <a target="_blank" rel="noopener" href="https://github.com/tiann/KernelSU/blob/main/.github/workflows/gki-kernel.yml">GitHub Action</a></p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/02/09/%E4%B8%80%E6%9C%88%E7%9A%84%E4%B9%A6%E5%BD%B1%E9%9F%B3/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-02-15 22:16:38
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/tech/" title="tech">
+                        #tech
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/android/" title="android">
+                        #android
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
         </div>
       
-      <div class="post-item" title="Build Android Kernel for Pixel 9 Pro XL">
-        <div class="time-m-d">02-15</div>
-        <div class="title">
-          <a href="/2025/02/15/Build-Android-Kernel-for-Pixel-9-Pro-XL/">
-            <span>Build Android Kernel for Pixel 9 Pro XL</span>
-          </a>
-        </div>
-      </div>
+    </div>
     
-      <div class="post-item" title="一月的书影音">
-        <div class="time-m-d">02-09</div>
-        <div class="title">
-          <a href="/2025/02/09/%E4%B8%80%E6%9C%88%E7%9A%84%E4%B9%A6%E5%BD%B1%E9%9F%B3/">
-            <span>一月的书影音</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="提取U校园视音频文件">
-        <div class="time-m-d">01-13</div>
-        <div class="title">
-          <a href="/2025/01/13/%E6%8F%90%E5%8F%96U%E6%A0%A1%E5%9B%AD%E8%A7%86%E9%9F%B3%E9%A2%91%E6%96%87%E4%BB%B6/">
-            <span>提取U校园视音频文件</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="记梦">
-        <div class="time-m-d">01-08</div>
-        <div class="title">
-          <a href="/2025/01/08/%E8%AE%B0%E6%A2%A6/">
-            <span>记梦</span>
-          </a>
-        </div>
-      </div>
-    
-        <!-- 后续文章的发布年份呈现 -->
-        <div class="content-title">
-          <h2>
-            <span>2024</span>
-          </h2>
-        </div>
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
       
-      <div class="post-item" title="2024 年度总结">
-        <div class="time-m-d">12-31</div>
-        <div class="title">
-          <a href="/2024/12/31/2024-%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/">
-            <span>2024 年度总结</span>
-          </a>
-        </div>
-      </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83"><span class="toc-text">配置环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD-android-kernel"><span class="toc-text">下载 android kernel</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BC%96%E8%AF%91"><span class="toc-text">编译</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97"><span class="toc-text">编译内核模块</span></a></li></ol></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
     
-      <div class="post-item" title="考试月前的周末">
-        <div class="time-m-d">12-02</div>
-        <div class="title">
-          <a href="/2024/12/02/%E8%80%83%E8%AF%95%E6%9C%88%E5%89%8D%E7%9A%84%E5%91%A8%E6%9C%AB/">
-            <span>考试月前的周末</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="重玩 Minecraft">
-        <div class="time-m-d">11-29</div>
-        <div class="title">
-          <a href="/2024/11/29/%E9%87%8D%E7%8E%A9-Minecraft/">
-            <span>重玩 Minecraft</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="Pixel 9 Pro XL">
-        <div class="time-m-d">10-29</div>
-        <div class="title">
-          <a href="/2024/10/29/Pixel-9-Pro-XL/">
-            <span>Pixel 9 Pro XL</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="广州游记">
-        <div class="time-m-d">10-22</div>
-        <div class="title">
-          <a href="/2024/10/22/%E5%B9%BF%E5%B7%9E%E6%B8%B8%E8%AE%B0/">
-            <span>广州游记</span>
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="重拾blog">
-        <div class="time-m-d">09-27</div>
-        <div class="title">
-          <a href="/2024/09/27/%E9%87%8D%E6%8B%BEblog/">
-            <span>重拾blog</span>
-          </a>
-        </div>
+      <div class="comments-container">
+        
+
+
+  <div id="disqus_thread"></div>
+  <script>
+    /**
+    *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+    *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+    /*
+    var disqus_config = function () {
+    this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+    this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+    */
+    (function() { // DON'T EDIT BELOW THIS LINE
+    var d = document, s = d.createElement('script');
+    s.src = 'https://jing-jing-s-blog.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+
+
       </div>
     
   </div>
-</div>
+
 
         
 <div class="footer">
@@ -467,6 +534,20 @@
 
 
         
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Build%20Android%20Kernel%20for%20Pixel%209%20Pro%20XL + '&url=' + https%3A%2F%2Fmoeleak.github.io%2F2025%2F02%2F15%2FBuild-Android-Kernel-for-Pixel-9-Pro-XL%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+      </div>
+    </div>
   
   
 <script src="/js/shares.js"></script>
