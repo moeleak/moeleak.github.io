@@ -1068,6 +1068,37 @@ figure .pin-copy {
   --color-border-md-table: #4c566a;
 }
 
+@font-face {
+  font-family: 'AaKaiSong Stray ee87d30c';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/bin/fonts-zh/AaKaiSong.stray.ee87d30c.woff2) format('woff2');
+}
+
+/*
+body:lang(en), *[lang='en'],
+body:lang(fr), *[lang='fr'],
+body:lang(it), *[lang='it'],
+body:lang(de), *[lang='de'] {
+  font-family: 'Livvic', 'AaKaiSong', 'AaKaiSong Stray ee87d30c', sans-serif;
+}
+body:lang(zh), *[lang='zh'] {
+  font-family: 'AaKaiSong', 'AaKaiSong Stray ee87d30c', 'Livvic — Lighter Bold', sans-serif;
+}
+.symbols,
+body:lang(el), *[lang='el'],
+body:lang(grc), *[lang='grc'] {
+  font-family: 'Open Sans — Greek', 'Livvic', 'AaKaiSong', 'AaKaiSong Stray ee87d30c', sans-serif;
+}
+body:lang(ru), *[lang='ru'] {
+  font-family: 'Open Sans — Cyrillic', 'Livvic', 'AaKaiSong', 'AaKaiSong Stray ee87d30c', sans-serif;
+}
+pre, code, .tt {
+  font-family: 'Sono', 'AaKaiSong', 'AaKaiSong Stray ee87d30c', monospace;
+}
+*/
+
 * {
   margin: 0;
   padding: 0;
@@ -1078,7 +1109,8 @@ html, body {
   letter-spacing: 0.01rem;
   background-color: var(--bg-body);
   transition: color 400ms ease-in-out 0s, background-color 400ms ease-in-out 0s;
-  font-family: Consolas, "Liberation Mono", Menlo, Monaco, "Source Han Sans CN", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif
+  font-family: Consolas, "Liberation Mono", Menlo, Monaco, "AaKaiSong", "AaKaiSong Stray ee87d30c", "Hiragino Sans GB", "Microsoft YaHei", sans-serif
+  
 }
 
 body.hidden {
@@ -1095,6 +1127,7 @@ body.hidden {
   line-height: 2;
   word-wrap: break-word;
   color: var(--color-text-md-content)
+
 }
 
 @media (max-width: 768px) {
