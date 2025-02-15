@@ -1068,13 +1068,15 @@ figure .pin-copy {
   --color-border-md-table: #4c566a;
 }
 
+/*
 @font-face {
-  font-family: 'AaKaiSong Stray ee87d30c';
+  font-family: 'AaKaiSong';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/bin/fonts-zh/AaKaiSong.stray.ee87d30c.woff2) format('woff2');
+  src: url(/bin/fonts-zh/AaKaiSong.ttf) format('ttf');
 }
+*/
 
 /*
 body:lang(en), *[lang='en'],
@@ -1109,7 +1111,8 @@ html, body {
   letter-spacing: 0.01rem;
   background-color: var(--bg-body);
   transition: color 400ms ease-in-out 0s, background-color 400ms ease-in-out 0s;
-  font-family: Consolas, "Liberation Mono", Menlo, Monaco, "AaKaiSong", "AaKaiSong Stray ee87d30c", "Hiragino Sans GB", "Microsoft YaHei", sans-serif
+  /*font-family: Consolas, "Liberation Mono", Menlo, Monaco, "AaKaiSong", "AaKaiSong Stray ee87d30c", "Hiragino Sans GB", "Microsoft YaHei", sans-serif*/
+  font-family: Consolas, "Liberation Mono", Menlo, Monaco, "Source Han Sans CN", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif
   
 }
 
