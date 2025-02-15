@@ -51,6 +51,12 @@ body.hidden {
   padding-right: 6px;
 }
 
+.card-meta{
+  font-size: 1.5rem;
+  color: var(--color-text-base);
+  margin-top: 10px;
+}
+
 .markdown-body {
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
