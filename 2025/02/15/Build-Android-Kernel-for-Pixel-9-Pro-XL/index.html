@@ -154,7 +154,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-02-21 17:04:15
+          2025-02-21 17:08:52
         </span>
         
               <span class="post-tags">
@@ -192,7 +192,7 @@
 
 <h2 id="从源代码编译，不使用-prebuilt"><a href="#从源代码编译，不使用-prebuilt" class="headerlink" title="从源代码编译，不使用 prebuilt"></a>从源代码编译，不使用 prebuilt</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">./build_caimito.sh --config=use_source_tree_aosp</span></span><br></pre></td></tr></table></figure>
 
-<h2 id="修改内核Kconfig配置文件"><a href="#修改内核Kconfig配置文件" class="headerlink" title="修改内核Kconfig配置文件"></a>修改内核Kconfig配置文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">tools/bazel run //private/devices/google/caimito:zumapro_caimito_dist -- menuconfig</span></span><br></pre></td></tr></table></figure>
+<h2 id="修改内核Kconfig配置文件"><a href="#修改内核Kconfig配置文件" class="headerlink" title="修改内核Kconfig配置文件"></a>修改内核Kconfig配置文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">tools/bazel run //private/devices/google/caimito:zumapro_caimito_config -- menuconfig</span></span><br></pre></td></tr></table></figure>
 
 <p>其中 menuconfig 也可以改成 nconfig, savedefconfig</p>
 <h2 id="编译内核模块"><a href="#编译内核模块" class="headerlink" title="编译内核模块"></a>编译内核模块</h2><p>参考 KernelSU 的 <a target="_blank" rel="noopener" href="https://github.com/tiann/KernelSU/blob/main/.github/workflows/gki-kernel.yml">GitHub Action</a> 脚本</p>
@@ -211,7 +211,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-02-21 17:04:15
+              2025-02-21 17:08:52
             </span>
             
                   <span class="post-tags">
