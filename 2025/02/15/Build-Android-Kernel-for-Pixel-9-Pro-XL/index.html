@@ -154,7 +154,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-02-15 22:16:38
+          2025-02-21 17:04:15
         </span>
         
               <span class="post-tags">
@@ -183,14 +183,19 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">docker run -v /Volumes/Projects:/projects --platform linux/amd64 -it ubuntu:22.04 bash</span></span><br></pre></td></tr></table></figure>
 
 <p>安装依赖：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">apt-get install git repo kmod cpio ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python3 python2 binutils-aarch64-linux-gnu pahole gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu p7zip-full p7zip-rar</span> </span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> apt-get install git repo kmod cpio ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python3 python2 binutils-aarch64-linux-gnu pahole gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu p7zip-full p7zip-rar</span> </span><br></pre></td></tr></table></figure>
 
-<h1 id="下载-android-kernel"><a href="#下载-android-kernel" class="headerlink" title="下载 android kernel"></a>下载 android kernel</h1><p>参考<a target="_blank" rel="noopener" href="https://source.android.com/docs/setup/build/building-pixel-kernels">这里</a>查看你的 pixel 代号，在国内可以用 ustc 的源，不然下载会很慢</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">repo init -u https://mirrors.ustc.edu.cn/aosp/kernel/manifest.git -b android-gs-caimito-6.1-android14-qpr3-d1 --depth=1</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">repo <span class="built_in">sync</span> -c --no-tags</span></span><br></pre></td></tr></table></figure>
+<h1 id="下载-android-kernel"><a href="#下载-android-kernel" class="headerlink" title="下载 android kernel"></a>下载 android kernel</h1><p>参考<a target="_blank" rel="noopener" href="https://source.android.com/docs/setup/build/building-pixel-kernels">这里</a>查看你的 pixel 代号，在国内可以用 ustc 和 thu 的源，不然下载会很慢</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">export</span> REPO_URL=<span class="string">&#x27;https://mirrors.tuna.tsinghua.edu.cn/git/git-repo/&#x27;</span></span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">repo init -u https://mirrors.ustc.edu.cn/aosp/kernel/manifest.git -b android-gs-caimito-6.1-android14-qpr3-d1 --depth=1</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">repo <span class="built_in">sync</span> -c --no-tags</span></span><br></pre></td></tr></table></figure>
 
 <h1 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">./build_caimito.sh</span></span><br></pre></td></tr></table></figure>
 
-<h2 id="编译内核模块"><a href="#编译内核模块" class="headerlink" title="编译内核模块"></a>编译内核模块</h2><p>参考 KernelSU 的 <a target="_blank" rel="noopener" href="https://github.com/tiann/KernelSU/blob/main/.github/workflows/gki-kernel.yml">GitHub Action</a></p>
+<h2 id="从源代码编译，不使用-prebuilt"><a href="#从源代码编译，不使用-prebuilt" class="headerlink" title="从源代码编译，不使用 prebuilt"></a>从源代码编译，不使用 prebuilt</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">./build_caimito.sh --config=use_source_tree_aosp</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="修改内核Kconfig配置文件"><a href="#修改内核Kconfig配置文件" class="headerlink" title="修改内核Kconfig配置文件"></a>修改内核Kconfig配置文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">tools/bazel run //private/devices/google/caimito:zumapro_caimito_dist -- menuconfig</span></span><br></pre></td></tr></table></figure>
+
+<p>其中 menuconfig 也可以改成 nconfig, savedefconfig</p>
+<h2 id="编译内核模块"><a href="#编译内核模块" class="headerlink" title="编译内核模块"></a>编译内核模块</h2><p>参考 KernelSU 的 <a target="_blank" rel="noopener" href="https://github.com/tiann/KernelSU/blob/main/.github/workflows/gki-kernel.yml">GitHub Action</a> 脚本</p>
 
       </div>
       
@@ -206,7 +211,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-02-15 22:16:38
+              2025-02-21 17:04:15
             </span>
             
                   <span class="post-tags">
@@ -241,7 +246,7 @@
     <div class="title">Contents</div>
     <div class="catalog-content">
       
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83"><span class="toc-text">配置环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD-android-kernel"><span class="toc-text">下载 android kernel</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BC%96%E8%AF%91"><span class="toc-text">编译</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97"><span class="toc-text">编译内核模块</span></a></li></ol></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83"><span class="toc-text">配置环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD-android-kernel"><span class="toc-text">下载 android kernel</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BC%96%E8%AF%91"><span class="toc-text">编译</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E%E6%BA%90%E4%BB%A3%E7%A0%81%E7%BC%96%E8%AF%91%EF%BC%8C%E4%B8%8D%E4%BD%BF%E7%94%A8-prebuilt"><span class="toc-text">从源代码编译，不使用 prebuilt</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E5%86%85%E6%A0%B8Kconfig%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-text">修改内核Kconfig配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97"><span class="toc-text">编译内核模块</span></a></li></ol></li></ol>
       
     </div>
   </div>
