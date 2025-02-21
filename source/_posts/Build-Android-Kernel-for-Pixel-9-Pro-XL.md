@@ -50,7 +50,7 @@ $ ./build_caimito.sh --config=use_source_tree_aosp
 ## 修改内核Kconfig配置文件
 
 ```shell
-$ tools/bazel run //private/devices/google/caimito:zumapro_caimito_dist -- menuconfig
+$ tools/bazel run //private/devices/google/caimito:zumapro_caimito_config -- menuconfig
 ```
 
 其中 menuconfig 也可以改成 nconfig, savedefconfig
