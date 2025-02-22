@@ -95,6 +95,13 @@ ignore:
 
 # Extensions
 ## Plugins: https://hexo.io/plugins/
+#
+#
+
+plugins:
+  hexo-generator-feed
+
+#
 ## Themes: https://hexo.io/themes/
 theme: oranges
 
@@ -111,3 +118,8 @@ deploy:
   repo: 'git@github.com:moeleak/moeleak.github.io.git'
   branch: master
 
+
+feed:
+  type: atom
+  path: atom.xml
+  limit: 20
