@@ -155,7 +155,7 @@
       <div class="post-attach">
         <span class="post-pubtime">
           <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-04-08 11:43:24
+          2025-04-08 12:39:50
         </span>
         
       </div>
@@ -170,6 +170,11 @@
 <h2 id="Steam"><a href="#Steam" class="headerlink" title="Steam"></a>Steam</h2><p>这个本子用来玩galgame还是不错的，但是默认的 Steam proton 无法启动。需要用 proton-ge 魔改版。而且 Pixelbook Go 的 vulkan 驱动似乎有问题，目前我用不了 dxvk 来启动游戏，你可以用 wined3d 来尝试一下。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">yay -S proton-ge-custom-bin</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">cd</span> /usr/share/steam/compatibilitytools.d/proton-ge-custom/</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">sed -i <span class="string">&#x27;s/^[[:space:]]*#[[:space:]]*\(&quot;PROTON_USE_WINED3D&quot;: &quot;1&quot;,\)/\1/&#x27;</span> user_settings.py</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
+<p>但是不知道为什么，steamwebhelper 第一次启动会无响应，第二次就好了。而且 steamwebhelper 极其不优雅，早就想换掉了。</p>
+<p>可以尝试一下 <a target="_blank" rel="noopener" href="https://github.com/dmadisetti/steam-tui">steam-tui</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ yay -S steam-tui</span><br></pre></td></tr></table></figure>
+
+<p>不用臃肿的 web 界面即可快速启动游戏。</p>
 <h2 id="电池优化"><a href="#电池优化" class="headerlink" title="电池优化"></a>电池优化</h2><p>可以试一下 <a target="_blank" rel="noopener" href="https://wiki.archlinux.org/title/TLP">TLP</a> 工具</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> --now tlp</span></span><br></pre></td></tr></table></figure>
 
@@ -189,7 +194,7 @@
           <div class="post-attach">
             <span class="post-pubtime">
               <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-04-08 11:43:24
+              2025-04-08 12:39:50
             </span>
             
           </div>
