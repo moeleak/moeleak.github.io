@@ -33,6 +33,15 @@ $ sed -i 's/^[[:space:]]*#[[:space:]]*\("PROTON_USE_WINED3D": "1",\)/\1/' user_s
 
 ```
 
+但是不知道为什么，steamwebhelper 第一次启动会无响应，第二次就好了。而且 steamwebhelper 极其不优雅，早就想换掉了。
+
+可以尝试一下 [steam-tui](https://github.com/dmadisetti/steam-tui)
+```bash
+$ yay -S steam-tui
+```
+
+不用臃肿的 web 界面即可快速启动游戏。
+
 ## 电池优化
 
 可以试一下 [TLP](https://wiki.archlinux.org/title/TLP) 工具
