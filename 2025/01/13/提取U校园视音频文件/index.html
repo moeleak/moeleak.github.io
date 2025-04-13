@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <link rel="stylesheet" href="/custom.css">
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="静静" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  
+  
+  <title>
+    
+      提取U校园视音频文件 
+      
+      
+      |
+    
+     静静&#39;s Blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.ico">
+    <link rel="icon" href="/images/favicon.ico">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<!-- hexo injector head_end start --><script>  (function(){    var w = window;    if(w.ChannelIO){      return w.console.error("ChannelIO script included twice.");    }    var ch = function(){ ch.c(arguments); };    ch.q = [];    ch.c = function(args){ ch.q.push(args); };    w.ChannelIO = ch;    function l(){      if(w.ChannelIOInitialized){ return; }      w.ChannelIOInitialized = true;      var s = document.createElement("script");      s.type = "text/javascript";      s.async = true;      s.src = "https://cdn.channel.io/plugin/ch-plugin-web.js";      var x = document.getElementsByTagName("script")[0];      if(x.parentNode){        x.parentNode.insertBefore(s, x);      }    }    if(document.readyState === "complete"){      l();    } else {      w.addEventListener("DOMContentLoaded", l);      w.addEventListener("load", l);    }  })();  ChannelIO('boot', {    "pluginKey": "e7a297e4-c4b6-4d31-843e-5c50e58788b8"  });</script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="静静's Blog" type="application/atom+xml">
+</head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.jpeg" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">静静</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">提取U校园视音频文件</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2025-04-13 22:32:29
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/tech/" title="tech">
+                    #tech
+                  </a>
+                </span>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/android/" title="android">
+                    #android
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <p>需要 root 权限，一次比较无聊的经历。</p>
+<span id="more"></span>
+
+<h2 id="0x01"><a href="#0x01" class="headerlink" title="0x01"></a>0x01</h2><p>首先找到文件位置，由于全部下载，文件会比较大，只需找到文件所在位置，然后看哪个文件夹比较大就可以定位视音频文件了。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">komodo:/data/data/cn.unipus.ucampus.student # du -sh *</span><br><span class="line">18K	app_UApm</span><br><span class="line">3.5K	app_textures</span><br><span class="line">4.2M	app_webview</span><br><span class="line">7.5M	cache</span><br><span class="line">3.5K	code_cache</span><br><span class="line">23K	crashsdk</span><br><span class="line">204K	databases</span><br><span class="line">5.9G	files</span><br><span class="line">760K	shared_prefs</span><br><span class="line">komodo:/data/data/cn.unipus.ucampus.student # cd files</span><br><span class="line">komodo:/data/data/cn.unipus.ucampus.student/files # du -sh *</span><br><span class="line">3.5K	auth</span><br><span class="line">16K	bac.catch</span><br><span class="line">4.0K	bwc.catch</span><br><span class="line">24K	cn.jiguang.joperate.jcore_report</span><br><span class="line">4.0K	com.tencent.open.config.json.1106180023</span><br><span class="line">4.0K	com_alibaba_aliyun_crash_defend_sdk_info</span><br><span class="line">4.0K	crs.catch</span><br><span class="line">3.5K	dau</span><br><span class="line">4.0K	exid.dat</span><br><span class="line">3.5K	filedownloader</span><br><span class="line">38M	i39bd9d1b6fefdb81</span><br><span class="line">18K	jpush_stat_history</span><br><span class="line">39K	jpush_stat_history_pushcore</span><br><span class="line">356K	libijmDataEncryption.so</span><br><span class="line">4.0K	push_stat_cache.json</span><br><span class="line">4.0K	r_key_info</span><br><span class="line">5.8G	s</span><br><span class="line">3.5K	s_e</span><br><span class="line">3.5K	stats</span><br><span class="line">4.0K	umeng_it.cache</span><br><span class="line">0	umeng_policy_result_flag</span><br><span class="line">0	umeng_zcfg_flag</span><br><span class="line">3.5K	userinfo</span><br><span class="line">69M	www</span><br><span class="line">komodo:/data/data/cn.unipus.ucampus.student/files #</span><br><span class="line">---------------------------------------------</span><br><span class="line">komodo:/data/data/cn.unipus.ucampus.student/files/s/e/yys3 # ls -la</span><br><span class="line">total 6137375</span><br><span class="line">drwx------ 2 u0_a471 u0_a471     24576 2025-01-13 15:03 .</span><br><span class="line">drwx------ 3 u0_a471 u0_a471      3452 2025-01-13 14:38 ..</span><br><span class="line">-rw------- 1 u0_a471 u0_a471 180790694 2025-01-13 14:43 .03525879A1678CE0661A3047B9179904.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471  17698039 2025-01-13 14:59 .059D19BC8DC951A1951EAD6B2AAB2D2A.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471    510824 2025-01-13 14:47 .099BB643CF75F4034594B49EB3D4F105.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471  18964672 2025-01-13 15:02 .09C4A48CD6B2E6E42CE49B3900183580.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471    528987 2025-01-13 14:39 .0BBBC1EA5E84620AF862500ABFCA8E64.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471  15923918 2025-01-13 14:42 .120D48F44C16718060454E55ADE88F2D.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471    464099 2025-01-13 14:44 .125F3C8C9EE14F5FE68476E7CEBFE453.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471   1529286 2025-01-13 14:45 .1292F1B558E2A5D3CC433E253F7A96E7.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471    701727 2025-01-13 14:47 .12FC64E26F9EC26CFE56D810B19CE09B.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471    522405 2025-01-13 14:42 .1400FC514F47DCAA5A4F2C46C03D00DE.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471    505809 2025-01-13 14:46 .15480FE404DA8AA31E7B20DB0525610E.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471   2762788 2025-01-13 15:00 .15F06D4033DDF699D3854296FE0FB839.wys</span><br><span class="line">-rw------- 1 u0_a471 u0_a471    242476 2025-01-13 14:41 .16FB7917F2EB4200368037A03F387846.wys</span><br><span class="line">......</span><br><span class="line">komodo:/data/data/cn.unipus.ucampus.student/files/s/e/yys3 #</span><br></pre></td></tr></table></figure>
+
+<p>确定都在 <code>/data/data/cn.unipus.ucampus.student/files/s/e/yys3</code>里，拷贝复制到<code>/sdcard</code>里，直接adb pull到电脑上</p>
+<h2 id="0x02"><a href="#0x02" class="headerlink" title="0x02"></a>0x02</h2><p>确定文件格式</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">xxd .03525879A1678CE0661A3047B9179904.wys | less</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://s2.loli.net/2025/01/13/kWEg8GO7tK2aQbU.png"></p>
+<p>因为它的存储形式是 “mp42”，而不是 “24pm”，这一点就可以看出这是一个大端的 32 位格式。所以数据会按照 4 个字节进行存储。</p>
+<p>貌似没有对格式进行什么加密，修改，看起来就是mp4文件，但是我的播放器不能直接打开。</p>
+<p>写个脚本转换一下</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line">i=1</span><br><span class="line"><span class="keyword">for</span> file <span class="keyword">in</span> $(<span class="built_in">ls</span> -<span class="built_in">tr</span> .*.wys); <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Converting <span class="variable">$file</span> -&gt; <span class="variable">$&#123;i&#125;</span>.mp4&quot;</span></span><br><span class="line">    ffmpeg -i <span class="string">&quot;<span class="variable">$file</span>&quot;</span> -c copy <span class="string">&quot;<span class="variable">$&#123;i&#125;</span>.mp4&quot;</span> -loglevel quiet</span><br><span class="line">    ((i++))</span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;All done!&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="0x03"><a href="#0x03" class="headerlink" title="0x03"></a>0x03</h2><p><img src="https://s2.loli.net/2025/01/13/XPkJE3dba1LAcxQ.png"></p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2025/01/08/%E8%AE%B0%E6%A2%A6/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2025-04-13 22:32:29
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/tech/" title="tech">
+                        #tech
+                      </a>
+                    </span>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/android/" title="android">
+                        #android
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2025/02/09/%E4%B8%80%E6%9C%88%E7%9A%84%E4%B9%A6%E5%BD%B1%E9%9F%B3/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#0x01"><span class="toc-text">0x01</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#0x02"><span class="toc-text">0x02</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#0x03"><span class="toc-text">0x03</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+  <div id="disqus_thread"></div>
+  <script>
+    /**
+    *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+    *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+    /*
+    var disqus_config = function () {
+    this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+    this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+    */
+    (function() { // DON'T EDIT BELOW THIS LINE
+    var d = document, s = d.createElement('script');
+    s.src = 'https://jing-jing-s-blog.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/moeleak">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+        <li>
+          
+              <a title="twitter" target="_blank" rel="noopener" href="https://x.com/moeleak">
+                <i class="iconfont icon-twitter"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        Flowers were sold out but I'd like to plant one for you
+        
+    </div>
+  
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+      </div>
+    </div>
+  </body>
+</html>
