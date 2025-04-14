@@ -1,8 +1,72 @@
 #!/bin/bash
 
+# Get the current date and time
 current_date_time="$(date "+%Y-%m-%d %H:%M:%S")"
+# Set the commit message
+commit_message="Site updated: ${current_date_time}"
+
+echo "========================================"
+echo "Preparing to update blog source files (source branch)"
+echo "========================================"
+
+# Display current Git status (including untracked files)
+echo "--- Current Git Status ---"
+git status
+echo "----------------------"
+
+# Display changes to be staged and committed (diff)
+# Note: This only shows changes in tracked files. New files won't show diff content but will appear in status.
+echo "--- Changes to be staged and committed (diff) ---"
+git diff
+echo "----------------------------------"
+
+# Ask the user whether to continue
+read -p "Stage all the above changes, commit, and push to the source branch? (y/n): " confirm_source
+
+# If the user input is not 'y' or 'Y', exit the script
+if [[ "$confirm_source" != "y" && "$confirm_source" != "Y" ]]; then
+  echo "Operation cancelled."
+  exit 0
+fi
+
+# --- Performing source branch operations ---
+echo ">>> Staging all files (git add .)..."
 git add .
-git commit -m "Site updated: ${current_date_time}"
+
+echo ">>> Committing to source branch (git commit)..."
+git commit -m "${commit_message}"
+
+echo ">>> Pushing to source branch (git push)..."
 git push
 
-hexo clean && hexo d -g
+echo "========================================"
+echo "Source files successfully pushed to the source branch."
+echo "========================================"
+echo ""
+echo "========================================"
+echo "Preparing to clean and deploy the blog to the master branch"
+echo "========================================"
+
+# Confirm again before deployment (Optional, remove this section if the previous confirmation is sufficient)
+read -p "Execute Hexo clean and deploy (hexo clean && hexo d -g)? (y/n): " confirm_deploy
+
+if [[ "$confirm_deploy" != "y" && "$confirm_deploy" != "Y" ]]; then
+  echo "Deployment operation cancelled."
+  exit 0
+fi
+
+# --- Performing Hexo deployment operations ---
+echo ">>> Cleaning old generated files (hexo clean)..."
+hexo clean
+
+echo ">>> Generating and deploying the website (hexo d -g)..."
+# The hexo d -g command will, based on your _config.yml configuration,
+# typically generate static files into the public directory,
+# and then push the contents of the public directory to the configured master branch
+hexo d -g
+
+echo "========================================"
+echo "Blog successfully deployed to the master branch!"
+echo "========================================"
+
+exit 0
