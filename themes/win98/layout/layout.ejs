@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="<%= config.language %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= config.title %><% if (page.title) { %> - <%= page.title %><% } %></title>
+  <!-- 引入 98.css -->
+  <link rel="stylesheet" href="https://unpkg.com/98.css" />
+  <!-- 引入自定义的补充 CSS -->
+  <link rel="stylesheet" href="<%- url_for('/css/style.css') %>">
+  <%# Hexo 注入的头部脚本会在这里 %>
+</head>
+<body class="windows-desktop">
+
+  <!-- Hexo 渲染的初始内容，默认隐藏，仅供 JS fetch 读取 -->
+  <div id="initial-content-wrapper" style="display: none;">
+    <%- body %>
+  </div>
+
+  <!-- 桌面图标 -->
+  <div class="desktop-icons">
+      <!-- 我的电脑 (存档) -->
+      <a href="<%- url_for('/archives/') %>" class="desktop-icon" id="icon-mycomputer" data-window-title="存档"> <%# 改链接和标题 %>
+        <img src="<%- url_for('/images/icon_mycomputer.png') %>" alt="我的电脑">
+        <span>我的电脑</span>
+      </a>
+      <!-- 我的文档 (关于) -->
+      <a href="<%- url_for('/about/') %>" class="desktop-icon" id="icon-mydocuments" data-window-title="关于我"> <%# 新增/修改图标, 改链接和标题 %>
+        <img src="<%- url_for('/images/icon_mydocuments.png') %>" alt="我的文档">
+        <span>我的文档</span>
+      </a>
+      <!-- 网上邻居 (友链) -->
+      <a href="<%- url_for('/links/') %>" class="desktop-icon" id="icon-network" data-window-title="友情链接"> <%# 改链接和标题 %>
+        <img src="<%- url_for('/images/icon_network.png') %>" alt="网上邻居">
+        <span>网上邻居</span>
+      </a>
+  </div>
+
+  <!-- 这个容器用来放置动态创建的窗口 -->
+  <div id="window-container"></div>
+
+  <!-- 引入交互逻辑的 JS -->
+  <script src="<%- url_for('/js/win98.js') %>"></script>
+</body>
+</html>
+
