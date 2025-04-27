@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     windowDiv.style.position = 'absolute'; // Crucial for positioning
 
     // --- Initial Position Calculation (Mobile Friendly) ---
-    const initialWidth = 450;
+    const initialWidth = 250;
     const initialHeight = 350;
     const margin = 10; // Minimum margin from viewport edges
 
@@ -213,6 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const onPointerDown = (e) => {
+      if (e.target.closest('.title-bar-controls')) {
+        // Click was on a control button (like close), let its own handler work.
+        return;
+      }
       // Ignore non-primary mouse button or touches on the resizer
       if ((e.pointerType === 'mouse' && e.button !== 0) || e.target.style.cursor === 'nwse-resize') {
         return;
