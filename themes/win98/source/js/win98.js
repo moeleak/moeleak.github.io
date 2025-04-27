@@ -130,172 +130,149 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function makeDraggable(element, handle) {
     let isDragging = false;
-    // Store pointerId to manage capture correctly
     let pointerId = null;
     let startX, startY, initialLeft, initialTop;
 
-    // --- Event Handler: Pointer Down ---
-    const onPointerDown = (e) => {
-      // Ignore if not the primary button (e.g., right-click) for mouse
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      // Ignore if the event target is the resizer handle (important!)
-      // Check based on the cursor style assigned in createWindow
-      if (e.target.style.cursor === 'nwse-resize') return;
+    // Define event handler functions beforehand
+    // We need named functions to be able to remove them with the correct options
 
-      isDragging = true;
-      pointerId = e.pointerId; // Store the ID of the pointer initiating the drag
-
-      // Record starting positions
-      startX = e.clientX;
-      startY = e.clientY;
-      initialLeft = element.offsetLeft;
-      initialTop = element.offsetTop;
-
-      // --- Style changes to indicate dragging ---
-      handle.style.cursor = 'grabbing'; // Feedback on the handle
-      element.style.userSelect = 'none'; // Prevent text selection *in* the window
-      document.body.style.userSelect = 'none'; // Prevent text selection *outside* the window
-      document.body.classList.add('is-dragging-window'); // Optional global style hook
-
-      // --- Bring window to front ---
-      // Assumes highestZIndex is accessible in this scope
-      if (typeof highestZIndex !== 'undefined' && parseInt(element.style.zIndex) < highestZIndex) {
-        highestZIndex++;
-        element.style.zIndex = highestZIndex;
-      }
-
-      // --- Capture the pointer ---
-      // Crucial: Ensures subsequent events for *this specific pointer interaction*
-      // are directed to 'handle', even if the pointer moves outside its bounds.
-      try {
-        handle.setPointerCapture(pointerId);
-      } catch (err) {
-        console.error("Error setting pointer capture:", err);
-        // Might fail if the element is not suitable for capture, but usually works on DOM elements.
-      }
-
-
-      // --- Attach move and up listeners to the *document* ---
-      // Listening globally ensures we track movement regardless of cursor position.
-      document.addEventListener('pointermove', onPointerMove);
-      document.addEventListener('pointerup', onPointerUp);
-      document.addEventListener('pointercancel', onPointerUp); // Handle interruptions
-
-      // --- Prevent Default Browser Actions ---
-      // This is vital for touch interaction to prevent page scrolling, zooming, etc.
-      // Calling it in 'pointerdown' is often necessary to stop the browser
-      // from initiating its own gesture handling.
-      e.preventDefault();
-
-      // Also explicitly prevent default drag behavior (e.g., image ghosting)
-      // The 'dragstart' event might still fire without this in some cases.
-      if (handle.ondragstart !== undefined) { // Check if event exists
-        handle.ondragstart = () => false;
-      }
-
-    }; // --- End of onPointerDown ---
-
-    // --- Event Handler: Pointer Move ---
     const onPointerMove = (e) => {
-      // Only react if we are dragging and the event is from the correct pointer
+      // Only react if we are dragging the correct pointer
       if (!isDragging || e.pointerId !== pointerId) return;
 
-      // Calculate the distance moved
+      // ---- CRITICAL: Prevent default touch actions DURING move ----
+      // This might be necessary if the browser decides mid-drag
+      // that the user might be trying to scroll.
+      e.preventDefault();
+      // e.stopPropagation(); // Optional: uncomment if issues persist
+
+      // Calculate movement
       const currentX = e.clientX;
       const currentY = e.clientY;
       const deltaX = currentX - startX;
       const deltaY = currentY - startY;
 
-      // Calculate the new theoretical top-left position
       let newLeft = initialLeft + deltaX;
       let newTop = initialTop + deltaY;
 
-      // --- Boundary Checks (Keep the window fully within the viewport) ---
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      // Get the element's current dimensions dynamically as they might change (though unlikely during drag)
-      const elementWidth = element.offsetWidth;
-      const elementHeight = element.offsetHeight;
+      // Boundary checks (Keep fully on screen)
+      const VpWidth = window.innerWidth;
+      const VpHeight = window.innerHeight;
+      const elWidth = element.offsetWidth;
+      const elHeight = element.offsetHeight;
 
-      // Clamp the left position (prevent moving past left edge 0)
-      newLeft = Math.max(0, newLeft);
-      // Clamp the top position (prevent moving past top edge 0)
-      newTop = Math.max(0, newTop);
-
-      // Clamp the left position based on the right edge (prevent moving past right edge)
-      // Ensure the calculation works even if element is wider than viewport
-      newLeft = Math.min(newLeft, Math.max(0, viewportWidth - elementWidth)); // Use max(0, ...) to prevent negative offset if wider
-
-      // Clamp the top position based on the bottom edge (prevent moving past bottom edge)
-      // Ensure the calculation works even if element is taller than viewport
-      newTop = Math.min(newTop, Math.max(0, viewportHeight - elementHeight)); // Use max(0, ...) to prevent negative offset if taller
+      newLeft = Math.max(0, Math.min(newLeft, VpWidth - elWidth));
+      newTop = Math.max(0, Math.min(newTop, VpHeight - elHeight));
+      // Ensure calculations are correct if window > viewport
+      if (elWidth > VpWidth) {
+        newLeft = 0; // Or center it: Math.max(0, VpWidth - elWidth);
+      }
+      if (elHeight > VpHeight) {
+        newTop = 0; // Or center it: Math.max(0, VpHeight - elHeight);
+      }
 
 
-      // Apply the constrained position
+      // Apply position
       element.style.left = `${newLeft}px`;
       element.style.top = `${newTop}px`;
 
-      // --- Prevent Default Actions (during move) ---
-      // Continue to prevent default actions like text selection or scrolling during the move.
-      e.preventDefault();
+      // console.log(`Dragging: ${newLeft}, ${newTop}`); // DEBUG
+    };
 
-    }; // --- End of onPointerMove ---
-
-    // --- Event Handler: Pointer Up / Cancel ---
     const onPointerUp = (e) => {
       // Only react if ending the drag for the pointer we are tracking
       if (!isDragging || e.pointerId !== pointerId) return;
 
       isDragging = false;
+      // console.log("Drag End"); // DEBUG
 
-      // --- Restore styles ---
-      handle.style.cursor = 'grab'; // Reset handle cursor
-      element.style.removeProperty('user-select'); // Re-enable text selection in window
-      document.body.style.removeProperty('user-select'); // Re-enable text selection on page
-      document.body.classList.remove('is-dragging-window'); // Remove global style hook
+      // Restore styles
+      handle.style.cursor = 'grab';
+      element.style.removeProperty('user-select');
+      document.body.style.removeProperty('user-select');
+      document.body.classList.remove('is-dragging-window');
 
-      // --- Release pointer capture ---
-      // Important to release the capture so other elements can receive pointer events normally.
-      // Check if the element still holds the capture before releasing to avoid errors.
+      // Release pointer capture
       if (handle.hasPointerCapture(pointerId)) {
         try {
           handle.releasePointerCapture(pointerId);
+          // console.log("Pointer Capture Released"); // DEBUG
         } catch (err) {
           console.error("Error releasing pointer capture:", err);
         }
-
       }
-      pointerId = null; // Clear the tracked pointer ID
+      pointerId = null;
 
-
-      // --- Remove global listeners ---
-      // Clean up listeners to prevent memory leaks and unintended behavior.
-      document.removeEventListener('pointermove', onPointerMove);
+      // Remove global listeners WITH specific options for passive
+      document.removeEventListener('pointermove', onPointerMove, { passive: false, capture: false }); // Ensure options match addEventListener
       document.removeEventListener('pointerup', onPointerUp);
       document.removeEventListener('pointercancel', onPointerUp);
 
       // Optional: Reset ondragstart if it was set
-      // if (handle.ondragstart !== undefined) {
-      //     handle.ondragstart = null;
-      // }
+      // if (handle.ondragstart !== undefined) { handle.ondragstart = null; }
+    };
 
-    }; // --- End of onPointerUp ---
+    const onPointerDown = (e) => {
+      // Ignore non-primary mouse button or touches on the resizer
+      if ((e.pointerType === 'mouse' && e.button !== 0) || e.target.style.cursor === 'nwse-resize') {
+        return;
+      }
 
-    // --- Attach the initial listener to the handle element ---
+      isDragging = true;
+      pointerId = e.pointerId;
+      // console.log(`Drag Start - Pointer ID: ${pointerId}`); // DEBUG
+
+      startX = e.clientX;
+      startY = e.clientY;
+      initialLeft = element.offsetLeft;
+      initialTop = element.offsetTop;
+
+      // Style changes
+      handle.style.cursor = 'grabbing';
+      element.style.userSelect = 'none';
+      document.body.style.userSelect = 'none';
+      document.body.classList.add('is-dragging-window');
+
+      // Bring window to front
+      if (typeof highestZIndex !== 'undefined' && parseInt(element.style.zIndex) < highestZIndex) {
+        highestZIndex++;
+        element.style.zIndex = highestZIndex;
+      }
+
+      // ---- CRITICAL: Prevent default actions & Stop Propagation ----
+      e.preventDefault(); // Prevent scrolling, context menu, etc.
+      e.stopPropagation(); // Stop event from bubbling up
+
+      // Set touch-action explicitly on the handle (belt and suspenders)
+      handle.style.touchAction = 'none';
+
+      // Capture the pointer
+      try {
+        handle.setPointerCapture(pointerId);
+        // console.log("Pointer Capture Set"); // DEBUG
+      } catch (err) {
+        console.error("Error setting pointer capture:", err);
+      }
+
+      // Add global listeners for move and up/cancel
+      // ---- CRITICAL: Add listener with passive: false ----
+      document.addEventListener('pointermove', onPointerMove, { passive: false, capture: false });
+      document.addEventListener('pointerup', onPointerUp);       // passive default is fine here
+      document.addEventListener('pointercancel', onPointerUp); // passive default is fine here
+
+    }; // --- End of onPointerDown ---
+
+
+    // Attach the initial listener to the handle element
     handle.addEventListener('pointerdown', onPointerDown);
 
-    // --- Set initial cursor style ---
+    // Set initial cursor style
     handle.style.cursor = 'grab';
 
-    // --- Ensure `touch-action: none` is set via CSS or JS (CSS is preferred) ---
-    // If not already done in CSS, uncomment the line below:
-    // handle.style.touchAction = 'none';
-
-    // --- Prevent default drag start behavior (redundant but safe) ---
+    // Prevent default image drag behavior (redundant but safe)
     if (handle.ondragstart !== undefined) {
       handle.ondragstart = () => false;
     }
-
 
   } // --- End of makeDraggable function ---
 
