@@ -113,6 +113,10 @@ body.windows-desktop {
     cursor: grabbing;
 }
 
+#window-container > .window > div[style*="cursor: nwse-resize"] { /* Example selector based on inline style */
+     touch-action: none; /* <<<--- 添加这一行：禁用缩放手柄上的默认触摸行为 */
+}
+
 /* Style for content loaded inside the window body if needed */
 .win98-content { /* Use the class from post.ejs etc. */
    /* Add styles specific to your blog content if 98.css defaults aren't enough */
