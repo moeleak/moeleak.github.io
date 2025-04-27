@@ -4,292 +4,361 @@ document.addEventListener('DOMContentLoaded', () => {
     const windowContainer = document.getElementById('window-container');
     let highestZIndex = 10;
 
-    // --- Window Creation Function (Updated for 98.css) ---
+    // --- Window Creation Function (Updated for 98.css & Mobile Position) ---
     function createWindow(title, contentUrl) {
         highestZIndex++;
         const windowId = `window-${Date.now()}`;
 
-        // Main window element (Uses 98.css class 'window')
         const windowDiv = document.createElement('div');
-        windowDiv.className = 'window'; // Use 98.css window class
+        windowDiv.className = 'window';
         windowDiv.id = windowId;
-        // position: absolute is set via style.css or inline style below
-        windowDiv.style.position = 'absolute';
-        windowDiv.style.left = `${Math.random() * 200 + 50}px`;
-        windowDiv.style.top = `${Math.random() * 100 + 50}px`;
-        windowDiv.style.width = '450px'; // Initial size
-        windowDiv.style.height = '350px';
-        windowDiv.style.zIndex = highestZIndex;
-        // 98.css window has default resize handle, but might need overflow hidden if content overflows strangely
-        // windowDiv.style.resize = 'both'; // Keep if you want CSS resize
-        // windowDiv.style.overflow = 'hidden'; // Often needed with resize
+        windowDiv.style.position = 'absolute'; // Crucial for positioning
 
-        // Title bar (Uses 98.css class 'title-bar')
+        // --- Initial Position Calculation (Mobile Friendly) ---
+        const initialWidth = 450;
+        const initialHeight = 350;
+        const margin = 10; // Minimum margin from viewport edges
+
+        // Ensure dimensions don't exceed viewport size, especially on mobile
+        const clampedWidth = Math.min(initialWidth, window.innerWidth - 2 * margin);
+        const clampedHeight = Math.min(initialHeight, window.innerHeight - 2 * margin);
+
+        const maxLeft = window.innerWidth - clampedWidth - margin;
+        const maxTop = window.innerHeight - clampedHeight - margin - 30; // Account for potential top bars/notches
+
+        // Calculate random position within safe bounds
+        const randomLeft = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxLeft)));
+        const randomTop = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxTop)));
+
+        windowDiv.style.left = `${randomLeft}px`;
+        windowDiv.style.top = `${randomTop}px`;
+        windowDiv.style.width = `${clampedWidth}px`; // Use clamped width
+        windowDiv.style.height = `${clampedHeight}px`; // Use clamped height
+        windowDiv.style.zIndex = highestZIndex;
+
+        // --- Title bar ---
         const titleBar = document.createElement('div');
         titleBar.className = 'title-bar';
 
-        // Title text (Uses 98.css class 'title-bar-text')
         const titleText = document.createElement('div');
         titleText.className = 'title-bar-text';
         titleText.textContent = title;
         titleBar.appendChild(titleText);
 
-        // Title bar controls (Uses 98.css class 'title-bar-controls')
         const buttonsDiv = document.createElement('div');
         buttonsDiv.className = 'title-bar-controls';
 
-        // Close button (Uses 98.css button structure)
         const closeButton = document.createElement('button');
         closeButton.setAttribute('aria-label', 'Close');
-        // closeButton.innerHTML = '<span>X</span>'; // Or just text 'X'
-        closeButton.textContent = 'X'; // Simple 'X' text for the button
+        closeButton.textContent = 'X';
         closeButton.onclick = () => {
             windowDiv.remove();
         };
-        // Add minimize/maximize buttons similarly if needed
         buttonsDiv.appendChild(closeButton);
+        titleBar.appendChild(buttonsDiv);
 
-        titleBar.appendChild(buttonsDiv); // Append buttons to title bar
-
-        // Window content area (Uses 98.css class 'window-body')
+        // --- Window content area ---
         const contentDiv = document.createElement('div');
         contentDiv.className = 'window-body';
-        // contentDiv.classList.add('has-space'); // Optional: adds padding via 98.css
-        contentDiv.innerHTML = '<p>Loading...</p>'; // Placeholder
-        // Ensure scrolling works if content overflows
-        contentDiv.style.overflow = 'auto';
-
+        contentDiv.innerHTML = '<p>加载中...</p>'; // Use Chinese here
+        // Scrolling is handled by CSS flexbox overflow in style.css
 
         windowDiv.appendChild(titleBar);
         windowDiv.appendChild(contentDiv);
 
-        // --- Make window active on click ---
-        windowDiv.addEventListener('mousedown', () => {
-            highestZIndex++;
-            windowDiv.style.zIndex = highestZIndex;
-        }, true);
+        // --- Bring to front on interaction ---
+        const bringToFront = () => {
+             if (parseInt(windowDiv.style.zIndex) < highestZIndex) {
+                highestZIndex++;
+                windowDiv.style.zIndex = highestZIndex;
+             }
+        };
+        // Use pointerdown for unified mouse/touch start
+        windowDiv.addEventListener('pointerdown', bringToFront, true);
 
-        // --- Make window draggable (Using the titleBar as handle) ---
-        makeDraggable(windowDiv, titleBar); // Pass titleBar as the handle
-        // --- Make window resizable (JS implementation) ---
+
+        // --- Make window draggable (Unified Mouse/Touch) ---
+        makeDraggable(windowDiv, titleBar);
+
+        // --- Make window resizable (Unified Mouse/Touch) ---
         const resizer = document.createElement('div');
-        resizer.style.width = '12px'; // Slightly larger area
-        resizer.style.height = '12px';
-        resizer.style.background = 'transparent'; // Invisible handle
+        resizer.style.width = '15px'; // Slightly larger touch target
+        resizer.style.height = '15px';
         resizer.style.position = 'absolute';
         resizer.style.right = '0';
         resizer.style.bottom = '0';
-        resizer.style.cursor = 'nwse-resize'; // Diagonal resize cursor
-        resizer.style.zIndex = '1'; // Ensure it's clickable
+        resizer.style.cursor = 'nwse-resize';
+        resizer.style.zIndex = '1';
+        // Optional: Add a visual indicator for the handle if needed
+        // resizer.style.backgroundColor = 'rgba(0,0,255,0.1)';
         windowDiv.appendChild(resizer);
 
-        makeResizable(windowDiv, resizer); // Call the new resize function
+        makeResizable(windowDiv, resizer);
 
 
-        // Append to container
         windowContainer.appendChild(windowDiv);
 
-        // --- Load content (No changes needed here) ---
+        // --- Load content ---
         if (contentUrl) {
             fetch(contentUrl)
                 .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    if (!response.ok) throw new Error(`HTTP 错误！状态: ${response.status}`);
                     return response.text();
                 })
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    // *** IMPORTANT: Ensure this selector matches your content template ***
-                    const mainContent = doc.querySelector('#content-main'); // Or '.win98-content'
+                    const mainContent = doc.querySelector('#content-main');
                     if (mainContent) {
                         contentDiv.innerHTML = mainContent.innerHTML;
                         setupWindowLinks(contentDiv); // Re-scan links inside loaded content
                     } else {
-                        contentDiv.innerHTML = '<p>Error: Content structure not found in fetched page.</p>';
-                        console.warn("Could not find element with selector '#content-main' in fetched HTML from:", contentUrl);
+                        contentDiv.innerHTML = '<p>错误：在获取的页面中未找到内容结构。</p>';
+                        console.warn("无法在获取的 HTML 中找到选择器 '#content-main' 的元素:", contentUrl);
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading content:', error);
-                    contentDiv.innerHTML = `<p>Error loading content: ${error.message}</p>`;
+                    console.error('加载内容时出错:', error);
+                    contentDiv.innerHTML = `<p>加载内容出错: ${error.message}</p>`;
                 });
         } else {
-             contentDiv.innerHTML = '<p>No content URL provided.</p>';
+             contentDiv.innerHTML = '<p>未提供内容 URL。</p>';
         }
 
-    return windowDiv;
-  }
+        return windowDiv;
+    }
 
-  function makeResizable(element, handle) {
-    let isResizing = false;
-    let startX, startY, initialWidth, initialHeight;
-
-    handle.addEventListener('mousedown', (e) => {
-      // Only react to left mouse button
-      if (e.button !== 0) return;
-
-      isResizing = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      initialWidth = element.offsetWidth;
-      initialHeight = element.offsetHeight;
-
-      // Prevent text selection globally during resize
-      document.body.style.userSelect = 'none';
-      // Change cursor globally to indicate resize operation
-      document.body.style.cursor = 'nwse-resize';
-
-      // Bring window to front when starting resize
-      highestZIndex++;
-      element.style.zIndex = highestZIndex;
-
-      // Stop the event from bubbling up (e.g., to prevent window drag)
-      e.stopPropagation();
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!isResizing) return;
-
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-
-      let newWidth = initialWidth + deltaX;
-      let newHeight = initialHeight + deltaY;
-
-      // Apply minimum size constraints based on CSS or defaults
-      // Use getComputedStyle for more reliable min-width/min-height if set in CSS
-      const computedStyle = window.getComputedStyle(element);
-      const minWidth = parseInt(computedStyle.minWidth || '200');
-      const minHeight = parseInt(computedStyle.minHeight || '150');
-
-      // Ensure size doesn't go below minimum
-      newWidth = Math.max(minWidth, newWidth);
-      newHeight = Math.max(minHeight, newHeight);
-
-      element.style.width = `${newWidth}px`;
-      element.style.height = `${newHeight}px`;
-
-      // Optional: Prevent rapid mouse movements from selecting text outside browser
-      e.preventDefault();
-    });
-
-    document.addEventListener('mouseup', (e) => {
-      // Only react to left mouse button release
-      if (e.button !== 0) return;
-
-      if (isResizing) {
-        isResizing = false;
-        // Restore default cursor and text selection behavior
-        document.body.style.removeProperty('user-select');
-        document.body.style.removeProperty('cursor');
-      }
-    });
-
-    // Handle case where mouse leaves the window/document while resizing
-    document.addEventListener('mouseleave', (e) => {
-      // This event listener on `document` is debated, sometimes mouseup is enough.
-      // If resize doesn't stop reliably when mouse button released outside window, add mouseup here too.
-      // if (isResizing) {
-      //    isResizing = false;
-      //    document.body.style.removeProperty('user-select');
-      //    document.body.style.removeProperty('cursor');
-      // }
-    });
-  }
-
-  // --- Draggable Functionality (No changes needed) ---
-  function makeDraggable(element, handle) {
+    // --- Unified Draggable Functionality (Mouse & Touch) ---
+    function makeDraggable(element, handle) {
         let isDragging = false;
-        let offsetX, offsetY;
+        let startX, startY, initialLeft, initialTop;
 
-        handle.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return;
+        const onPointerDown = (e) => {
+            // Ignore if not left mouse button or if it's a touch on the resizer
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            if (e.target.style.cursor === 'nwse-resize') return; // Don't drag if starting resize
+
             isDragging = true;
-            offsetX = e.clientX - element.getBoundingClientRect().left; // Use getBoundingClientRect for accuracy
-            offsetY = e.clientY - element.getBoundingClientRect().top;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = element.offsetLeft;
+            initialTop = element.offsetTop;
+
             handle.style.cursor = 'grabbing';
-            element.style.userSelect = 'none';
-            highestZIndex++;
-            element.style.zIndex = highestZIndex;
+            element.style.userSelect = 'none'; // Prevent text selection during drag
+            document.body.classList.add('is-dragging-window'); // Global style adjustments
 
-            // Add a class to body to prevent text selection globally during drag
-            document.body.classList.add('is-dragging-window');
-        });
+            // Bring window to front (already handled by pointerdown on element, but good to ensure)
+            if (parseInt(element.style.zIndex) < highestZIndex) {
+                highestZIndex++;
+                element.style.zIndex = highestZIndex;
+            }
 
-        document.addEventListener('mousemove', (e) => {
+            // Capture further events on the document
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+            document.addEventListener('pointercancel', onPointerUp); // Handle cancellation (e.g., system interruption)
+
+             // Prevent default touch action like scrolling page
+             if (e.pointerType === 'touch') {
+                e.preventDefault();
+             }
+             handle.setPointerCapture(e.pointerId); // Ensure handle receives subsequent events
+        };
+
+        const onPointerMove = (e) => {
             if (!isDragging) return;
-            let newX = e.clientX - offsetX;
-            let newY = e.clientY - offsetY;
+
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+            const deltaX = currentX - startX;
+            const deltaY = currentY - startY;
+
+            let newLeft = initialLeft + deltaX;
+            let newTop = initialTop + deltaY;
+
+            // --- Boundary checks ---
             const VpWidth = window.innerWidth;
             const VpHeight = window.innerHeight;
             const elWidth = element.offsetWidth;
-            // Keep window partially visible (e.g., title bar)
             const titleBarHeight = handle.offsetHeight || 20;
 
-            newX = Math.max(-elWidth + 40, Math.min(newX, VpWidth - 40)); // Allow slight offscreen left/right
-            newY = Math.max(0, Math.min(newY, VpHeight - titleBarHeight)); // Keep title bar visible
+            // Keep window partially visible
+            newLeft = Math.max(-elWidth + 50, Math.min(newLeft, VpWidth - 50)); // Allow more offscreen space
+            newTop = Math.max(0, Math.min(newTop, VpHeight - titleBarHeight));
 
-            element.style.left = `${newX}px`;
-            element.style.top = `${newY}px`;
-        });
+            element.style.left = `${newLeft}px`;
+            element.style.top = `${newTop}px`;
 
-        document.addEventListener('mouseup', (e) => {
-             if (e.button !== 0) return;
-             if (isDragging) {
-                isDragging = false;
-                handle.style.cursor = 'grab';
-                element.style.removeProperty('user-select');
-                 // Remove global class
-                document.body.classList.remove('is-dragging-window');
-             }
-        });
+            // Prevent default only if dragging actually happens (optional)
+            // e.preventDefault();
+        };
 
-         // Optional: Prevent drag end if mouse leaves handle but button still pressed
-        // handle.addEventListener('mouseleave', () => { /* No action needed usually */ });
+        const onPointerUp = (e) => {
+            if (!isDragging) return;
+
+            isDragging = false;
+            handle.style.cursor = 'grab';
+            element.style.removeProperty('user-select');
+            document.body.classList.remove('is-dragging-window');
+
+            // Release event capture
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+            handle.releasePointerCapture(e.pointerId);
+        };
+
+        handle.addEventListener('pointerdown', onPointerDown);
+        handle.style.cursor = 'grab'; // Initial cursor style
+         // Prevent default drag behavior on the handle itself (e.g., dragging an image)
+        handle.ondragstart = () => false;
     }
 
-    // --- Link Handling (No changes needed in logic, but ensure selectors are correct) ---
+
+    // --- Unified Resizable Functionality (Mouse & Touch) ---
+    function makeResizable(element, handle) {
+        let isResizing = false;
+        let startX, startY, initialWidth, initialHeight;
+
+        const onPointerDown = (e) => {
+            // Ignore if not left mouse button (for mouse)
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialWidth = element.offsetWidth;
+            initialHeight = element.offsetHeight;
+
+            // Global styles during resize
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'nwse-resize';
+
+            // Bring window to front
+             if (parseInt(element.style.zIndex) < highestZIndex) {
+                highestZIndex++;
+                element.style.zIndex = highestZIndex;
+             }
+
+            // Capture events on the handle itself
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+            document.addEventListener('pointercancel', onPointerUp);
+
+            handle.setPointerCapture(e.pointerId); // Capture pointer events
+             // Prevent default touch actions (like scrolling) when resizing
+             if (e.pointerType === 'touch') {
+                e.preventDefault();
+             }
+            e.stopPropagation(); // Prevent triggering drag start
+        };
+
+        const onPointerMove = (e) => {
+            if (!isResizing) return;
+
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+
+            let newWidth = initialWidth + deltaX;
+            let newHeight = initialHeight + deltaY;
+
+            // Minimum size constraints
+            const computedStyle = window.getComputedStyle(element);
+            const minWidth = parseInt(computedStyle.minWidth || '150'); // Adjusted minimums
+            const minHeight = parseInt(computedStyle.minHeight || '100');
+
+            newWidth = Math.max(minWidth, newWidth);
+            newHeight = Math.max(minHeight, newHeight);
+
+            // Apply new dimensions
+            element.style.width = `${newWidth}px`;
+            element.style.height = `${newHeight}px`;
+
+            // Prevent page scroll during resize via touch
+            if (e.pointerType === 'touch') {
+                 e.preventDefault();
+            }
+        };
+
+        const onPointerUp = (e) => {
+            if (!isResizing) return;
+
+            isResizing = false;
+            // Restore global styles
+            document.body.style.removeProperty('user-select');
+            document.body.style.removeProperty('cursor');
+
+            // Release event listeners and capture
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+            handle.releasePointerCapture(e.pointerId);
+        };
+
+        handle.addEventListener('pointerdown', onPointerDown);
+         // Prevent default drag behavior on the handle
+        handle.ondragstart = () => false;
+    }
+
+
+    // --- Link Handling (Refined Selector - ensure it matches your intent) ---
     function setupWindowLinks(parentElement = document) {
-        // Select links that should open in a window. Refine selector as needed.
-        // Example: internal posts/pages + desktop icons meant for windows
+        // Select links that should open in a window.
+        // This example targets:
+        // 1. Desktop icons with 'data-window-title'
+        // 2. Internal links starting with '/' BUT NOT just '/' (homepage)
+        // 3. Exclude links with class 'no-window' (add this class if needed)
         const windowLinks = parentElement.querySelectorAll(
-            'a[href^="/"]:not([href="/"]), a.desktop-icon[data-window-title]:not(#icon-network):not(#icon-home)' // Exclude network/home icons explicitly if they have special behavior
+            'a.desktop-icon[data-window-title], a[href^="/"]:not([href="/"]):not(.no-window)'
         );
 
-
         windowLinks.forEach(link => {
+            // Prevent adding listener multiple times if content is reloaded/rescanned
             if (link.dataset.windowListenerAttached) return;
 
             link.addEventListener('click', (event) => {
-                event.preventDefault();
+                event.preventDefault(); // Stop default navigation
                 const url = link.getAttribute('href');
-                const title = link.dataset.windowTitle || link.textContent.trim() || 'Window';
+                const title = link.dataset.windowTitle || link.textContent.trim() || '窗口'; // Default title
 
-                 const existingWindow = Array.from(windowContainer.children).find(win => win.dataset.contentUrl === url);
-                 if(existingWindow){
-                      highestZIndex++;
-                      existingWindow.style.zIndex = highestZIndex;
-                      existingWindow.classList.add('window-shake');
-                      setTimeout(() => existingWindow.classList.remove('window-shake'), 300);
-                 } else {
-                     const newWindow = createWindow(title, url);
-                     newWindow.dataset.contentUrl = url; // Store URL
-                 }
+                // --- Check if window for this URL already exists ---
+                let existingWindow = null;
+                const windows = windowContainer.querySelectorAll('.window');
+                for (let win of windows) {
+                    if (win.dataset.contentUrl === url) {
+                        existingWindow = win;
+                        break;
+                    }
+                }
+
+                if (existingWindow) {
+                    // Bring existing window to front and shake it
+                    highestZIndex++;
+                    existingWindow.style.zIndex = highestZIndex;
+                    existingWindow.classList.add('window-shake');
+                    setTimeout(() => existingWindow.classList.remove('window-shake'), 300);
+                } else {
+                    // Create a new window
+                    const newWindow = createWindow(title, url);
+                    newWindow.dataset.contentUrl = url; // Store URL for checking later
+                }
             });
-            link.dataset.windowListenerAttached = 'true';
+            link.dataset.windowListenerAttached = 'true'; // Mark as processed
         });
     }
 
     // --- Initial Setup ---
     setupWindowLinks(); // Setup links on the main page
 
-    // Add CSS for shake animation and global drag style
+    // --- Add CSS for shake animation and global drag style ---
+    // (Keep the existing style injection part, it's fine)
     const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
     styleSheet.innerText = `
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
         .window-shake { animation: shake 0.3s ease-in-out; }
-        body.is-dragging-window { user-select: none; } /* Prevent text selection page-wide during drag */
+        body.is-dragging-window { user-select: none; -webkit-user-select: none; } /* Prevent text selection page-wide during drag */
     `;
     document.head.appendChild(styleSheet);
 
