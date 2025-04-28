@@ -1,431 +1,362 @@
 // source/js/win98.js
 
 document.addEventListener('DOMContentLoaded', () => {
-  const windowContainer = document.getElementById('window-container');
-  let highestZIndex = 10;
+    // 全局变量，在 DOMContentLoaded 作用域内
+    const windowContainer = document.getElementById('window-container');
+    if (!windowContainer) {
+        console.error("关键错误：未在页面中找到 #window-container 元素！窗口功能将无法使用。");
+        return; // 如果没有容器，后续代码无法执行
+    }
+    let highestZIndex = 10; // 用于管理窗口层叠顺序
 
-  // --- Window Creation Function (Updated for 98.css & Mobile Position) ---
-  function createWindow(title, contentUrl) {
-    highestZIndex++;
-    const windowId = `window-${Date.now()}`;
+    // ===============================================
+    //  1. 函数定义部分 (必须放在调用它们的代码之前！)
+    // ===============================================
 
-    const windowDiv = document.createElement('div');
-    windowDiv.className = 'window';
-    windowDiv.id = windowId;
-    windowDiv.style.position = 'absolute'; // Crucial for positioning
-
-    // --- Initial Position Calculation (Mobile Friendly) ---
-    const initialWidth = 250;
-    const initialHeight = 350;
-    const margin = 10; // Minimum margin from viewport edges
-
-    // Ensure dimensions don't exceed viewport size, especially on mobile
-    const clampedWidth = Math.min(initialWidth, window.innerWidth - 2 * margin);
-    const clampedHeight = Math.min(initialHeight, window.innerHeight - 2 * margin);
-
-    const maxLeft = window.innerWidth - clampedWidth - margin;
-    const maxTop = window.innerHeight - clampedHeight - margin - 30; // Account for potential top bars/notches
-
-    // Calculate random position within safe bounds
-    const randomLeft = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxLeft)));
-    const randomTop = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxTop)));
-
-    windowDiv.style.left = `${randomLeft}px`;
-    windowDiv.style.top = `${randomTop}px`;
-    windowDiv.style.width = `${clampedWidth}px`; // Use clamped width
-    windowDiv.style.height = `${clampedHeight}px`; // Use clamped height
-    windowDiv.style.zIndex = highestZIndex;
-
-    // --- Title bar ---
-    const titleBar = document.createElement('div');
-    titleBar.className = 'title-bar';
-
-    const titleText = document.createElement('div');
-    titleText.className = 'title-bar-text';
-    titleText.textContent = title;
-    titleBar.appendChild(titleText);
-
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'title-bar-controls';
-
-    const closeButton = document.createElement('button');
-    closeButton.setAttribute('aria-label', 'Close');
-    closeButton.textContent = 'X';
-    closeButton.onclick = () => {
-      windowDiv.remove();
-    };
-    buttonsDiv.appendChild(closeButton);
-    titleBar.appendChild(buttonsDiv);
-
-    // --- Window content area ---
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'window-body';
-    contentDiv.innerHTML = '<p>加载中...</p>'; // Use Chinese here
-    // Scrolling is handled by CSS flexbox overflow in style.css
-
-    windowDiv.appendChild(titleBar);
-    windowDiv.appendChild(contentDiv);
-
-    // --- Bring to front on interaction ---
-    const bringToFront = () => {
-      if (parseInt(windowDiv.style.zIndex) < highestZIndex) {
+    /**
+     * 创建一个新的窗口元素并添加到页面中
+     * @param {string} title - 窗口的初始标题
+     * @param {string} contentUrl - 要异步加载并显示在窗口中的内容的 URL
+     * @returns {HTMLElement|null} 创建的窗口元素，如果创建失败则返回 null
+     */
+    function createWindow(title, contentUrl) {
         highestZIndex++;
+        const windowId = `window-${Date.now()}`;
+
+        const windowDiv = document.createElement('div');
+        windowDiv.className = 'window';
+        windowDiv.id = windowId;
+        windowDiv.style.position = 'absolute'; // 必须是绝对定位
+
+        // --- 初始位置和尺寸计算 (移动端友好) ---
+        const initialWidth = 450; // 默认初始宽度
+        const initialHeight = 350; // 默认初始高度
+        const margin = 10; // 距离屏幕边缘的最小间距
+
+        const clampedWidth = Math.min(initialWidth, window.innerWidth - 2 * margin);
+        const clampedHeight = Math.min(initialHeight, window.innerHeight - 2 * margin);
+        const maxLeft = window.innerWidth - clampedWidth - margin;
+        const maxTop = window.innerHeight - clampedHeight - margin - 30; // 为顶部状态栏留出空间
+        const randomLeft = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxLeft)));
+        const randomTop = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxTop)));
+
+        windowDiv.style.left = `${randomLeft}px`;
+        windowDiv.style.top = `${randomTop}px`;
+        windowDiv.style.width = `${clampedWidth}px`;
+        windowDiv.style.height = `${clampedHeight}px`;
         windowDiv.style.zIndex = highestZIndex;
-      }
-    };
-    // Use pointerdown for unified mouse/touch start
-    windowDiv.addEventListener('pointerdown', bringToFront, true);
-
-
-    // --- Make window draggable (Unified Mouse/Touch) ---
-    makeDraggable(windowDiv, titleBar);
-
-    // --- Make window resizable (Unified Mouse/Touch) ---
-    const resizer = document.createElement('div');
-    resizer.style.width = '15px'; // Slightly larger touch target
-    resizer.style.height = '15px';
-    resizer.style.position = 'absolute';
-    resizer.style.right = '0';
-    resizer.style.bottom = '0';
-    resizer.style.cursor = 'nwse-resize';
-    resizer.style.zIndex = '1';
-    // Optional: Add a visual indicator for the handle if needed
-    // resizer.style.backgroundColor = 'rgba(0,0,255,0.1)';
-    windowDiv.appendChild(resizer);
-
-    makeResizable(windowDiv, resizer);
-
-
-    windowContainer.appendChild(windowDiv);
-
-    // --- Load content ---
-    if (contentUrl) {
-      fetch(contentUrl)
-        .then(response => {
-          if (!response.ok) throw new Error(`HTTP 错误！状态: ${response.status}`);
-          return response.text();
-        })
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const mainContent = doc.querySelector('#content-main');
-          if (mainContent) {
-            contentDiv.innerHTML = mainContent.innerHTML;
-            setupWindowLinks(contentDiv); // Re-scan links inside loaded content
-          } else {
-            contentDiv.innerHTML = '<p>错误：在获取的页面中未找到内容结构。</p>';
-            console.warn("无法在获取的 HTML 中找到选择器 '#content-main' 的元素:", contentUrl);
-          }
-        })
-        .catch(error => {
-          console.error('加载内容时出错:', error);
-          contentDiv.innerHTML = `<p>加载内容出错: ${error.message}</p>`;
-        });
-    } else {
-      contentDiv.innerHTML = '<p>未提供内容 URL。</p>';
-    }
-
-    return windowDiv;
-  }
-
-  function makeDraggable(element, handle) {
-    let isDragging = false;
-    let pointerId = null;
-    let startX, startY, initialLeft, initialTop;
-
-    // Define event handler functions beforehand
-    // We need named functions to be able to remove them with the correct options
-
-    const onPointerMove = (e) => {
-      // Only react if we are dragging the correct pointer
-      if (!isDragging || e.pointerId !== pointerId) return;
-
-      // ---- CRITICAL: Prevent default touch actions DURING move ----
-      // This might be necessary if the browser decides mid-drag
-      // that the user might be trying to scroll.
-      e.preventDefault();
-      // e.stopPropagation(); // Optional: uncomment if issues persist
-
-      // Calculate movement
-      const currentX = e.clientX;
-      const currentY = e.clientY;
-      const deltaX = currentX - startX;
-      const deltaY = currentY - startY;
-
-      let newLeft = initialLeft + deltaX;
-      let newTop = initialTop + deltaY;
-
-      // Boundary checks (Keep fully on screen)
-      const VpWidth = window.innerWidth;
-      const VpHeight = window.innerHeight;
-      const elWidth = element.offsetWidth;
-      const elHeight = element.offsetHeight;
-
-      newLeft = Math.max(0, Math.min(newLeft, VpWidth - elWidth));
-      newTop = Math.max(0, Math.min(newTop, VpHeight - elHeight));
-      // Ensure calculations are correct if window > viewport
-      if (elWidth > VpWidth) {
-        newLeft = 0; // Or center it: Math.max(0, VpWidth - elWidth);
-      }
-      if (elHeight > VpHeight) {
-        newTop = 0; // Or center it: Math.max(0, VpHeight - elHeight);
-      }
-
-
-      // Apply position
-      element.style.left = `${newLeft}px`;
-      element.style.top = `${newTop}px`;
-
-      // console.log(`Dragging: ${newLeft}, ${newTop}`); // DEBUG
-    };
-
-    const onPointerUp = (e) => {
-      // Only react if ending the drag for the pointer we are tracking
-      if (!isDragging || e.pointerId !== pointerId) return;
-
-      isDragging = false;
-      // console.log("Drag End"); // DEBUG
-
-      // Restore styles
-      handle.style.cursor = 'grab';
-      element.style.removeProperty('user-select');
-      document.body.style.removeProperty('user-select');
-      document.body.classList.remove('is-dragging-window');
-
-      // Release pointer capture
-      if (handle.hasPointerCapture(pointerId)) {
-        try {
-          handle.releasePointerCapture(pointerId);
-          // console.log("Pointer Capture Released"); // DEBUG
-        } catch (err) {
-          console.error("Error releasing pointer capture:", err);
-        }
-      }
-      pointerId = null;
-
-      // Remove global listeners WITH specific options for passive
-      document.removeEventListener('pointermove', onPointerMove, { passive: false, capture: false }); // Ensure options match addEventListener
-      document.removeEventListener('pointerup', onPointerUp);
-      document.removeEventListener('pointercancel', onPointerUp);
-
-      // Optional: Reset ondragstart if it was set
-      // if (handle.ondragstart !== undefined) { handle.ondragstart = null; }
-    };
-
-    const onPointerDown = (e) => {
-      if (e.target.closest('.title-bar-controls')) {
-        // Click was on a control button (like close), let its own handler work.
-        return;
-      }
-      // Ignore non-primary mouse button or touches on the resizer
-      if ((e.pointerType === 'mouse' && e.button !== 0) || e.target.style.cursor === 'nwse-resize') {
-        return;
-      }
-
-      isDragging = true;
-      pointerId = e.pointerId;
-      // console.log(`Drag Start - Pointer ID: ${pointerId}`); // DEBUG
-
-      startX = e.clientX;
-      startY = e.clientY;
-      initialLeft = element.offsetLeft;
-      initialTop = element.offsetTop;
-
-      // Style changes
-      handle.style.cursor = 'grabbing';
-      element.style.userSelect = 'none';
-      document.body.style.userSelect = 'none';
-      document.body.classList.add('is-dragging-window');
-
-      // Bring window to front
-      if (typeof highestZIndex !== 'undefined' && parseInt(element.style.zIndex) < highestZIndex) {
-        highestZIndex++;
-        element.style.zIndex = highestZIndex;
-      }
-
-      // ---- CRITICAL: Prevent default actions & Stop Propagation ----
-      e.preventDefault(); // Prevent scrolling, context menu, etc.
-      e.stopPropagation(); // Stop event from bubbling up
-
-      // Set touch-action explicitly on the handle (belt and suspenders)
-      handle.style.touchAction = 'none';
-
-      // Capture the pointer
-      try {
-        handle.setPointerCapture(pointerId);
-        // console.log("Pointer Capture Set"); // DEBUG
-      } catch (err) {
-        console.error("Error setting pointer capture:", err);
-      }
-
-      // Add global listeners for move and up/cancel
-      // ---- CRITICAL: Add listener with passive: false ----
-      document.addEventListener('pointermove', onPointerMove, { passive: false, capture: false });
-      document.addEventListener('pointerup', onPointerUp);       // passive default is fine here
-      document.addEventListener('pointercancel', onPointerUp); // passive default is fine here
-
-    }; // --- End of onPointerDown ---
-
-
-    // Attach the initial listener to the handle element
-    handle.addEventListener('pointerdown', onPointerDown);
-
-    // Set initial cursor style
-    handle.style.cursor = 'grab';
-
-    // Prevent default image drag behavior (redundant but safe)
-    if (handle.ondragstart !== undefined) {
-      handle.ondragstart = () => false;
-    }
-
-  } // --- End of makeDraggable function ---
-
-  // --- Unified Resizable Functionality (Mouse & Touch) ---
-  function makeResizable(element, handle) {
-    let isResizing = false;
-    let startX, startY, initialWidth, initialHeight;
-
-    const onPointerDown = (e) => {
-      // Ignore if not left mouse button (for mouse)
-      if (e.button !== 0 && e.pointerType === 'mouse') return;
-
-      isResizing = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      initialWidth = element.offsetWidth;
-      initialHeight = element.offsetHeight;
-
-      // Global styles during resize
-      document.body.style.userSelect = 'none';
-      document.body.style.cursor = 'nwse-resize';
-
-      // Bring window to front
-      if (parseInt(element.style.zIndex) < highestZIndex) {
-        highestZIndex++;
-        element.style.zIndex = highestZIndex;
-      }
-
-      // Capture events on the handle itself
-      document.addEventListener('pointermove', onPointerMove);
-      document.addEventListener('pointerup', onPointerUp);
-      document.addEventListener('pointercancel', onPointerUp);
-
-      handle.setPointerCapture(e.pointerId); // Capture pointer events
-      // Prevent default touch actions (like scrolling) when resizing
-      if (e.pointerType === 'touch') {
-        e.preventDefault();
-      }
-      handle.style.touchAction = 'none';
-      e.stopPropagation(); // Prevent triggering drag start
-    };
-
-    const onPointerMove = (e) => {
-      if (!isResizing) return;
-
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-
-      let newWidth = initialWidth + deltaX;
-      let newHeight = initialHeight + deltaY;
-
-      // Minimum size constraints
-      const computedStyle = window.getComputedStyle(element);
-      const minWidth = parseInt(computedStyle.minWidth || '150'); // Adjusted minimums
-      const minHeight = parseInt(computedStyle.minHeight || '100');
-
-      newWidth = Math.max(minWidth, newWidth);
-      newHeight = Math.max(minHeight, newHeight);
-
-      // Apply new dimensions
-      element.style.width = `${newWidth}px`;
-      element.style.height = `${newHeight}px`;
-
-      // Prevent page scroll during resize via touch
-      if (e.pointerType === 'touch') {
-        e.preventDefault();
-      }
-    };
-
-    const onPointerUp = (e) => {
-      if (!isResizing) return;
-
-      isResizing = false;
-      // Restore global styles
-      document.body.style.removeProperty('user-select');
-      document.body.style.removeProperty('cursor');
-
-      // Release event listeners and capture
-      document.removeEventListener('pointermove', onPointerMove);
-      document.removeEventListener('pointerup', onPointerUp);
-      document.removeEventListener('pointercancel', onPointerUp);
-      handle.releasePointerCapture(e.pointerId);
-    };
-
-    handle.addEventListener('pointerdown', onPointerDown);
-    // Prevent default drag behavior on the handle
-    handle.ondragstart = () => false;
-  }
-
-
-  // --- Link Handling (Refined Selector - ensure it matches your intent) ---
-  function setupWindowLinks(parentElement = document) {
-    // Select links that should open in a window.
-    // This example targets:
-    // 1. Desktop icons with 'data-window-title'
-    // 2. Internal links starting with '/' BUT NOT just '/' (homepage)
-    // 3. Exclude links with class 'no-window' (add this class if needed)
-    const windowLinks = parentElement.querySelectorAll(
-      'a.desktop-icon[data-window-title], a[href^="/"]:not([href="/"]):not(.no-window)'
-    );
-
-    windowLinks.forEach(link => {
-      // Prevent adding listener multiple times if content is reloaded/rescanned
-      if (link.dataset.windowListenerAttached) return;
-
-      link.addEventListener('click', (event) => {
-        event.preventDefault(); // Stop default navigation
-        const url = link.getAttribute('href');
-        const title = link.dataset.windowTitle || link.textContent.trim() || '窗口'; // Default title
-
-        // --- Check if window for this URL already exists ---
-        let existingWindow = null;
-        const windows = windowContainer.querySelectorAll('.window');
-        for (let win of windows) {
-          if (win.dataset.contentUrl === url) {
-            existingWindow = win;
-            break;
-          }
-        }
-
-        if (existingWindow) {
-          // Bring existing window to front and shake it
-          highestZIndex++;
-          existingWindow.style.zIndex = highestZIndex;
-          existingWindow.classList.add('window-shake');
-          setTimeout(() => existingWindow.classList.remove('window-shake'), 300);
+        windowDiv.dataset.contentUrl = contentUrl; // 存储内容URL，用于后续检查
+
+        // --- 标题栏 ---
+        const titleBar = document.createElement('div');
+        titleBar.className = 'title-bar';
+        const titleText = document.createElement('div');
+        titleText.className = 'title-bar-text';
+        titleText.textContent = title;
+        titleBar.appendChild(titleText);
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'title-bar-controls';
+        const closeButton = document.createElement('button');
+        closeButton.setAttribute('aria-label', 'Close');
+        closeButton.textContent = 'X';
+        closeButton.onclick = (e) => {
+            e.stopPropagation();
+            windowDiv.remove();
+        };
+        buttonsDiv.appendChild(closeButton);
+        titleBar.appendChild(buttonsDiv);
+
+        // --- 窗口内容区域 ---
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'window-body';
+        contentDiv.innerHTML = '<p>加载中...</p>';
+
+        windowDiv.appendChild(titleBar);
+        windowDiv.appendChild(contentDiv);
+
+        // --- 使窗口获得焦点 (提升层级) ---
+        const bringToFront = () => {
+            if (parseInt(windowDiv.style.zIndex) < highestZIndex) {
+                highestZIndex++;
+                windowDiv.style.zIndex = highestZIndex;
+            }
+        };
+        windowDiv.addEventListener('pointerdown', bringToFront, true);
+
+        // --- 使窗口可拖动 ---
+        makeDraggable(windowDiv, titleBar);
+
+        // --- 使窗口可调整大小 ---
+        const resizer = document.createElement('div');
+        resizer.style.cssText = `
+            width: 15px; height: 15px; position: absolute;
+            right: 0; bottom: 0; cursor: nwse-resize;
+            z-index: 1; touch-action: none;
+        `; // 设置多个样式
+        windowDiv.appendChild(resizer);
+        makeResizable(windowDiv, resizer);
+
+        // --- 将窗口添加到容器 ---
+        windowContainer.appendChild(windowDiv);
+
+        // --- 异步加载内容 ---
+        if (contentUrl) {
+            fetch(contentUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP 错误！状态: ${response.status}`);
+                    return response.text();
+                })
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const mainContent = doc.querySelector('#content-main');
+
+                    if (mainContent) {
+                        // 尝试提取并更新标题
+                        const h1Element = mainContent.querySelector('h1');
+                        if (h1Element && h1Element.textContent.trim()) {
+                            titleText.textContent = h1Element.textContent.trim();
+                            console.log("窗口标题已更新为:", titleText.textContent);
+                        } else {
+                            console.log("加载的内容中未找到 H1，保留初始标题:", title);
+                        }
+                        contentDiv.innerHTML = mainContent.innerHTML;
+                        setupWindowLinks(contentDiv); // 为新内容设置链接
+                    } else {
+                        contentDiv.innerHTML = '<p>错误：在获取的页面中未找到 #content-main 结构。</p>';
+                        titleText.textContent = title + " (内容加载失败)";
+                        console.warn("无法在获取的 HTML 中找到选择器 '#content-main':", contentUrl);
+                    }
+                })
+                .catch(error => {
+                    console.error('加载内容时出错:', contentUrl, error);
+                    contentDiv.innerHTML = `<p>加载内容出错: ${error.message}</p>`;
+                    titleText.textContent = title + " (加载错误)";
+                });
         } else {
-          // Create a new window
-          const newWindow = createWindow(title, url);
-          newWindow.dataset.contentUrl = url; // Store URL for checking later
+            contentDiv.innerHTML = '<p>未提供内容 URL。</p>';
+            titleText.textContent = title + " (无内容)";
         }
-      });
-      link.dataset.windowListenerAttached = 'true'; // Mark as processed
-    });
-  }
 
-  // --- Initial Setup ---
-  setupWindowLinks(); // Setup links on the main page
+        return windowDiv;
+    }
 
-  // --- Add CSS for shake animation and global drag style ---
-  // (Keep the existing style injection part, it's fine)
-  const styleSheet = document.createElement("style");
-  styleSheet.type = "text/css";
-  styleSheet.innerText = `
-@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
-.window-shake { animation: shake 0.3s ease-in-out; }
-body.is-dragging-window { user-select: none; -webkit-user-select: none; } /* Prevent text selection page-wide during drag */
-`;
-  document.head.appendChild(styleSheet);
+    /**
+     * 使指定元素可通过拖动其句柄来移动 (支持触摸和鼠标)
+     * @param {HTMLElement} element - 要使其可拖动的窗口元素
+     * @param {HTMLElement} handle - 用于拖动的句柄元素 (通常是标题栏)
+     */
+    function makeDraggable(element, handle) {
+        let isDragging = false, pointerId = null, startX, startY, initialLeft, initialTop;
 
-});
+        const onPointerMove = (e) => {
+            if (!isDragging || e.pointerId !== pointerId) return;
+            e.preventDefault();
+            const deltaX = e.clientX - startX, deltaY = e.clientY - startY;
+            let newLeft = initialLeft + deltaX, newTop = initialTop + deltaY;
+            const VpWidth = window.innerWidth, VpHeight = window.innerHeight;
+            const elWidth = element.offsetWidth, elHeight = element.offsetHeight;
+            newLeft = Math.max(0, Math.min(newLeft, VpWidth - elWidth));
+            newTop = Math.max(0, Math.min(newTop, VpHeight - elHeight));
+            if (elWidth > VpWidth) newLeft = 0;
+            if (elHeight > VpHeight) newTop = 0;
+            element.style.left = `${newLeft}px`;
+            element.style.top = `${newTop}px`;
+        };
+
+        const onPointerUp = (e) => {
+            if (!isDragging || e.pointerId !== pointerId) return;
+            isDragging = false;
+            handle.style.cursor = 'grab';
+            element.style.removeProperty('user-select');
+            document.body.style.removeProperty('user-select');
+            document.body.classList.remove('is-dragging-window');
+            if (handle.hasPointerCapture(pointerId)) try { handle.releasePointerCapture(pointerId); } catch (err) { console.error("释放拖动指针捕获时出错:", err); }
+            pointerId = null;
+            document.removeEventListener('pointermove', onPointerMove, { passive: false, capture: false });
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+        };
+
+        const onPointerDown = (e) => {
+            if (e.target.closest('.title-bar-controls')) return;
+            if ((e.pointerType === 'mouse' && e.button !== 0) || e.target.style.cursor === 'nwse-resize') return;
+            isDragging = true;
+            pointerId = e.pointerId;
+            startX = e.clientX; startY = e.clientY;
+            initialLeft = element.offsetLeft; initialTop = element.offsetTop;
+            handle.style.cursor = 'grabbing';
+            element.style.userSelect = 'none';
+            document.body.style.userSelect = 'none';
+            document.body.classList.add('is-dragging-window');
+            if (typeof highestZIndex !== 'undefined' && parseInt(element.style.zIndex) < highestZIndex) { highestZIndex++; element.style.zIndex = highestZIndex; }
+            e.preventDefault(); e.stopPropagation();
+            handle.style.touchAction = 'none';
+            try { handle.setPointerCapture(pointerId); } catch (err) { console.error("设置拖动指针捕获时出错:", err); }
+            document.addEventListener('pointermove', onPointerMove, { passive: false, capture: false });
+            document.addEventListener('pointerup', onPointerUp);
+            document.addEventListener('pointercancel', onPointerUp);
+        };
+
+        handle.addEventListener('pointerdown', onPointerDown);
+        handle.style.cursor = 'grab';
+        if (handle.ondragstart !== undefined) handle.ondragstart = () => false;
+    }
+
+    /**
+     * 使指定元素可通过拖动其右下角句柄来调整大小 (支持触摸和鼠标)
+     * @param {HTMLElement} element - 要使其可调整大小的窗口元素
+     * @param {HTMLElement} handle - 用于调整大小的句柄元素
+     */
+    function makeResizable(element, handle) {
+        let isResizing = false, pointerId = null, startX, startY, initialWidth, initialHeight;
+
+        const onPointerMove = (e) => {
+            if (!isResizing || e.pointerId !== pointerId) return;
+            e.preventDefault();
+            const deltaX = e.clientX - startX, deltaY = e.clientY - startY;
+            let newWidth = initialWidth + deltaX, newHeight = initialHeight + deltaY;
+            const computedStyle = window.getComputedStyle(element);
+            const minWidth = parseInt(computedStyle.minWidth || '150');
+            const minHeight = parseInt(computedStyle.minHeight || '100');
+            newWidth = Math.max(minWidth, newWidth);
+            newHeight = Math.max(minHeight, newHeight);
+            element.style.width = `${newWidth}px`;
+            element.style.height = `${newHeight}px`;
+        };
+
+        const onPointerUp = (e) => {
+            if (!isResizing || e.pointerId !== pointerId) return;
+            isResizing = false;
+            document.body.style.removeProperty('user-select');
+            document.body.style.removeProperty('cursor');
+            if (handle.hasPointerCapture(pointerId)) try { handle.releasePointerCapture(pointerId); } catch (err) { console.error("释放缩放指针捕获时出错:", err); }
+            pointerId = null;
+            document.removeEventListener('pointermove', onPointerMove, { passive: false, capture: false });
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+        };
+
+        const onPointerDown = (e) => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            isResizing = true;
+            pointerId = e.pointerId;
+            startX = e.clientX; startY = e.clientY;
+            initialWidth = element.offsetWidth; initialHeight = element.offsetHeight;
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'nwse-resize';
+            if (typeof highestZIndex !== 'undefined' && parseInt(element.style.zIndex) < highestZIndex) { highestZIndex++; element.style.zIndex = highestZIndex; }
+            e.preventDefault(); e.stopPropagation();
+            handle.style.touchAction = 'none'; // 已经在 style.cssText 设置，这里是双保险
+            try { handle.setPointerCapture(pointerId); } catch (err) { console.error("设置缩放指针捕获时出错:", err); }
+            document.addEventListener('pointermove', onPointerMove, { passive: false, capture: false });
+            document.addEventListener('pointerup', onPointerUp);
+            document.addEventListener('pointercancel', onPointerUp);
+        };
+
+        handle.addEventListener('pointerdown', onPointerDown);
+        if (handle.ondragstart !== undefined) handle.ondragstart = () => false;
+    }
+
+
+    /**
+     * 设置页面中的链接，使其点击时在窗口中打开
+     * @param {Document|HTMLElement} parentElement - 在哪个父元素下查找链接，默认为整个文档
+     */
+    function setupWindowLinks(parentElement = document) {
+        const windowLinks = parentElement.querySelectorAll(
+            'a.desktop-icon[data-window-title], a[href^="/"]:not([href="/"]):not(.no-window)'
+        );
+        windowLinks.forEach(link => {
+            if (link.dataset.windowListenerAttached === 'true') return;
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const url = link.getAttribute('href');
+                const title = link.dataset.windowTitle || link.textContent.trim() || '窗口';
+                let existingWindow = null;
+                const windows = windowContainer.querySelectorAll('.window');
+                for (let win of windows) {
+                    if (win.dataset.contentUrl === url) { existingWindow = win; break; }
+                }
+                if (existingWindow) {
+                    highestZIndex++;
+                    existingWindow.style.zIndex = highestZIndex;
+                    existingWindow.classList.add('window-shake');
+                    setTimeout(() => existingWindow.classList.remove('window-shake'), 300);
+                } else {
+                    createWindow(title, url);
+                }
+            });
+            link.dataset.windowListenerAttached = 'true';
+        });
+    }
+
+    // ===============================================
+    //  2. 初始化和执行逻辑部分
+    // ===============================================
+
+    // --- 2.1 设置初始的链接点击行为 ---
+    setupWindowLinks();
+
+    // --- 2.2 根据访问的 URL 自动打开窗口 ---
+    const currentPath = window.location.pathname;
+    const isHomePage = (currentPath === '/' || currentPath === '/index.html' || currentPath === '');
+    let autoOpenTitle = null;
+    let autoOpenUrl = null;
+
+    console.log("--- Auto Open Logic Start ---");
+    console.log("Current Pathname:", currentPath);
+    console.log("Is Homepage?", isHomePage);
+
+    switch (currentPath) {
+        case '/about/': case '/about/index.html':
+            autoOpenTitle = "关于我"; autoOpenUrl = "/about/";
+            console.log("Path matched: /about/"); break;
+        case '/links/': case '/links/index.html':
+            autoOpenTitle = "友情链接"; autoOpenUrl = "/links/";
+            console.log("Path matched: /links/"); break;
+        case '/archives/': case '/archives/index.html':
+            autoOpenTitle = "存档"; autoOpenUrl = "/archives/";
+            console.log("Path matched: /archives/"); break;
+    }
+
+    console.log("After switch check - Title:", autoOpenTitle, "URL:", autoOpenUrl);
+
+    if (!isHomePage && !autoOpenTitle) {
+        console.log("Not homepage or special page, assuming post/page.");
+        autoOpenTitle = "加载中...";
+        autoOpenUrl = currentPath;
+        console.log("Set Auto Open Title:", autoOpenTitle, "URL:", autoOpenUrl);
+    } else {
+        console.log("Condition for post/page not met. Homepage:", isHomePage, "Matched Special:", !!autoOpenTitle);
+    }
+
+    console.log("Final check - Title:", autoOpenTitle, "URL:", autoOpenUrl);
+
+    if (autoOpenTitle && autoOpenUrl) {
+        console.log(`>>> Trying to create window: Title='${autoOpenTitle}', URL='${autoOpenUrl}'`);
+        // 不再使用 setTimeout，直接调用，确保执行
+        const autoOpenedWindow = createWindow(autoOpenTitle, autoOpenUrl);
+        if (autoOpenedWindow) {
+            console.log("<<< Window creation called (title might update after load).");
+        } else {
+            console.error(`<<< Window creation call seems to have failed for ${autoOpenUrl}`);
+        }
+    } else {
+        console.log(">>> No window to auto-open based on checks.");
+    }
+    console.log("--- Auto Open Logic End ---");
+
+    // --- 2.3 添加必要的 CSS 样式 ---
+    const styleSheet = document.createElement("style");
+    styleSheet.type = "text/css";
+    styleSheet.innerText = `
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+        .window-shake { animation: shake 0.3s ease-in-out; }
+        body.is-dragging-window { user-select: none; -webkit-user-select: none; }
+    `;
+    document.head.appendChild(styleSheet);
+
+}); // End of DOMContentLoaded listener
+
 

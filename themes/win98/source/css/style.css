@@ -233,6 +233,98 @@ body.windows-desktop {
     padding: 0;
 }
 
+
+/* --- 代码块样式修正 (针对 Table 结构) --- */
+
+/* 1. 重置包含代码块的 table 样式 */
+#window-container > .window > .window-body table {
+    border-collapse: collapse !important; /* 合并边框 */
+    border-spacing: 0 !important;      /* 移除单元格间距 */
+    border: none !important;           /* 移除表格外边框 */
+    width: 100% !important;          /* 表格宽度100% */
+    margin: 1em 0 !important;        /* 保留垂直外边距 */
+    padding: 0 !important;           /* 移除表格内边距 */
+    background: none !important;     /* 清除表格背景 */
+    font-size: inherit !important;     /* 继承字体大小 */
+}
+
+/* 2. 重置表格内的 a, tbody, tr, td 的基础样式 */
+#window-container > .window > .window-body table tbody,
+#window-container > .window > .window-body table tr,
+#window-container > .window > .window-body table td {
+    border: none !important;           /* 移除单元格边框 */
+    padding: 0 !important;           /* 移除单元格内边距 */
+    margin: 0 !important;            /* 移除外边距 */
+    background: none !important;     /* 清除单元格背景 */
+    vertical-align: top !important;    /* 垂直对齐方式 */
+    font-size: inherit !important;     /* 继承字体大小 */
+    line-height: inherit !important;   /* 继承行高 */
+}
+
+/* 3. 隐藏行号列 (第一列) */
+#window-container > .window > .window-body table td.gutter {
+    display: none !important;
+}
+
+/* 4. 确保代码列占据所有可用空间 (虽然隐藏第一列后会自动占据，但明确一下) */
+#window-container > .window > .window-body table td.code {
+    width: 100% !important;
+}
+
+/* 5. 清理代码列内的 pre 元素的默认或继承样式 */
+#window-container > .window > .window-body table td.code pre {
+    margin: 0 !important;            /* 移除 pre 的外边距 */
+    padding: 0 !important;           /* 移除 pre 的内边距 (样式将施加在 pre 上) */
+    border: none !important;           /* 移除 pre 可能有的边框 */
+    background: none !important;     /* 移除 pre 可能有的背景 */
+    box-shadow: none !important;       /* 移除 pre 可能有的阴影 */
+    overflow: visible !important;    /* 让 pre 自身不滚动，滚动由样式决定 */
+    width: auto !important;          /* 宽度自动 */
+    position: static !important;     /* 重置定位 */
+    white-space: normal !important;  /* 重置 white-space，后面会重新设置 */
+}
+
+/* 6. 将 Win98 风格样式应用到代码列的 pre 元素上 */
+#window-container > .window > .window-body table td.code pre {
+    display: block !important;
+    background-color: #ffffff !important; /* 白色背景 */
+    /* Win98 风格边框 */
+    box-shadow: inset 1px 1px 0px #ffffff, inset -1px -1px 0px #848584 !important;
+    border: 1px solid !important;
+    border-color: #848584 #ffffff #ffffff #848584 !important;
+    padding: 8px !important;            /* 内边距 */
+    font-family: "Courier New", Courier, monospace !important; /* 等宽字体 */
+    font-size: 12px !important;         /* 字体大小 */
+    line-height: 1.5 !important;        /* 行高 */
+    color: #000000 !important;         /* 文本颜色 */
+    white-space: pre-wrap !important;   /* 允许长行自动换行 */
+    word-wrap: break-word !important;   /* 在单词边界处换行 */
+    overflow: auto !important;        /* 如果内容超出，显示滚动条 */
+    min-height: 1.5em; /* 最小高度，防止空代码块塌陷 */
+}
+
+/* 7. 清理代码列内 pre > code 或 pre > span 的样式 (以防万一) */
+#window-container > .window > .window-body table td.code pre code,
+#window-container > .window > .window-body table td.code pre span.line {
+    display: inline !important; /* 改回 inline，因为 pre 控制块级 */
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-family: inherit !important; /* 继承 pre 的字体 */
+    font-size: inherit !important;
+    line-height: inherit !important;
+    /* 保留语法高亮的颜色 */
+    /* color: inherit !important; */ /* 不要取消这行的注释，否则语法高亮会失效 */
+    white-space: inherit !important; /* 继承 pre 的换行设置 */
+    position: static !important;
+    box-shadow: none !important;
+}
+/* 移除行号 pre 里的换行符，虽然隐藏了，但以防万一影响布局 */
+#window-container > .window > .window-body table td.gutter pre br {
+    display: none !important;
+}
+
 /* Custom close button visual (if default isn't desired) */
 /* .title-bar-controls button[aria-label="Close"] { */
     /* Optional: Add custom styling or use :before for an icon font */
