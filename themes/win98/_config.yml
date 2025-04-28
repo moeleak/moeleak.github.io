@@ -6,7 +6,7 @@ gitalk:
   repo: 'leak.moe' # 例如：myblog-comments
   owner: 'moeleak' # 例如：yourusername
   admin: ['moeleak'] # 博客管理员的 GitHub 用户名列表，例如：['yourusername']
-  id: leak.moe # 页面的唯一标识，建议使用 pathname
+  id: location.pathname # 页面的唯一标识，建议使用 pathname
   language: zh-CN # 界面语言，可选 'en', 'zh-CN', 'zh-TW' 等
   distractionFreeMode: false # 是否启用无干扰模式（类似全屏编辑）
   # 如果你的博客部署在 GitHub Pages 以外的地方，可能会遇到 CORS 问题
