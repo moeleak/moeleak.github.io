@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // ... (Rest of the initial position/size calculations - unchanged) ...
         const screenWidth = window.innerWidth;
         const mobileBreakpoint = 768;
-        const initialWidth = screenWidth < mobileBreakpoint ? 250 : 450;
+        const initialWidth = screenWidth < mobileBreakpoint ? 250 : 521;
         const initialHeight = 350;
         const margin = 10;
         const clampedWidth = Math.min(initialWidth, screenWidth - 2 * margin);
