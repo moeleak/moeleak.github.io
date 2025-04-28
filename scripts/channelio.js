@@ -1,3 +1,4 @@
+/*
 hexo.extend.injector.register('head_end', '<script>\
   (function(){\
     var w = window;\
@@ -31,3 +32,4 @@ hexo.extend.injector.register('head_end', '<script>\
     "pluginKey": "e7a297e4-c4b6-4d31-843e-5c50e58788b8"\
   });\
 </script>', 'default');
+*/
