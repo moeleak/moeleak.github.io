@@ -7,36 +7,14 @@
         <%- page.content %>
     </div>
 
-    <%# Add Gitalk section if comments are enabled in front-matter and theme config %>
+    <%# Add Gitalk placeholder section if comments are enabled %>
     <% if (page.comments && theme.gitalk && theme.gitalk.enable) { %>
-      <div id="gitalk-container" style="padding: 15px;"></div> <%# Gitalk container %>
-      <%# Gitalk CSS and JS (use CDN) %>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
-      <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-      <script>
-        // Initialize Gitalk
-        console.log("Gitalk script block START");
-        const gitalk = new Gitalk({
-          clientID: '<%- theme.gitalk.clientID %>',
-          clientSecret: '<%- theme.gitalk.clientSecret %>',
-          repo: '<%- theme.gitalk.repo %>',
-          owner: '<%- theme.gitalk.owner %>',
-          admin: <%- JSON.stringify(theme.gitalk.admin || [theme.gitalk.owner]) %>, // Ensure admin is an array
-          id: '<%- theme.gitalk.id === 'location.pathname' ? page.path : (theme.gitalk.id || page.path) %>',
-          language: '<%- theme.gitalk.language || 'zh-CN' %>',
-          distractionFreeMode: <%= theme.gitalk.distractionFreeMode === true %>, // Ensure boolean output
-          // proxy: '<%- theme.gitalk.proxy || '' %>' // Add proxy if configured
-        });
-        // Render Gitalk to the container
-        console.log("Gitalk instance created. Container exists?", document.getElementById('gitalk-container'));
-        try {
-          gitalk.render('gitalk-container');
-          console.log("gitalk.render() CALLED successfully.");
-        } catch (error) {
-          console.error("Error calling gitalk.render():", error);
-        }
-        console.log("Gitalk script block END"); // <-- 新增日志
-      </script>
+      <%# This is just a placeholder. win98.js will find it, give it a unique ID, %>
+      <%# and call the global initializeGitalkForWindow function. %>
+      <div id="gitalk-container-placeholder" style="padding: 15px;">
+          <!-- Content will be rendered here by Gitalk if initialized successfully -->
+          <p><i>评论区加载中...</i></p> <%# Optional loading message %>
+      </div>
     <% } %>
 </article>
 
