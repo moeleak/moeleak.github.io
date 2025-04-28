@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <title>静静&#39;s Blog</title>
+  <title>静静&#39;s Blog - 留言板</title>
   <!-- 引入 98.css -->
   <link rel="stylesheet" href="https://unpkg.com/98.css" />
   <!-- 引入自定义的补充 CSS -->
@@ -16,39 +16,40 @@
 
   <!-- Hexo 渲染的初始内容，默认隐藏，仅供 JS fetch 读取 -->
   <div id="initial-content-wrapper" style="display: none;">
-    <div class="archive-list-container" id="content-main">
-    <h1>存档</h1>
-    <hr>
+    <article class="page-container" id="content-main">
     
-          <h2>2025</h2>
-        
-        <p>2025-04-13 » <a href="/2025/04/13/%E4%B8%89%E5%9B%9B%E6%9C%88/">三四月</a></p>
+        <h1>留言板</h1>
+        <hr>
+    
+    <div class="page-body">
+        <p>欢迎在这里留下你的足迹！</p>
+
+    </div>
+
+    
+    
+      <div id="gitalk-container" style="padding: 15px;"></div> 
       
-        <p>2025-04-08 » <a href="/2025/04/08/Pixelbook-Go-%E4%BD%BF%E7%94%A8%E4%BD%93%E9%AA%8C/">Pixelbook Go 使用体验</a></p>
-      
-        <p>2025-02-15 » <a href="/2025/02/15/Build-Android-Kernel-for-Pixel-9-Pro-XL/">Build Android Kernel for Pixel 9 Pro XL</a></p>
-      
-        <p>2025-02-09 » <a href="/2025/02/09/%E4%B8%80%E6%9C%88%E7%9A%84%E4%B9%A6%E5%BD%B1%E9%9F%B3/">一月的书影音</a></p>
-      
-        <p>2025-01-13 » <a href="/2025/01/13/%E6%8F%90%E5%8F%96U%E6%A0%A1%E5%9B%AD%E8%A7%86%E9%9F%B3%E9%A2%91%E6%96%87%E4%BB%B6/">提取U校园视音频文件</a></p>
-      
-        <p>2025-01-08 » <a href="/2025/01/08/%E8%AE%B0%E6%A2%A6/">记梦</a></p>
-      
-          <h2>2024</h2>
-        
-        <p>2024-12-31 » <a href="/2024/12/31/2024-%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/">2024 年度总结</a></p>
-      
-        <p>2024-12-02 » <a href="/2024/12/02/%E8%80%83%E8%AF%95%E6%9C%88%E5%89%8D%E7%9A%84%E5%91%A8%E6%9C%AB/">考试月前的周末</a></p>
-      
-        <p>2024-11-29 » <a href="/2024/11/29/%E9%87%8D%E7%8E%A9-Minecraft/">重玩 Minecraft</a></p>
-      
-        <p>2024-10-29 » <a href="/2024/10/29/Pixel-9-Pro-XL/">Pixel 9 Pro XL</a></p>
-      
-        <p>2024-10-22 » <a href="/2024/10/22/%E5%B9%BF%E5%B7%9E%E6%B8%B8%E8%AE%B0/">广州游记</a></p>
-      
-        <p>2024-09-27 » <a href="/2024/09/27/%E9%87%8D%E6%8B%BEblog/">重拾blog</a></p>
-      
-</div>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+      <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+      <script>
+        // Initialize Gitalk
+        const gitalk = new Gitalk({
+          clientID: 'Ov23li6aKnpjnSs3ubxq',
+          clientSecret: 'ef49954cbaf11c8cf6a495feb5353c638314203a',
+          repo: 'leak.moe',
+          owner: 'moeleak',
+          admin: ["moeleak"], // Ensure admin is an array
+          id: 'leak.moe', // Use path for ID or configured value
+          language: 'zh-CN',
+          distractionFreeMode: false, // Ensure boolean output
+          // proxy: '' // Add proxy if configured
+        });
+        // Render Gitalk to the container
+        gitalk.render('gitalk-container');
+      </script>
+    
+</article>
 
 
   </div>

@@ -25,6 +25,30 @@
         <p>这里是静静的小伙伴：<br><a target="_blank" rel="noopener" href="https://www.northarea.tech/">猎风</a><br><a target="_blank" rel="noopener" href="https://blog.tse.moe/">圈圈</a><br><a target="_blank" rel="noopener" href="https://xnmoe.com/">小南</a></p>
 
     </div>
+
+    
+    
+      <div id="gitalk-container" style="padding: 15px;"></div> 
+      
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+      <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+      <script>
+        // Initialize Gitalk
+        const gitalk = new Gitalk({
+          clientID: 'Ov23li6aKnpjnSs3ubxq',
+          clientSecret: 'ef49954cbaf11c8cf6a495feb5353c638314203a',
+          repo: 'leak.moe',
+          owner: 'moeleak',
+          admin: ["moeleak"], // Ensure admin is an array
+          id: 'leak.moe', // Use path for ID or configured value
+          language: 'zh-CN',
+          distractionFreeMode: false, // Ensure boolean output
+          // proxy: '' // Add proxy if configured
+        });
+        // Render Gitalk to the container
+        gitalk.render('gitalk-container');
+      </script>
+    
 </article>
 
 
@@ -33,19 +57,24 @@
   <!-- 桌面图标 -->
   <div class="desktop-icons">
       <!-- 我的电脑 (存档) -->
-      <a href="/archives/" class="desktop-icon" id="icon-mycomputer" data-window-title="存档"> 
+      <a href="/archives/" class="desktop-icon" id="icon-mycomputer" data-window-title="存档">
         <img src="/images/icon_mycomputer.png" alt="我的电脑">
         <span>我的电脑</span>
       </a>
       <!-- 我的文档 (关于) -->
-      <a href="/about/" class="desktop-icon" id="icon-mydocuments" data-window-title="关于我"> 
+      <a href="/about/" class="desktop-icon" id="icon-mydocuments" data-window-title="关于我">
         <img src="/images/icon_mydocuments.png" alt="我的文档">
         <span>我的文档</span>
       </a>
       <!-- 网上邻居 (友链) -->
-      <a href="/links/" class="desktop-icon" id="icon-network" data-window-title="友情链接"> 
+      <a href="/links/" class="desktop-icon" id="icon-network" data-window-title="友情链接">
         <img src="/images/icon_network.png" alt="网上邻居">
         <span>网上邻居</span>
+      </a>
+      <!-- 记事本 (留言板) -->
+      <a href="/guestbook/" class="desktop-icon" id="icon-guestbook" data-window-title="留言板">
+        <img src="/images/icon_notepad.png" alt="留言板">
+        <span>留言板</span>
       </a>
   </div>
 

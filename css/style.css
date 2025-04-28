@@ -325,6 +325,221 @@ body.windows-desktop {
     display: none !important;
 }
 
+
+/* source/css/style.css */
+
+/* --- Gitalk Win98 Style Override --- */
+
+/* Target Gitalk container inside our window */
+#window-container > .window > .window-body #gitalk-container {
+  background-color: #c0c0c0; /* Win98 gray background */
+  border-top: 1px solid #848584; /* Separator line */
+  margin-top: 10px;
+  padding-top: 10px; /* Space above Gitalk elements */
+  font-family: "Zpix", "Tahoma", "SimSun", sans-serif; /* Inherit base font */
+  font-size: 12px; /* Base font size */
+  color: #000;
+}
+
+/* Remove Gitalk's default padding/margin if needed */
+#gitalk-container .gt-container {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  padding: 0 5px; /* Add some horizontal padding */
+}
+
+/* --- Header Area (Login/User Info) --- */
+#gitalk-container .gt-header {
+    margin-bottom: 10px;
+}
+
+/* Login Button Styling */
+#gitalk-container .gt-btn-login {
+  /* Use 98.css button style */
+  font-family: inherit;
+  font-size: 12px;
+  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+  border: none;
+  background-color: #c0c0c0;
+  color: #0a0a0a;
+  padding: 3px 8px; /* Adjust padding */
+  border-radius: 0;
+  cursor: default;
+  text-decoration: none; /* Remove underline */
+  line-height: normal; /* Reset line height */
+  display: inline-flex; /* Align icon and text */
+  align-items: center;
+}
+#gitalk-container .gt-btn-login:active {
+  box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff, inset 2px 2px grey, inset -2px -2px #dfdfdf;
+  padding: 4px 7px 2px 9px; /* Adjust padding for pushed effect */
+}
+#gitalk-container .gt-btn-login .gt-ico-github {
+    margin-right: 5px; /* Space between icon and text */
+    fill: #000; /* Icon color */
+}
+
+/* User Avatar */
+#gitalk-container .gt-header-avatar img {
+    border-radius: 0; /* Square avatar */
+    border: 1px solid #848584;
+}
+
+/* --- Comment Editor --- */
+#gitalk-container .gt-header-textarea {
+  font-family: "Courier New", Courier, monospace; /* Use monospace font */
+  font-size: 12px;
+  background-color: #fff; /* White background */
+  /* Win98 inset border */
+  box-shadow: inset 1px 1px 0px #848584, inset -1px -1px 0px #fff;
+  border: 1px solid;
+  border-color: #000; /* Black outer border */
+  border-radius: 0;
+  padding: 5px;
+  color: #000;
+  min-height: 70px;
+  margin-bottom: 5px; /* Space below textarea */
+}
+#gitalk-container .gt-header-textarea:focus {
+   outline: 1px dotted #000; /* Simple dotted focus */
+   outline-offset: 1px;
+}
+
+/* Preview Button (if visible) */
+#gitalk-container .gt-header-controls .gt-btn {
+    /* Style like other buttons */
+    font-family: inherit;
+    font-size: 11px; /* Slightly smaller */
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+    border: none;
+    background-color: #c0c0c0;
+    color: #0a0a0a;
+    padding: 2px 6px;
+    border-radius: 0;
+    cursor: default;
+    margin-right: 5px;
+}
+#gitalk-container .gt-header-controls .gt-btn:active {
+    box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff, inset 2px 2px grey, inset -2px -2px #dfdfdf;
+    padding: 3px 5px 1px 7px;
+}
+
+/* --- Comment Button --- */
+#gitalk-container .gt-btn-public {
+   /* Style like login button */
+  font-family: inherit;
+  font-size: 12px;
+  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+  border: none;
+  background-color: #c0c0c0;
+  color: #0a0a0a;
+  padding: 3px 8px;
+  border-radius: 0;
+  cursor: default;
+  float: right; /* Align to right */
+  margin-top: 5px; /* Space above */
+}
+#gitalk-container .gt-btn-public:active {
+  box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff, inset 2px 2px grey, inset -2px -2px #dfdfdf;
+  padding: 4px 7px 2px 9px;
+}
+#gitalk-container .gt-btn-public:disabled {
+    color: #848584; /* Gray out disabled text */
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf; /* Keep shadow */
+    cursor: default;
+}
+
+/* --- Comments List --- */
+#gitalk-container .gt-comments-body {
+  background-color: transparent; /* Make comments background transparent */
+  padding-top: 15px; /* Space above comments */
+  border-top: 1px solid #848584; /* Separator */
+  margin-top: 15px; /* Space below comment button */
+}
+
+/* Individual Comment */
+#gitalk-container .gt-comment-content {
+  background-color: #c0c0c0; /* Match container background */
+  border: 1px solid #848584; /* Simple border */
+  border-radius: 0;
+  box-shadow: none;
+  padding: 8px;
+  margin-bottom: 10px;
+  color: #000; /* Ensure text color */
+}
+#gitalk-container .gt-comment-admin .gt-comment-content {
+    border-color: #000080; /* Maybe highlight admin comments */
+}
+
+#gitalk-container .gt-comment-body {
+    font-size: inherit; /* Use base size */
+    color: inherit;
+}
+/* Comment links */
+#gitalk-container .gt-comment-body a {
+    color: #0000FF; /* Standard blue link color */
+    text-decoration: underline;
+}
+/* Comment code blocks */
+#gitalk-container .gt-comment-body pre {
+    font-family: "Courier New", Courier, monospace;
+    background-color: #fff;
+    border: 1px solid #848584;
+    padding: 5px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 5px 0;
+}
+#gitalk-container .gt-comment-body code {
+    font-family: "Courier New", Courier, monospace;
+    background-color: #fff;
+    padding: 1px 3px;
+    border: 1px dotted #848584;
+}
+
+
+#gitalk-container .gt-comment-header {
+    font-size: 11px; /* Smaller header font */
+    color: #000;
+    margin-bottom: 5px;
+}
+#gitalk-container .gt-comment-header .gt-comment-username {
+    font-weight: bold;
+    color: #000080; /* Dark blue for username */
+}
+
+#gitalk-container .gt-comment-avatar img {
+   border-radius: 0; /* Square avatar */
+   border: 1px solid #848584;
+   margin-right: 8px;
+}
+
+/* Loading Spinner */
+#gitalk-container .gt-spinner::before {
+    border: 3px solid #008080; /* Teal border */
+    border-right-color: transparent;
+    width: 24px;
+    height: 24px;
+    margin: 20px auto; /* Center spinner */
+}
+
+/* Footer (Powered by Gitalk) - Style or hide */
+#gitalk-container .gt-footer {
+    font-size: 10px;
+    text-align: center;
+    margin-top: 15px;
+    color: #555;
+}
+#gitalk-container .gt-footer a {
+    color: #0000FF;
+    text-decoration: underline;
+}
+/* Optional: Hide footer if you don't want it */
+/* #gitalk-container .gt-footer { display: none; } */
+
+
+
 /* Custom close button visual (if default isn't desired) */
 /* .title-bar-controls button[aria-label="Close"] { */
     /* Optional: Add custom styling or use :before for an icon font */
