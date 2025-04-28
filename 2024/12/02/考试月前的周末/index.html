@@ -9,6 +9,12 @@
   <link rel="stylesheet" href="https://unpkg.com/98.css" />
   <!-- 引入自定义的补充 CSS -->
   <link rel="stylesheet" href="/css/style.css">
+
+  
+  
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+  
+
   
 <!-- hexo injector head_end start --><script>  (function(){    var w = window;    if(w.ChannelIO){      return w.console.error("ChannelIO script included twice.");    }    var ch = function(){ ch.c(arguments); };    ch.q = [];    ch.c = function(args){ ch.q.push(args); };    w.ChannelIO = ch;    function l(){      if(w.ChannelIOInitialized){ return; }      w.ChannelIOInitialized = true;      var s = document.createElement("script");      s.type = "text/javascript";      s.async = true;      s.src = "https://cdn.channel.io/plugin/ch-plugin-web.js";      var x = document.getElementsByTagName("script")[0];      if(x.parentNode){        x.parentNode.insertBefore(s, x);      }    }    if(document.readyState === "complete"){      l();    } else {      w.addEventListener("DOMContentLoaded", l);      w.addEventListener("load", l);    }  })();  ChannelIO('boot', {    "pluginKey": "e7a297e4-c4b6-4d31-843e-5c50e58788b8"  });</script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="静静's Blog" type="application/atom+xml">
 </head>
@@ -76,6 +82,7 @@
         <span>网上邻居</span>
       </a>
       <!-- 记事本 (留言板) -->
+      
       <a href="/guestbook/" class="desktop-icon" id="icon-guestbook" data-window-title="留言板">
         <img src="/images/icon_notepad.png" alt="留言板">
         <span>留言板</span>
@@ -85,7 +92,63 @@
   <!-- 这个容器用来放置动态创建的窗口 -->
   <div id="window-container"></div>
 
-  <!-- 引入交互逻辑的 JS -->
+  
+  
+    <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+    
+    <script>
+      function initializeGitalkForWindow(targetContainerId, uniquePageId) {
+        console.log(`[Gitalk Global] Attempting init for container #${targetContainerId}, page ID: ${uniquePageId}`);
+        const containerElement = document.getElementById(targetContainerId);
+
+        if (!containerElement) {
+          console.error(`[Gitalk Global] Error: Container #${targetContainerId} not found.`);
+          return;
+        }
+        if (typeof Gitalk === 'undefined') {
+          console.error("[Gitalk Global] Error: Gitalk library not loaded.");
+          containerElement.innerHTML = '<p style="color:red;">错误：Gitalk 库未加载！</p>';
+          return;
+        }
+
+        // --- Prevent re-initialization on the same container ---
+        if (containerElement.dataset.gitalkInitialized === 'true') {
+             console.log(`[Gitalk Global] Info: Gitalk already initialized for #${targetContainerId}. Skipping.`);
+             return;
+        }
+
+
+        try {
+          const gitalkInstance = new Gitalk({
+            clientID: 'Ov23li6aKnpjnSs3ubxq',
+            clientSecret: '7b6d9108eb12053eac6eb4737b4fe43438dcafaa', // Still here, be mindful
+            repo: 'leak.moe',
+            owner: 'moeleak',
+            admin: ["moeleak"],
+            id: uniquePageId, // Use the passed unique ID (contentUrl from win98.js)
+            language: 'zh-CN',
+            distractionFreeMode: false,
+            // proxy: ''
+          });
+
+          console.log(`[Gitalk Global] Instance created for #${targetContainerId}. Rendering...`);
+          gitalkInstance.render(targetContainerId);
+          containerElement.dataset.gitalkInitialized = 'true'; // Mark as initialized
+          console.log(`[Gitalk Global] Render command issued for #${targetContainerId}.`);
+
+        } catch (error) {
+          console.error(`[Gitalk Global] Error during Gitalk init/render for #${targetContainerId}:`, error);
+          containerElement.innerHTML = `<p style="color:red;">Gitalk 初始化/渲染出错: ${error.message}</p>`;
+          // Remove initialized flag if setup failed mid-way? Maybe not necessary.
+          // delete containerElement.dataset.gitalkInitialized;
+        }
+      }
+    </script>
+  
+
+
+  <!-- 引入交互逻辑的 JS (放在 Gitalk 函数定义之后) -->
   <script src="/js/win98.js"></script>
 </body>
 </html>
