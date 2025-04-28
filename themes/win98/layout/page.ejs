@@ -21,7 +21,7 @@
           repo: '<%- theme.gitalk.repo %>',
           owner: '<%- theme.gitalk.owner %>',
           admin: <%- JSON.stringify(theme.gitalk.admin || [theme.gitalk.owner]) %>, // Ensure admin is an array
-          id: '<%- theme.gitalk.id === 'pathname' ? page.path : (theme.gitalk.id || page.path) %>', // Use path for ID or configured value
+          id: '<%- theme.gitalk.id === 'location.pathname' ? page.path : (theme.gitalk.id || page.path) %>',
           language: '<%- theme.gitalk.language || 'zh-CN' %>',
           distractionFreeMode: <%= theme.gitalk.distractionFreeMode === true %>, // Ensure boolean output
           // proxy: '<%- theme.gitalk.proxy || '' %>' // Add proxy if configured
