@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
         buttonsDiv.className = 'title-bar-controls';
         const closeButton = document.createElement('button');
         closeButton.setAttribute('aria-label', 'Close');
-        closeButton.textContent = 'X';
         closeButton.onclick = (e) => {
             e.stopPropagation();
             windowDiv.remove();
