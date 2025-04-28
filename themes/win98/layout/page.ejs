@@ -15,6 +15,7 @@
       <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
       <script>
         // Initialize Gitalk
+        console.log("Gitalk script block START");
         const gitalk = new Gitalk({
           clientID: '<%- theme.gitalk.clientID %>',
           clientSecret: '<%- theme.gitalk.clientSecret %>',
@@ -27,7 +28,14 @@
           // proxy: '<%- theme.gitalk.proxy || '' %>' // Add proxy if configured
         });
         // Render Gitalk to the container
-        gitalk.render('gitalk-container');
+        console.log("Gitalk instance created. Container exists?", document.getElementById('gitalk-container'));
+        try {
+          gitalk.render('gitalk-container');
+          console.log("gitalk.render() CALLED successfully.");
+        } catch (error) {
+          console.error("Error calling gitalk.render():", error);
+        }
+        console.log("Gitalk script block END"); // <-- 新增日志
       </script>
     <% } %>
 </article>

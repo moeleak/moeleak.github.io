@@ -2,7 +2,7 @@
 gitalk:
   enable: true # 是否启用 Gitalk
   clientID: 'Ov23li6aKnpjnSs3ubxq' # 从 GitHub OAuth App 获取
-  clientSecret: 'ef49954cbaf11c8cf6a495feb5353c638314203a' # 从 GitHub OAuth App 获取
+  clientSecret: '7b6d9108eb12053eac6eb4737b4fe43438dcafaa' # 从 GitHub OAuth App 获取
   repo: 'leak.moe' # 例如：myblog-comments
   owner: 'moeleak' # 例如：yourusername
   admin: ['moeleak'] # 博客管理员的 GitHub 用户名列表，例如：['yourusername']
@@ -12,4 +12,3 @@ gitalk:
   # 如果你的博客部署在 GitHub Pages 以外的地方，可能会遇到 CORS 问题
   # 可以考虑部署一个 CORS 代理，然后取消下面的注释并填入代理地址
   # proxy: 'https://your-cors-proxy.herokuapp.com/https://github.com/login/oauth/access_token'
-
