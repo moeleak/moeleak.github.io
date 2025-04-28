@@ -3,11 +3,11 @@
   <title>静静&#39;s Blog</title>
   
   
-  <link href="https://moeleak.github.io/atom.xml" rel="self"/>
+  <link href="https://leak.moe/atom.xml" rel="self"/>
   
-  <link href="https://moeleak.github.io/"/>
+  <link href="https://leak.moe/"/>
   <updated>2025-04-24T17:10:19.546Z</updated>
-  <id>https://moeleak.github.io/</id>
+  <id>https://leak.moe/</id>
   
   <author>
     <name>静静</name>
@@ -18,8 +18,8 @@
   
   <entry>
     <title>三四月</title>
-    <link href="https://moeleak.github.io/2025/04/13/%E4%B8%89%E5%9B%9B%E6%9C%88/"/>
-    <id>https://moeleak.github.io/2025/04/13/%E4%B8%89%E5%9B%9B%E6%9C%88/</id>
+    <link href="https://leak.moe/2025/04/13/%E4%B8%89%E5%9B%9B%E6%9C%88/"/>
+    <id>https://leak.moe/2025/04/13/%E4%B8%89%E5%9B%9B%E6%9C%88/</id>
     <published>2025-04-13T13:39:04.000Z</published>
     <updated>2025-04-24T17:10:19.546Z</updated>
     
@@ -35,14 +35,14 @@
     
     
     
-    <category term="memory" scheme="https://moeleak.github.io/tags/memory/"/>
+    <category term="memory" scheme="https://leak.moe/tags/memory/"/>
     
   </entry>
   
   <entry>
     <title>Pixelbook Go 使用体验</title>
-    <link href="https://moeleak.github.io/2025/04/08/Pixelbook-Go-%E4%BD%BF%E7%94%A8%E4%BD%93%E9%AA%8C/"/>
-    <id>https://moeleak.github.io/2025/04/08/Pixelbook-Go-%E4%BD%BF%E7%94%A8%E4%BD%93%E9%AA%8C/</id>
+    <link href="https://leak.moe/2025/04/08/Pixelbook-Go-%E4%BD%BF%E7%94%A8%E4%BD%93%E9%AA%8C/"/>
+    <id>https://leak.moe/2025/04/08/Pixelbook-Go-%E4%BD%BF%E7%94%A8%E4%BD%93%E9%AA%8C/</id>
     <published>2025-04-08T00:43:06.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -62,8 +62,8 @@
   
   <entry>
     <title>Build Android Kernel for Pixel 9 Pro XL</title>
-    <link href="https://moeleak.github.io/2025/02/15/Build-Android-Kernel-for-Pixel-9-Pro-XL/"/>
-    <id>https://moeleak.github.io/2025/02/15/Build-Android-Kernel-for-Pixel-9-Pro-XL/</id>
+    <link href="https://leak.moe/2025/02/15/Build-Android-Kernel-for-Pixel-9-Pro-XL/"/>
+    <id>https://leak.moe/2025/02/15/Build-Android-Kernel-for-Pixel-9-Pro-XL/</id>
     <published>2025-02-15T09:23:31.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -78,16 +78,16 @@
     
     
     
-    <category term="tech" scheme="https://moeleak.github.io/tags/tech/"/>
+    <category term="tech" scheme="https://leak.moe/tags/tech/"/>
     
-    <category term="android" scheme="https://moeleak.github.io/tags/android/"/>
+    <category term="android" scheme="https://leak.moe/tags/android/"/>
     
   </entry>
   
   <entry>
     <title>一月的书影音</title>
-    <link href="https://moeleak.github.io/2025/02/09/%E4%B8%80%E6%9C%88%E7%9A%84%E4%B9%A6%E5%BD%B1%E9%9F%B3/"/>
-    <id>https://moeleak.github.io/2025/02/09/%E4%B8%80%E6%9C%88%E7%9A%84%E4%B9%A6%E5%BD%B1%E9%9F%B3/</id>
+    <link href="https://leak.moe/2025/02/09/%E4%B8%80%E6%9C%88%E7%9A%84%E4%B9%A6%E5%BD%B1%E9%9F%B3/"/>
+    <id>https://leak.moe/2025/02/09/%E4%B8%80%E6%9C%88%E7%9A%84%E4%B9%A6%E5%BD%B1%E9%9F%B3/</id>
     <published>2025-02-09T11:41:21.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -102,14 +102,14 @@
     
     
     
-    <category term="memory" scheme="https://moeleak.github.io/tags/memory/"/>
+    <category term="memory" scheme="https://leak.moe/tags/memory/"/>
     
   </entry>
   
   <entry>
     <title>提取U校园视音频文件</title>
-    <link href="https://moeleak.github.io/2025/01/13/%E6%8F%90%E5%8F%96U%E6%A0%A1%E5%9B%AD%E8%A7%86%E9%9F%B3%E9%A2%91%E6%96%87%E4%BB%B6/"/>
-    <id>https://moeleak.github.io/2025/01/13/%E6%8F%90%E5%8F%96U%E6%A0%A1%E5%9B%AD%E8%A7%86%E9%9F%B3%E9%A2%91%E6%96%87%E4%BB%B6/</id>
+    <link href="https://leak.moe/2025/01/13/%E6%8F%90%E5%8F%96U%E6%A0%A1%E5%9B%AD%E8%A7%86%E9%9F%B3%E9%A2%91%E6%96%87%E4%BB%B6/"/>
+    <id>https://leak.moe/2025/01/13/%E6%8F%90%E5%8F%96U%E6%A0%A1%E5%9B%AD%E8%A7%86%E9%9F%B3%E9%A2%91%E6%96%87%E4%BB%B6/</id>
     <published>2025-01-13T07:06:27.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -121,16 +121,16 @@
     
     
     
-    <category term="tech" scheme="https://moeleak.github.io/tags/tech/"/>
+    <category term="tech" scheme="https://leak.moe/tags/tech/"/>
     
-    <category term="android" scheme="https://moeleak.github.io/tags/android/"/>
+    <category term="android" scheme="https://leak.moe/tags/android/"/>
     
   </entry>
   
   <entry>
     <title>记梦</title>
-    <link href="https://moeleak.github.io/2025/01/08/%E8%AE%B0%E6%A2%A6/"/>
-    <id>https://moeleak.github.io/2025/01/08/%E8%AE%B0%E6%A2%A6/</id>
+    <link href="https://leak.moe/2025/01/08/%E8%AE%B0%E6%A2%A6/"/>
+    <id>https://leak.moe/2025/01/08/%E8%AE%B0%E6%A2%A6/</id>
     <published>2025-01-07T16:27:24.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -142,14 +142,14 @@
     
     
     
-    <category term="memory" scheme="https://moeleak.github.io/tags/memory/"/>
+    <category term="memory" scheme="https://leak.moe/tags/memory/"/>
     
   </entry>
   
   <entry>
     <title>2024 年度总结</title>
-    <link href="https://moeleak.github.io/2024/12/31/2024-%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/"/>
-    <id>https://moeleak.github.io/2024/12/31/2024-%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</id>
+    <link href="https://leak.moe/2024/12/31/2024-%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/"/>
+    <id>https://leak.moe/2024/12/31/2024-%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/</id>
     <published>2024-12-31T12:01:45.000Z</published>
     <updated>2025-04-13T14:32:29.407Z</updated>
     
@@ -161,14 +161,14 @@
     
     
     
-    <category term="memory" scheme="https://moeleak.github.io/tags/memory/"/>
+    <category term="memory" scheme="https://leak.moe/tags/memory/"/>
     
   </entry>
   
   <entry>
     <title>考试月前的周末</title>
-    <link href="https://moeleak.github.io/2024/12/02/%E8%80%83%E8%AF%95%E6%9C%88%E5%89%8D%E7%9A%84%E5%91%A8%E6%9C%AB/"/>
-    <id>https://moeleak.github.io/2024/12/02/%E8%80%83%E8%AF%95%E6%9C%88%E5%89%8D%E7%9A%84%E5%91%A8%E6%9C%AB/</id>
+    <link href="https://leak.moe/2024/12/02/%E8%80%83%E8%AF%95%E6%9C%88%E5%89%8D%E7%9A%84%E5%91%A8%E6%9C%AB/"/>
+    <id>https://leak.moe/2024/12/02/%E8%80%83%E8%AF%95%E6%9C%88%E5%89%8D%E7%9A%84%E5%91%A8%E6%9C%AB/</id>
     <published>2024-12-02T09:55:03.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -180,14 +180,14 @@
     
     
     
-    <category term="memory" scheme="https://moeleak.github.io/tags/memory/"/>
+    <category term="memory" scheme="https://leak.moe/tags/memory/"/>
     
   </entry>
   
   <entry>
     <title>重玩 Minecraft</title>
-    <link href="https://moeleak.github.io/2024/11/29/%E9%87%8D%E7%8E%A9-Minecraft/"/>
-    <id>https://moeleak.github.io/2024/11/29/%E9%87%8D%E7%8E%A9-Minecraft/</id>
+    <link href="https://leak.moe/2024/11/29/%E9%87%8D%E7%8E%A9-Minecraft/"/>
+    <id>https://leak.moe/2024/11/29/%E9%87%8D%E7%8E%A9-Minecraft/</id>
     <published>2024-11-29T07:32:33.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -199,16 +199,16 @@
     
     
     
-    <category term="memory" scheme="https://moeleak.github.io/tags/memory/"/>
+    <category term="memory" scheme="https://leak.moe/tags/memory/"/>
     
-    <category term="game" scheme="https://moeleak.github.io/tags/game/"/>
+    <category term="game" scheme="https://leak.moe/tags/game/"/>
     
   </entry>
   
   <entry>
     <title>Pixel 9 Pro XL</title>
-    <link href="https://moeleak.github.io/2024/10/29/Pixel-9-Pro-XL/"/>
-    <id>https://moeleak.github.io/2024/10/29/Pixel-9-Pro-XL/</id>
+    <link href="https://leak.moe/2024/10/29/Pixel-9-Pro-XL/"/>
+    <id>https://leak.moe/2024/10/29/Pixel-9-Pro-XL/</id>
     <published>2024-10-29T11:29:07.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -221,16 +221,16 @@
     
     
     
-    <category term="tech" scheme="https://moeleak.github.io/tags/tech/"/>
+    <category term="tech" scheme="https://leak.moe/tags/tech/"/>
     
-    <category term="android" scheme="https://moeleak.github.io/tags/android/"/>
+    <category term="android" scheme="https://leak.moe/tags/android/"/>
     
   </entry>
   
   <entry>
     <title>广州游记</title>
-    <link href="https://moeleak.github.io/2024/10/22/%E5%B9%BF%E5%B7%9E%E6%B8%B8%E8%AE%B0/"/>
-    <id>https://moeleak.github.io/2024/10/22/%E5%B9%BF%E5%B7%9E%E6%B8%B8%E8%AE%B0/</id>
+    <link href="https://leak.moe/2024/10/22/%E5%B9%BF%E5%B7%9E%E6%B8%B8%E8%AE%B0/"/>
+    <id>https://leak.moe/2024/10/22/%E5%B9%BF%E5%B7%9E%E6%B8%B8%E8%AE%B0/</id>
     <published>2024-10-22T05:27:20.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -242,14 +242,14 @@
     
     
     
-    <category term="travel" scheme="https://moeleak.github.io/tags/travel/"/>
+    <category term="travel" scheme="https://leak.moe/tags/travel/"/>
     
   </entry>
   
   <entry>
     <title>重拾blog</title>
-    <link href="https://moeleak.github.io/2024/09/27/%E9%87%8D%E6%8B%BEblog/"/>
-    <id>https://moeleak.github.io/2024/09/27/%E9%87%8D%E6%8B%BEblog/</id>
+    <link href="https://leak.moe/2024/09/27/%E9%87%8D%E6%8B%BEblog/"/>
+    <id>https://leak.moe/2024/09/27/%E9%87%8D%E6%8B%BEblog/</id>
     <published>2024-09-27T11:31:09.000Z</published>
     <updated>2025-04-13T14:32:29.408Z</updated>
     
@@ -261,7 +261,7 @@
     
     
     
-    <category term="memory" scheme="https://moeleak.github.io/tags/memory/"/>
+    <category term="memory" scheme="https://leak.moe/tags/memory/"/>
     
   </entry>
   
