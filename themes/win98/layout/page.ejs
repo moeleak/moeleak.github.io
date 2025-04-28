@@ -6,5 +6,29 @@
     <div class="page-body">
         <%- page.content %>
     </div>
+
+    <%# Add Gitalk section if comments are enabled in front-matter and theme config %>
+    <% if (page.comments && theme.gitalk && theme.gitalk.enable) { %>
+      <div id="gitalk-container" style="padding: 15px;"></div> <%# Gitalk container %>
+      <%# Gitalk CSS and JS (use CDN) %>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+      <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+      <script>
+        // Initialize Gitalk
+        const gitalk = new Gitalk({
+          clientID: '<%- theme.gitalk.clientID %>',
+          clientSecret: '<%- theme.gitalk.clientSecret %>',
+          repo: '<%- theme.gitalk.repo %>',
+          owner: '<%- theme.gitalk.owner %>',
+          admin: <%- JSON.stringify(theme.gitalk.admin || [theme.gitalk.owner]) %>, // Ensure admin is an array
+          id: '<%- theme.gitalk.id === 'pathname' ? page.path : (theme.gitalk.id || page.path) %>', // Use path for ID or configured value
+          language: '<%- theme.gitalk.language || 'zh-CN' %>',
+          distractionFreeMode: <%= theme.gitalk.distractionFreeMode === true %>, // Ensure boolean output
+          // proxy: '<%- theme.gitalk.proxy || '' %>' // Add proxy if configured
+        });
+        // Render Gitalk to the container
+        gitalk.render('gitalk-container');
+      </script>
+    <% } %>
 </article>
 

@@ -29,14 +29,22 @@ document.addEventListener('DOMContentLoaded', () => {
         windowDiv.style.position = 'absolute'; // 必须是绝对定位
 
         // --- 初始位置和尺寸计算 (移动端友好) ---
-        const initialWidth = 450; // 默认初始宽度
+        const screenWidth = window.innerWidth;
+        const mobileBreakpoint = 768; // Threshold for mobile devices (adjust as needed)
+        const initialWidth = screenWidth < mobileBreakpoint ? 250 : 450; // Use 250 for mobile, 450 for desktop
+
         const initialHeight = 350; // 默认初始高度
         const margin = 10; // 距离屏幕边缘的最小间距
 
-        const clampedWidth = Math.min(initialWidth, window.innerWidth - 2 * margin);
+        // Clamp width and height based on available space
+        const clampedWidth = Math.min(initialWidth, screenWidth - 2 * margin);
         const clampedHeight = Math.min(initialHeight, window.innerHeight - 2 * margin);
-        const maxLeft = window.innerWidth - clampedWidth - margin;
-        const maxTop = window.innerHeight - clampedHeight - margin - 30; // 为顶部状态栏留出空间
+        
+        // Calculate maximum possible positions
+        const maxLeft = screenWidth - clampedWidth - margin;
+        const maxTop = window.innerHeight - clampedHeight - margin - 30; // 为顶部状态栏留出空间 (assuming 30px status bar height)
+        
+        // Ensure random position is within bounds and at least 'margin' distance
         const randomLeft = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxLeft)));
         const randomTop = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxTop)));
 
@@ -334,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (autoOpenTitle && autoOpenUrl) {
         console.log(`>>> Trying to create window: Title='${autoOpenTitle}', URL='${autoOpenUrl}'`);
-        // 不再使用 setTimeout，直接调用，确保执行
         const autoOpenedWindow = createWindow(autoOpenTitle, autoOpenUrl);
         if (autoOpenedWindow) {
             console.log("<<< Window creation called (title might update after load).");
