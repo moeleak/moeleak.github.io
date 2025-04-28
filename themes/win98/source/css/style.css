@@ -319,6 +319,29 @@ body.windows-desktop {
     font-family: inherit !important; /* 尝试继承父元素的字体，可能需要 !important 强制 */
 }
 
+/* --- Desktop Icon Font Customization --- */
+
+.desktop-icon span {
+    /* 1. 设置 Zpix 字体，并提供后备字体 */
+    font-family: "Zpix", "SimSun", "Microsoft YaHei", sans-serif;
+
+    /* 2. 调整字体大小（如果需要，可以覆盖之前的 11px 设置） */
+    /* font-size: 12px; */ /* 比如改为 12px，如果 11px 下 Zpix 不清晰 */
+
+    /* 3. 应用像素字体渲染优化（和之前 Gitalk 的一样） */
+    font-smooth: never;          /* Firefox */
+    -webkit-font-smoothing: none; /* Chrome, Safari, Edge */
+    image-rendering: pixelated;   /* 尝试让浏览器以像素化方式渲染 */
+    image-rendering: crisp-edges; /* 另一个选项 */
+
+    /* 4. 其他现有样式（比如颜色、文本对齐等）应该保持不变 */
+    /* color: white; */ /* 已有 */
+    /* text-align: center; */ /* 父元素 a 已处理 */
+    /* padding: 1px 3px; */ /* 已有 */
+    /* user-select: none; */ /* 父元素 a 已处理 */
+}
+
+
 /* Custom close button visual (if default isn't desired) */
 /* .title-bar-controls button[aria-label="Close"] { */
     /* Optional: Add custom styling or use :before for an icon font */
