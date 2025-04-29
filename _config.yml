@@ -45,12 +45,16 @@ relative_link: false
 future: true
 syntax_highlighter: highlight.js
 highlight:
-  line_number: true
+  enable: true
+  line_number: false
   auto_detect: false
-  tab_replace: ''
+  tab_replace: '  '
   wrap: true
-  hljs: false
+  hljs: true
+
+
 prismjs:
+  enable: false
   preprocess: true
   line_number: true
   tab_replace: ''
@@ -123,3 +127,5 @@ feed:
   type: atom
   path: atom.xml
   limit: 20
+
+
