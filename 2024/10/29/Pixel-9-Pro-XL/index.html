@@ -92,7 +92,7 @@
 <h2 id="外观"><a href="#外观" class="headerlink" title="外观"></a>外观</h2><p>Google 的设计美学一直都在我的审美上，采用四边等宽的6.8英寸直屏和直角边框设计，介于1.5K到2K的屏幕分辨率，有约3000nits的峰值亮度，可以说是目前最好的一块屏幕</p>
 <p>不过那个毫米波天线真的是好奇怪，设计的不好看。</p>
 <h2 id="DIY"><a href="#DIY" class="headerlink" title="DIY"></a>DIY</h2><h3 id="Root-权限"><a href="#Root-权限" class="headerlink" title="Root 权限"></a>Root 权限</h3><p>购买Pixel的一个很大原因就是方便刷机，可以一键解锁 Bootloader，在更新 Android 15 之后，打开开发者选项，打开 OEM，Type-C 连接到电脑上。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ fastboot flashing unlock</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">$ fastboot flashing unlock<br></code></pre></td></tr></table></figure>
 
 <p>即可解锁 Bootloader。</p>
 <p>接下来是获取 root 权限，流行的一共有 3 种方案</p>
@@ -104,15 +104,15 @@
 <p>我选用的是 APatch，隐藏性更好，更新也比较快。</p>
 <p>在<a target="_blank" rel="noopener" href="https://developers.google.com/android/images#komodo">这里</a>找到你对应的系统，下载刷机包，提取出 boot.img boot_init.img 等镜像文件。</p>
 <p>在 GitHub 上下载到 APatch 的 apk，用 APatch Manager 修补。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ fastboot flash boot boot_apatch.img</span><br><span class="line">$ fastboot reboot</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">$ fastboot flash boot boot_apatch.img<br>$ fastboot reboot<br></code></pre></td></tr></table></figure>
 
 <p>重启之后打开 APatch Manager 就可以发现已经获得 root 权限了。</p>
 <h3 id="修改机型"><a href="#修改机型" class="headerlink" title="修改机型"></a>修改机型</h3><p>由于我这一款 Pixel 是日版的，相机快门声音无法关闭，可以通过修改机型为美版或台版解决。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ su</span><br><span class="line"># dd if=/dev/block/by-name/devinfo of=/sdcard/devinfo_.img</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">$ su<br># dd if=/dev/block/by-name/devinfo of=/sdcard/devinfo_.img<br></code></pre></td></tr></table></figure>
 
 <p>用 Hex 编辑器，修改对应的机型代码即可。（注：Pixel 9 Pro 要自己搜索）</p>
 <p><img src="https://s2.loli.net/2024/10/31/2DWnbfioPN3Jrda.png"></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># dd if=/sdcard/devinfo_.img of=/dev/block/by-name/devinfo</span><br><span class="line"># exit</span><br><span class="line">$ exit</span><br><span class="line">$ adb reboot</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext"># dd if=/sdcard/devinfo_.img of=/dev/block/by-name/devinfo<br># exit<br>$ exit<br>$ adb reboot<br></code></pre></td></tr></table></figure>
 
 <h3 id="模块"><a href="#模块" class="headerlink" title="模块"></a>模块</h3><ul>
 <li>Google Photos Unlimited Backup 谷歌相册无限备份</li>
