@@ -12,8 +12,10 @@ tags:
 
 解除写保护需要拆机暂时拆除电池，只接入电源。进开发者模式刷 UEFI 固件：
 
-```bash
-cd; curl -LOk mrchromebox.tech/firmware-util.sh && sudo bash firmware-util.sh
+```shell
+$ cd
+$ curl -LOk mrchromebox.tech/firmware-util.sh
+$ sudo bash firmware-util.sh
 ```
 
 之前在 macOS 上的 pd 虚拟机安装 Arch Linux ARM 用的 archboot iso 安装，但是我到这个 Pixelbook Go 上启动失败，提示找不到 initram 于是换了官方的启动镜像成功了。
@@ -36,7 +38,7 @@ $ sed -i 's/^[[:space:]]*#[[:space:]]*\("PROTON_USE_WINED3D": "1",\)/\1/' user_s
 但是不知道为什么，steamwebhelper 第一次启动会无响应，第二次就好了。而且 steamwebhelper 极其不优雅，早就想换掉了。
 
 可以尝试一下 [steam-tui](https://github.com/dmadisetti/steam-tui)
-```bash
+```shell
 $ yay -S steam-tui
 ```
 
