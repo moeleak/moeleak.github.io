@@ -37,7 +37,7 @@
     <p>最近在海鲜市场花不到500买了 Pixelbook Go，来简单分享一下使用体验，总的来说比较超出我的预期。</p>
 <h1 id="刷入-Arch-Linux"><a href="#刷入-Arch-Linux" class="headerlink" title="刷入 Arch Linux"></a>刷入 Arch Linux</h1><p>作为赛博洁癖，买来第一件事就是刷入 Arch，不喜欢 chromeOS 的一堆毒瘤软件。</p>
 <p>解除写保护需要拆机暂时拆除电池，只接入电源。进开发者模式刷 UEFI 固件：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cd</span>; curl -LOk mrchromebox.tech/firmware-util.sh &amp;&amp; <span class="hljs-built_in">sudo</span> bash firmware-util.sh<br></code></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">cd</span></span><br><span class="hljs-meta prompt_">$ </span><span class="language-bash">curl -LOk mrchromebox.tech/firmware-util.sh</span><br><span class="hljs-meta prompt_">$ </span><span class="language-bash"><span class="hljs-built_in">sudo</span> bash firmware-util.sh</span><br></code></pre></td></tr></table></figure>
 
 <p>之前在 macOS 上的 pd 虚拟机安装 Arch Linux ARM 用的 archboot iso 安装，但是我到这个 Pixelbook Go 上启动失败，提示找不到 initram 于是换了官方的启动镜像成功了。</p>
 <h2 id="声卡驱动"><a href="#声卡驱动" class="headerlink" title="声卡驱动"></a>声卡驱动</h2><p>参考<a target="_blank" rel="noopener" href="https://github.com/WeirdTreeThing/chromebook-linux-audio">这个仓库</a>即可一键部署声卡驱动程序</p>
@@ -46,7 +46,7 @@
 
 <p>但是不知道为什么，steamwebhelper 第一次启动会无响应，第二次就好了。而且 steamwebhelper 极其不优雅，早就想换掉了。</p>
 <p>可以尝试一下 <a target="_blank" rel="noopener" href="https://github.com/dmadisetti/steam-tui">steam-tui</a></p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">$ yay -S steam-tui<br></code></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">$ </span><span class="language-bash">yay -S steam-tui</span><br></code></pre></td></tr></table></figure>
 
 <p>不用臃肿的 web 界面即可快速启动游戏。</p>
 <h2 id="电池优化"><a href="#电池优化" class="headerlink" title="电池优化"></a>电池优化</h2><p>可以试一下 <a target="_blank" rel="noopener" href="https://wiki.archlinux.org/title/TLP">TLP</a> 工具</p>
