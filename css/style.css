@@ -220,7 +220,71 @@ body.is-dragging-window {
     -webkit-user-select: none;
 }
 
+
+#window-container > .window > .window-body:not(.image-popup-body) pre code.hljs {
+    white-space: pre-wrap !important;   /* Preserve whitespace but wrap lines */
+    word-break: break-word !important;  /* Break long words/strings if necessary */
+    overflow-x: hidden !important;      /* Prevent internal horizontal scrollbar */
+}
+
+/* --- Window Resizer Handle Styling --- */
+.window-resizer {
+    /* 默认 (桌面端) 尺寸 */
+    width: 15px;  /* 较小的宽度 */
+    height: 15px; /* 较小的高度 */
+
+    /* 可选: 为桌面端添加细微的视觉提示，例如一个小的背景图案或颜色 */
+    /* background-color: rgba(0, 0, 0, 0.1); */
+    /* 或者使用一个抓手图标 */
+    /* background-image: url('../images/resize-grip.png'); */
+    /* background-repeat: no-repeat; */
+    /* background-position: center; */
+    /* background-size: 8px 8px; */
+
+    /* 平滑过渡大小变化（可选）*/
+    transition: width 0.1s ease, height 0.1s ease;
+}
+
+/* --- 媒体查询: 增大触摸设备的缩放手柄 --- */
+
+/* 推荐方式: 使用 pointer: coarse 检测主要输入方式是否为低精度（如手指）*/
+@media (pointer: coarse) {
+    .window-resizer {
+        /* 移动端/触摸设备尺寸 */
+        width: 35px;  /* 更大的触摸宽度 */
+        height: 35px; /* 更大的触摸高度 */
+
+        /* 可选: 在触摸设备上让触摸区域更明显 (调试用或永久) */
+        /* background-color: rgba(0, 255, 0, 0.2); */
+    }
+}
+
 /* --- HighlightJS Styles --- */
+
+/* 去掉 highlight.js / Rouge 生成的外框 */
+figure.highlight,
+figure.highlight table {
+  background: #C0C0C0 !important;   /* 跟 pre 保持一致 */
+  border: none !important;          /* 去边框 */
+  border-collapse: collapse;
+  margin: 0 !important;             /* 去默认外距 */
+  padding: 0 !important;            /* 去默认内距 */
+}
+
+/* 如果你用的是 Rouge（Jekyll 默认）会有 .gutter / .code 两列 */
+figure.highlight td,
+figure.highlight .gutter,
+figure.highlight .code {
+  background: #C0C0C0 !important;
+  border: none !important;
+}
+
+/* 让真正的 <pre> 继续保留 3D 凹凸效果 */
+figure.highlight pre {
+  margin: 0;        /* 别再留空隙 */
+  padding: 8px;     /* 和你原先一样 */
+}
+
 pre code.hljs {
   display: block;
   overflow-x: auto;
@@ -235,7 +299,7 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 
 */
 .hljs {
-  background: white;
+  background: #C0C0C0;
   color: black
 }
 .hljs-comment,
@@ -285,6 +349,26 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   font-weight: bold
 }
 
+
+pre {
+  background: #C0C0C0;          /* Win98 灰 */
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  padding: 8px;                 /* 内边距 */
+  border-top:    2px solid #FFF;      /* 高光（上） */
+  border-left:   2px solid #FFF;      /* 高光（左） */
+  border-right:  2px solid #808080;   /* 阴影（右） */
+  border-bottom: 2px solid #808080;   /* 阴影（下） */
+  margin: 1em 0;                 /* 与正文留白，可按需调 */
+  overflow-x: auto;              /* 代码过长时横向滚动 */
+}
+
+code,
+code * {
+  font-family: 'Courier New', monospace !important;
+  font-weight: bold !important;
+  image-rendering:pixelated;
+}
 
 /* --- End of Styles --- */
 

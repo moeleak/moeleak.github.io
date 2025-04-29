@@ -220,15 +220,27 @@ document.addEventListener('DOMContentLoaded', () => {
         makeDraggable(windowDiv, titleBar);
 
         // --- 使窗口可调整大小 (不变) ---
+        // --- 使窗口可调整大小 (增大触摸区域) ---
+        // --- 使窗口可调整大小 (使用 CSS 类控制大小) ---
         const resizer = document.createElement('div');
+        resizer.className = 'window-resizer'; // <--- 添加 CSS 类名
+
+        // --- 从 style.cssText 中移除 width 和 height ---
+        // 让 CSS 文件来控制尺寸
         resizer.style.cssText = `
-            width: 15px; height: 15px; position: absolute;
-            right: 0; bottom: 0; cursor: nwse-resize;
-            z-index: 1; touch-action: none;
+            /* width 和 height 已移除 */
+            position: absolute;
+            right: 0;           /* 定位保持不变 */
+            bottom: 0;          /* 定位保持不变 */
+            cursor: nwse-resize; /* 光标样式保持不变 */
+            z-index: 1;         /* z-index 保持不变 */
+            touch-action: none; /* 防止页面滚动 */
+            /* 可选: 添加一个半透明背景或边框用于调试，完成后删除 */
+            /* border: 1px dashed rgba(255, 0, 0, 0.5); */
         `;
         windowDiv.appendChild(resizer);
+        // makeResizable 函数仍然使用这个带有新类名的 resizer 元素
         makeResizable(windowDiv, resizer);
-
 
         // --- 将窗口添加到容器 ---
         windowContainer.appendChild(windowDiv);
