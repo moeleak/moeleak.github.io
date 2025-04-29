@@ -3,6 +3,8 @@ title: About
 date: 2024-09-27 17:22:37
 ---
 
+![quancifang.png](https://s2.loli.net/2025/04/29/4t3q2y8KeaQAZkv.webp)
+
 ## About me
 你好啊，我是静静，这是我一直用的网名，启发是“The quieter you become, the more you hear”，静下心来才能听到更多，大概用了有十年？
 
