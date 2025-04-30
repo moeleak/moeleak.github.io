@@ -10,8 +10,74 @@ document.addEventListener('DOMContentLoaded', () => {
     let isInitialLoad = true; // Flag for initial auto-open URL handling
     const baseTitle = document.body.dataset.baseTitle || 'Desktop'; // Get base title once
 
+    // --- NEW: Flag to detect Gitalk callback ---
+    let isGitalkCallback = false;
+    const initialUrlParams = new URLSearchParams(window.location.search);
+    if (initialUrlParams.has('code') && initialUrlParams.has('state')) {
+        isGitalkCallback = true;
+        console.log("[Win98 Init] Detected Gitalk OAuth callback parameters (code/state). Delaying history manipulation.");
+        // Optional: Add a timeout to reset the flag in case Gitalk fails to clean URL
+        // setTimeout(() => {
+        //     console.log("[Win98 Init] Resetting Gitalk callback flag after timeout.");
+        //     isGitalkCallback = false;
+        //     // Force URL cleanup if still present?
+        //     const currentParams = new URLSearchParams(window.location.search);
+        //     if (currentParams.has('code') || currentParams.has('state')) {
+        //         console.warn("[Win98 Init] Gitalk params still present after timeout. Forcing cleanup.");
+        //         if (history.state) {
+        //             history.replaceState(history.state, document.title, window.location.pathname);
+        //         } else {
+        //             history.replaceState({ windowUrl: window.location.pathname }, document.title, window.location.pathname);
+        //         }
+        //     }
+        // }, 5000); // Reset after 5 seconds
+    }
+
     // ===============================================
-    //  1. 函数定义部分
+    //  Helper Function for Conditional History API Calls
+    // ===============================================
+    function safeHistoryCall(method, state, title, url) {
+        // Always ensure state has at least windowUrl if possible
+        if (state && typeof state === 'object' && !state.windowUrl && url) {
+            state.windowUrl = url;
+        } else if (!state && url) {
+            state = { windowUrl: url };
+        }
+
+        if (isGitalkCallback) {
+            console.warn(`[Win98 History] Skipped ${method} during Gitalk callback. Target URL: ${url}, Target Title: ${title}`);
+            // Prevent win98.js interference. Gitalk should handle the URL cleanup.
+            return;
+        }
+
+        try {
+            // Prevent state object modification by history API
+            const clonedState = state ? JSON.parse(JSON.stringify(state)) : null;
+
+            // Ensure title is a string
+            const safeTitle = (typeof title === 'string' && title) ? title : document.title; // Use current title as fallback
+
+            // Ensure URL is valid
+            const safeUrl = (typeof url === 'string' && url) ? url : window.location.pathname + window.location.search; // Fallback to current full URL
+
+            history[method](clonedState, safeTitle, safeUrl);
+            console.log(`[Win98 History] Called ${method}. URL: ${safeUrl}, Title: ${safeTitle}, State:`, clonedState);
+
+            // Also update document.title if the method isn't just replacing state for the *same* URL
+            // (or if it's pushState)
+            if (document.title !== safeTitle && (method === 'pushState' || window.location.pathname !== safeUrl.split('?')[0])) {
+                 document.title = safeTitle;
+                 console.log(`[Win98 Title] Updated document.title to: ${safeTitle}`);
+            }
+
+        } catch (error) {
+            console.error(`[Win98 History] Error calling ${method}:`, error, "State:", state, "Title:", title, "URL:", url);
+        }
+    }
+
+
+    // ===============================================
+    //  1. 函数定义部分 ( createWindow, makeDraggable, etc.)
     // ===============================================
 
     /**
@@ -34,8 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
             isImagePopup = false // <-- New option
         } = options;
 
+        const windowId = `window-${Date.now()}`; // Moved ID generation earlier
         highestZIndex++;
-        const windowId = `window-${Date.now()}`;
         const contentUrl = !isImagePopup ? contentIdentifier : null; // Store actual URL only if not image popup
         const imageSrc = isImagePopup ? contentIdentifier : null; // Store image source if it is an image popup
 
@@ -51,27 +117,24 @@ document.addEventListener('DOMContentLoaded', () => {
              windowDiv.dataset.imageSrc = imageSrc; // Store image src for identification if needed
         }
 
-
         // --- Calculate final position and size ---
         const screenWidth = window.innerWidth;
         const mobileBreakpoint = 768;
-        // Adjust default size for image popups potentially? Or keep same? Let's keep same for now.
         const defaultWidth = screenWidth < mobileBreakpoint ? Math.min(screenWidth - 20, 300) : 521;
         const defaultHeight = screenWidth < mobileBreakpoint ? Math.min(window.innerHeight - 50, 400) : 350;
         const targetWidth = defaultWidth;
         const targetHeight = defaultHeight;
         const margin = 10;
         const clampedWidth = Math.min(targetWidth, screenWidth - 2 * margin);
-        const clampedHeight = Math.min(targetHeight, window.innerHeight - 2 * margin - 30);
+        const clampedHeight = Math.min(targetHeight, window.innerHeight - 2 * margin - 30); // Adjust for potential taskbar?
         const maxLeft = screenWidth - clampedWidth - margin;
-        const maxTop = window.innerHeight - clampedHeight - margin - 30;
+        const maxTop = window.innerHeight - clampedHeight - margin - 30; // Adjust for potential taskbar?
         const randomLeft = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxLeft)));
         const randomTop = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxTop)));
         const finalLeft = randomLeft;
         const finalTop = randomTop;
         const finalWidth = clampedWidth;
         const finalHeight = clampedHeight;
-
 
         // --- Set Initial State (for animation) ---
          if (animateFromSource && sourceX !== undefined && sourceY !== undefined) {
@@ -102,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         buttonsDiv.className = 'title-bar-controls';
         const closeButton = document.createElement('button');
         closeButton.setAttribute('aria-label', 'Close');
-        // --- Updated Close Button Logic (No changes needed for image popups here) ---
         closeButton.onclick = (e) => {
             e.stopPropagation();
 
@@ -112,68 +174,53 @@ document.addEventListener('DOMContentLoaded', () => {
             windowDiv.remove();
 
             const remainingWindows = windowContainer.querySelectorAll('.window');
+            const remainingContentWindows = Array.from(remainingWindows).filter(win => win.dataset.contentUrl);
 
-            if (remainingWindows.length === 0) {
-                // Last window closed
+            if (remainingContentWindows.length === 0) {
+                // Last content window closed
                 const baseUrl = '/';
                 if (location.pathname !== baseUrl) {
-                    console.log('[Window Close] Last window closed. Reverting URL and Title to base.');
-                    try {
-                        history.replaceState({ windowUrl: baseUrl }, baseTitle, baseUrl);
-                        document.title = baseTitle; // Update browser title
-                    } catch (error) {
-                        console.error("[History API] Error reverting to base URL on close:", error);
-                    }
+                    console.log('[Window Close] Last content window closed. Reverting URL and Title to base.');
+                    safeHistoryCall('replaceState', { windowUrl: baseUrl }, baseTitle, baseUrl);
+                } else if (document.title !== baseTitle) {
+                    // Ensure title is base even if URL was already '/'
+                    if (!isGitalkCallback) document.title = baseTitle;
                 }
             } else {
-                // Other windows remain, check if the closed one was active AND HAD A URL
-                if (closedWindowUrl && location.pathname === closedWindowUrl) {
-                     let newTopWindow = null;
-                     let maxZ = 0;
-                     remainingWindows.forEach(win => {
-                         const z = parseInt(win.style.zIndex || '0');
-                         if (z > maxZ) {
-                             maxZ = z;
-                             newTopWindow = win;
-                         }
-                     });
-
-                     if (newTopWindow) {
-                         const newTopUrl = newTopWindow.dataset.contentUrl; // Check if the new top window has a URL
-                         const newTopTitle = newTopWindow.querySelector('.title-bar-text').textContent || baseTitle;
-                         if (newTopUrl && location.pathname !== newTopUrl) {
-                             console.log('[Window Close] Active URL window closed. Updating URL and Title to new top window:', newTopUrl);
-                             try {
-                                 history.replaceState({ windowUrl: newTopUrl, windowId: newTopWindow.id }, newTopTitle, newTopUrl);
-                                 document.title = newTopTitle;
-                             } catch (error) {
-                                 console.error("[History API] Error updating URL/Title to new top window on close:", error);
-                             }
-                         } else if (!newTopUrl) { // If new top window is e.g. an image popup
-                            const baseUrl = '/';
-                            if (location.pathname !== baseUrl) {
-                                try {
-                                    history.replaceState({ windowUrl: baseUrl }, baseTitle, baseUrl);
-                                    document.title = baseTitle;
-                                } catch (error) {
-                                     console.error("[History API] Error reverting to base URL (new top has no URL):", error);
-                                }
-                            }
-                         }
-                     } else {
-                         // Fallback: Revert to base if no top window found
-                         const baseUrl = '/';
-                          if (location.pathname !== baseUrl) {
-                             try {
-                                history.replaceState({ windowUrl: baseUrl }, baseTitle, baseUrl);
-                                document.title = baseTitle;
-                             } catch (error) {
-                                 console.error("[History API] Error reverting to base URL (fallback on close):", error);
-                             }
-                          }
+                // Other content windows remain, find the topmost one
+                 let newTopWindow = null;
+                 let maxZ = 0;
+                 remainingContentWindows.forEach(win => {
+                     const z = parseInt(win.style.zIndex || '0');
+                     if (z > maxZ) {
+                         maxZ = z;
+                         newTopWindow = win;
                      }
-                }
-                // If closed window wasn't active OR was an image popup, URL and Title remain unchanged
+                 });
+
+                 if (newTopWindow) {
+                     const newTopUrl = newTopWindow.dataset.contentUrl;
+                     const newTopTitle = newTopWindow.querySelector('.title-bar-text').textContent || baseTitle;
+                     const newTopId = newTopWindow.id;
+
+                     // If the closed window was the active one, update history to the new top window
+                     // Or if the current URL doesn't match the new top window
+                     if ((closedWindowUrl && location.pathname === closedWindowUrl) || location.pathname !== newTopUrl) {
+                         console.log('[Window Close] Updating URL/Title to new top window:', newTopUrl);
+                         safeHistoryCall('replaceState', { windowUrl: newTopUrl, windowId: newTopId, windowTitle: newTopTitle }, newTopTitle, newTopUrl);
+                     } else if (document.title !== newTopTitle) {
+                        // Ensure title matches top window even if URL was already correct
+                        if (!isGitalkCallback) document.title = newTopTitle;
+                     }
+                 } else {
+                      // Fallback: Should not happen if remainingContentWindows > 0, but just in case
+                      const baseUrl = '/';
+                      if (location.pathname !== baseUrl) {
+                          safeHistoryCall('replaceState', { windowUrl: baseUrl }, baseTitle, baseUrl);
+                      } else if (document.title !== baseTitle) {
+                           if (!isGitalkCallback) document.title = baseTitle;
+                      }
+                 }
             }
         };
         buttonsDiv.appendChild(closeButton);
@@ -182,15 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 窗口内容区域 ---
         const contentDiv = document.createElement('div');
         contentDiv.className = 'window-body';
-        // Add specific class for image popups for styling
         if (isImagePopup) {
             contentDiv.classList.add('image-popup-body');
         }
-
         windowDiv.appendChild(titleBar);
         windowDiv.appendChild(contentDiv);
 
-        // --- 使窗口获得焦点 (更新以包含 URL 和标题更新, skip for image popups) ---
+        // --- 使窗口获得焦点 (Update using safeHistoryCall) ---
         const bringToFront = () => {
             if (parseInt(windowDiv.style.zIndex) < highestZIndex) {
                 highestZIndex++;
@@ -199,47 +244,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentContentUrl = windowDiv.dataset.contentUrl; // Will be null for image popups
                 const currentTitle = titleText.textContent;
 
-                // Update Browser URL and Title on Focus ONLY IF it's not an image popup and they don't match
+                // Update Browser URL and Title on Focus ONLY IF it's not an image popup and they don't match current state
                 if (currentContentUrl && !isImagePopup && (location.pathname !== currentContentUrl || document.title !== currentTitle)) {
-                    try {
-                        history.replaceState({ windowUrl: currentContentUrl, windowId: windowId }, currentTitle, currentContentUrl);
-                        document.title = currentTitle;
-                        console.log(`[History API & Title] Replaced state/title for focus: ${currentContentUrl}, Title: ${currentTitle}`);
-                    } catch (error) {
-                        console.error("[History API & Title] Error calling replaceState/setting title:", error);
-                    }
+                    safeHistoryCall('replaceState', { windowUrl: currentContentUrl, windowId: windowId, windowTitle: currentTitle }, currentTitle, currentContentUrl);
                 } else if (!isImagePopup && document.title !== currentTitle) {
                     // Still update title if it got out of sync, even if URL matches
-                    document.title = currentTitle;
+                    if (!isGitalkCallback) document.title = currentTitle;
                 }
             }
         };
         windowDiv.addEventListener('pointerdown', bringToFront, true); // Capture phase
 
-        // --- 使窗口可拖动 (不变) ---
+        // --- 使窗口可拖动 (No changes needed here) ---
         makeDraggable(windowDiv, titleBar);
 
-        // --- 使窗口可调整大小 (不变) ---
-        // --- 使窗口可调整大小 (增大触摸区域) ---
-        // --- 使窗口可调整大小 (使用 CSS 类控制大小) ---
+        // --- 使窗口可调整大小 (No changes needed here) ---
         const resizer = document.createElement('div');
-        resizer.className = 'window-resizer'; // <--- 添加 CSS 类名
-
-        // --- 从 style.cssText 中移除 width 和 height ---
-        // 让 CSS 文件来控制尺寸
+        resizer.className = 'window-resizer'; // CSS class controls size
         resizer.style.cssText = `
-            /* width 和 height 已移除 */
             position: absolute;
-            right: 0;           /* 定位保持不变 */
-            bottom: 0;          /* 定位保持不变 */
-            cursor: nwse-resize; /* 光标样式保持不变 */
-            z-index: 1;         /* z-index 保持不变 */
-            touch-action: none; /* 防止页面滚动 */
-            /* 可选: 添加一个半透明背景或边框用于调试，完成后删除 */
-            /* border: 1px dashed rgba(255, 0, 0, 0.5); */
+            right: 0; bottom: 0;
+            cursor: nwse-resize;
+            z-index: 1;
+            touch-action: none;
         `;
         windowDiv.appendChild(resizer);
-        // makeResizable 函数仍然使用这个带有新类名的 resizer 元素
         makeResizable(windowDiv, resizer);
 
         // --- 将窗口添加到容器 ---
@@ -261,40 +290,38 @@ document.addEventListener('DOMContentLoaded', () => {
             }, { once: true });
         }
 
-        // --- Update Browser URL and Title on Create (Skip for image popups) ---
+        // --- Update Browser URL and Title on Create (Using safeHistoryCall) ---
         if (contentUrl && !isImagePopup) {
            const historyMethod = isInitialLoad && isAutoOpen ? 'replaceState' : 'pushState';
-           if (location.pathname !== contentUrl || (historyMethod === 'pushState' && document.title !== title) || (historyMethod === 'replaceState' && document.title !== title && isInitialLoad)) {
-                try {
-                   history[historyMethod]({ windowUrl: contentUrl, windowId: windowId }, title, contentUrl);
-                   document.title = title; // Set browser title on creation
-                   console.log(`[History API & Title] Called ${historyMethod}/set title for new window: ${contentUrl}, Title: ${title}`);
-                   if (isInitialLoad && isAutoOpen) {
-                       isInitialLoad = false;
-                   }
-                } catch (error) {
-                   console.error(`[History API & Title] Error calling ${historyMethod}/setting title:`, error);
-                }
+           // Check if state needs update (different URL, or pushing new state, or different title)
+           const needsHistoryUpdate = (location.pathname !== contentUrl || historyMethod === 'pushState' || document.title !== title);
+
+           if (needsHistoryUpdate) {
+                // Pass windowTitle in state here too
+                safeHistoryCall(historyMethod, { windowUrl: contentUrl, windowId: windowId, windowTitle: title }, title, contentUrl);
            } else if (isInitialLoad && isAutoOpen) {
-                isInitialLoad = false;
-                 try {
-                    history.replaceState({ windowUrl: contentUrl, windowId: windowId }, title, contentUrl);
-                    if (document.title !== title) document.title = title;
-                 } catch (error) {
-                     console.error("[History API & Title] Error calling replaceState/setting title for initial match:", error);
-                 }
+               // Even if URL matches, ensure state object is set on initial load if needed
+               if (!history.state || history.state.windowUrl !== contentUrl || history.state.windowId !== windowId) {
+                    safeHistoryCall('replaceState', { windowUrl: contentUrl, windowId: windowId, windowTitle: title }, title, contentUrl);
+               }
            }
+
+           // Manage the initial load flag correctly
+           if (isInitialLoad && isAutoOpen) {
+               isInitialLoad = false;
+           }
+
         } else if (isInitialLoad && isAutoOpen && !isImagePopup) {
-            // Handle initial load flag even if URL matches and it's not an image popup
+             // Ensure flag is handled even if no URL update was needed
              isInitialLoad = false;
         }
+
 
         // --- 处理内容：加载或直接设置 ---
         if (isImagePopup && imageSrc) {
             // --- Handle Image Popup Directly ---
             contentDiv.innerHTML = `<img src="${imageSrc}" alt="${title}">`; // Use title as alt
             console.log(`[Win98 Image Popup] Created window for image: ${imageSrc}`);
-            // No fetching, no history updates needed here.
 
         } else if (contentUrl) {
             // --- 异步加载页面内容 ---
@@ -318,18 +345,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             // Update history state title and browser title ONLY if this window is currently active AND NOT image popup
                             if (!isImagePopup && parseInt(windowDiv.style.zIndex) === highestZIndex && location.pathname === contentUrl) {
-                                try {
-                                    history.replaceState({ windowUrl: contentUrl, windowId: windowId }, newTitle, contentUrl);
-                                    document.title = newTitle;
-                                    console.log(`[Win98 & Title] Content loaded, active window title updated to: ${newTitle}`);
-                                } catch (error) {
-                                     console.error("[History API & Title] Error updating title in replaceState/document:", error);
-                                }
+                                 // Only update history state/title if URL/Title actually changed or state missing title
+                                 if (document.title !== newTitle || !history.state || history.state.windowUrl !== contentUrl || history.state.windowTitle !== newTitle ) {
+                                      safeHistoryCall('replaceState', { windowUrl: contentUrl, windowId: windowId, windowTitle: newTitle }, newTitle, contentUrl);
+                                 }
                             } else {
-                                 console.log(`[Win98] Window title updated to: ${newTitle} (window not active or image popup, browser title unchanged)`);
+                                 console.log(`[Win98] Window title updated to: ${newTitle} (window not active or image popup, browser history/title unchanged)`);
                             }
                         } else {
                             console.log("[Win98] H1 not found in loaded content, keeping initial title:", title);
+                            // Ensure history state has the initial title if this window is active
+                             if (!isImagePopup && parseInt(windowDiv.style.zIndex) === highestZIndex && location.pathname === contentUrl) {
+                                 if (!history.state || history.state.windowTitle !== title) {
+                                      safeHistoryCall('replaceState', { windowUrl: contentUrl, windowId: windowId, windowTitle: title }, title, contentUrl);
+                                 }
+                             }
                         }
 
                         // --- 内容处理 和 Gitalk ---
@@ -347,6 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             gitalkPlaceholder.id = uniqueGitalkId;
                             console.log(`[Win98] Renamed placeholder ID to: ${uniqueGitalkId}`);
                             if (typeof initializeGitalkForWindow === 'function') {
+                                // Pass contentUrl as the unique ID for Gitalk issues
                                 initializeGitalkForWindow(uniqueGitalkId, contentUrl);
                             } else {
                                 console.error("[Win98] Error: Global function 'initializeGitalkForWindow' not found!");
@@ -363,9 +394,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         contentDiv.innerHTML = '<p>错误：在获取的页面中未找到 #content-main 结构。</p>';
                         const errorTitle = title + " (内容加载失败)";
                         titleText.textContent = errorTitle;
-                        if (!isImagePopup && parseInt(windowDiv.style.zIndex) === highestZIndex && location.pathname === contentUrl) {
-                            document.title = errorTitle;
-                        }
+                         if (!isImagePopup && parseInt(windowDiv.style.zIndex) === highestZIndex && location.pathname === contentUrl) {
+                             safeHistoryCall('replaceState', { windowUrl: contentUrl, windowId: windowId, windowTitle: errorTitle }, errorTitle, contentUrl);
+                         }
                         console.warn("[Win98] Cannot find selector '#content-main' in fetched HTML:", contentUrl);
                     }
                 })
@@ -375,23 +406,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     const errorTitle = title + " (加载错误)";
                     titleText.textContent = errorTitle;
                      if (!isImagePopup && parseInt(windowDiv.style.zIndex) === highestZIndex && location.pathname === contentUrl) {
-                        document.title = errorTitle;
-                    }
+                        safeHistoryCall('replaceState', { windowUrl: contentUrl, windowId: windowId, windowTitle: errorTitle }, errorTitle, contentUrl);
+                     }
                 });
         } else if (!isImagePopup) {
             // Only show "No URL" if it's not an image popup
             contentDiv.innerHTML = '<p>未提供内容 URL。</p>';
             const noContentTitle = title + " (无内容)";
             titleText.textContent = noContentTitle;
+            // If this somehow becomes the active state, reflect it
             if (parseInt(windowDiv.style.zIndex) === highestZIndex) {
-                 document.title = noContentTitle;
+                 safeHistoryCall('replaceState', { windowUrl: location.pathname, windowId: windowId, windowTitle: noContentTitle }, noContentTitle, location.pathname);
             }
         }
 
         return windowDiv; // Return the created window element
     }
 
-    // --- makeDraggable function (不变) ---
+    /**
+     * Makes an element draggable by its handle.
+     */
     function makeDraggable(element, handle) {
          let isDragging = false, pointerId = null, startX, startY, initialLeft, initialTop;
         const onPointerMove = (e) => {
@@ -402,9 +436,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const VpWidth = window.innerWidth, VpHeight = window.innerHeight;
             const elWidth = element.offsetWidth, elHeight = element.offsetHeight;
             const handleHeight = handle.offsetHeight;
-            const minTop = -handleHeight + 10;
-            const maxTopAllowed = VpHeight - handleHeight - 5;
-            newLeft = Math.max(0 - elWidth + 50, Math.min(newLeft, VpWidth - 50));
+            const minTop = -handleHeight + 10; // Allow title bar to go slightly off screen top
+            const maxTopAllowed = VpHeight - handleHeight - 5; // Prevent title bar going below viewport bottom edge
+            newLeft = Math.max(0 - elWidth + 50, Math.min(newLeft, VpWidth - 50)); // Allow partial offscreen horizontally
             newTop = Math.max(minTop, Math.min(newTop, maxTopAllowed));
             element.style.left = `${newLeft}px`;
             element.style.top = `${newTop}px`;
@@ -425,33 +459,38 @@ document.addEventListener('DOMContentLoaded', () => {
             document.removeEventListener('pointercancel', onPointerUp);
         };
         const onPointerDown = (e) => {
-            if (e.target.closest('.title-bar-controls') || (e.pointerType === 'mouse' && e.button !== 0) || e.target.style.cursor === 'nwse-resize') return;
+            // Ignore clicks on controls, non-primary mouse buttons, or the resizer
+            if (e.target.closest('.title-bar-controls') || (e.pointerType === 'mouse' && e.button !== 0) || e.target.classList.contains('window-resizer')) return;
+
             isDragging = true;
             pointerId = e.pointerId;
             startX = e.clientX; startY = e.clientY;
             initialLeft = element.offsetLeft; initialTop = element.offsetTop;
             handle.style.cursor = 'grabbing';
             element.style.userSelect = 'none';
-            document.body.style.userSelect = 'none';
+            document.body.style.userSelect = 'none'; // Prevent text selection during drag
             document.body.classList.add('is-dragging-window');
+
             // bringToFront is handled by capture listener on windowDiv
-            e.preventDefault();
-            e.stopPropagation();
-            handle.style.touchAction = 'none';
+
+            e.preventDefault(); // Prevent default drag behaviors
+            e.stopPropagation(); // Stop event bubbling
+            handle.style.touchAction = 'none'; // Prevent scrolling on touch devices
             try { handle.setPointerCapture(pointerId); } catch (err) { console.error("Set pointer capture failed (drag):", err); }
             document.addEventListener('pointermove', onPointerMove, { capture: false });
             document.addEventListener('pointerup', onPointerUp);
-            document.addEventListener('pointercancel', onPointerUp);
+            document.addEventListener('pointercancel', onPointerUp); // Handle cancellation (e.g., ESC key)
         };
         handle.addEventListener('pointerdown', onPointerDown);
-        handle.style.cursor = 'grab';
-        if (handle.ondragstart !== undefined) { handle.ondragstart = () => false; }
+        handle.style.cursor = 'grab'; // Initial cursor
+        if (handle.ondragstart !== undefined) { handle.ondragstart = () => false; } // Prevent native image drag
     }
 
-
-    // --- makeResizable function (不变) ---
+    /**
+     * Makes an element resizable using a handle.
+     */
     function makeResizable(element, handle) {
-         let isResizing = false, pointerId = null, startX, startY, initialWidth, initialHeight, initialLeft, initialTop;
+         let isResizing = false, pointerId = null, startX, startY, initialWidth, initialHeight; // No initialLeft/Top needed
         const onPointerMove = (e) => {
             if (!isResizing || e.pointerId !== pointerId) return;
             e.preventDefault();
@@ -464,6 +503,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const minHeight = parseInt(computedStyle.minHeight || '100', 10);
             newWidth = Math.max(minWidth, newWidth);
             newHeight = Math.max(minHeight, newHeight);
+
+            // Optional: Add max width/height constraints based on viewport?
+            // const maxWidth = window.innerWidth - element.offsetLeft - 10;
+            // const maxHeight = window.innerHeight - element.offsetTop - 10;
+            // newWidth = Math.min(newWidth, maxWidth);
+            // newHeight = Math.min(newHeight, maxHeight);
+
             element.style.width = `${newWidth}px`;
             element.style.height = `${newHeight}px`;
         };
@@ -471,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isResizing || e.pointerId !== pointerId) return;
             isResizing = false;
             document.body.style.removeProperty('user-select');
-            document.body.style.removeProperty('cursor');
+            document.body.style.removeProperty('cursor'); // Restore default cursor
             if (handle.hasPointerCapture(pointerId)) {
                 try { handle.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
             }
@@ -481,77 +527,73 @@ document.addEventListener('DOMContentLoaded', () => {
             document.removeEventListener('pointercancel', onPointerUp);
         };
         const onPointerDown = (e) => {
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return; // Ignore non-primary clicks
             isResizing = true;
             pointerId = e.pointerId;
             startX = e.clientX;
             startY = e.clientY;
             initialWidth = element.offsetWidth;
             initialHeight = element.offsetHeight;
-            initialLeft = element.offsetLeft;
-            initialTop = element.offsetTop;
-            document.body.style.userSelect = 'none';
-            document.body.style.cursor = 'nwse-resize';
+            // initialLeft/Top not needed for resizing width/height from bottom-right
+
+            document.body.style.userSelect = 'none'; // Prevent selection during resize
+            document.body.style.cursor = 'nwse-resize'; // Indicate resize action
+
             // bringToFront is handled by capture listener on windowDiv
+
             e.preventDefault();
             e.stopPropagation();
-            handle.style.touchAction = 'none';
+            handle.style.touchAction = 'none'; // Crucial for touch devices
             try { handle.setPointerCapture(pointerId); } catch (err) { console.error("Set pointer capture failed (resize):", err); }
             document.addEventListener('pointermove', onPointerMove, { capture: false });
             document.addEventListener('pointerup', onPointerUp);
             document.addEventListener('pointercancel', onPointerUp);
         };
         handle.addEventListener('pointerdown', onPointerDown);
-        if (handle.ondragstart !== undefined) { handle.ondragstart = () => false; }
+        // Cursor is set by CSS on .window-resizer
+        if (handle.ondragstart !== undefined) { handle.ondragstart = () => false; } // Prevent default drag
     }
 
 
-    // --- setupWindowInteractions (Handles both Links and Image Popups via Delegation) ---
+    /**
+     * Sets up event listeners for interactions within a parent element (links, image clicks).
+     * Uses event delegation.
+     */
     function setupWindowInteractions(parentElement) {
-        // Use parentElement which is typically the '.window-body' after content load,
-        // or the main 'document' for desktop icons initially.
-
-        // ***** CORRECTED SECTION START *****
-        // Ensure parentElement is valid before proceeding
         if (!parentElement) {
-            console.error("[Win98 Interactions] Attempted to attach listener to an invalid element (null or undefined).");
+            console.error("[Win98 Interactions] Attempted to attach listener to an invalid element.");
             return;
         }
 
-        // Check if parentElement has dataset AND if the listener is already attached
-        // Note: 'document' object does not have a 'dataset' property
+        // Prevent attaching multiple listeners to the same content container
         if (parentElement.dataset && parentElement.dataset.interactionListenerAttached === 'true') {
              console.log(`[Win98 Interactions] Listener already attached to <${parentElement.tagName}>. Skipping.`);
-             return; // Prevent double-binding on elements like contentDiv
+             return;
         }
-        // ***** CORRECTED SECTION END *****
 
-
-        // Determine the element to log (use nodeName for document, tagName for elements)
         const elementName = parentElement.nodeName || parentElement.tagName || 'UnknownElement';
         console.log(`[Win98 Interactions] Attaching listener to ${elementName}`);
 
         parentElement.addEventListener('click', (event) => {
             const target = event.target;
 
-            // --- Handle Image Clicks ---
-            // Make sure target is an IMG and it's inside a '.window-body' that is NOT an image popup itself.
-            const windowBody = target.closest('.window-body');
-            if (target.tagName === 'IMG' && windowBody && !windowBody.classList.contains('image-popup-body')) {
+            // --- Handle Image Clicks (for popup) ---
+            const imgPopupTarget = target.closest('.window-body:not(.image-popup-body) img');
+            if (imgPopupTarget && parentElement.contains(imgPopupTarget)) {
                 event.preventDefault(); // Prevent default if image is wrapped in <a>
-                event.stopPropagation(); // Stop propagation to prevent link handling below if wrapped
+                event.stopPropagation(); // Stop propagation to prevent link handling
 
-                const imgElement = target;
+                const imgElement = imgPopupTarget;
                 const imgSrc = imgElement.src;
                 const imgAlt = imgElement.alt;
                 const filename = imgSrc.substring(imgSrc.lastIndexOf('/') + 1);
-                const title = imgAlt || filename || 'Image Viewer'; // Use alt, fallback to filename, then generic
+                const title = imgAlt || filename || 'Image Viewer';
 
                 const rect = imgElement.getBoundingClientRect();
                 const clickX = rect.left + (rect.width / 2);
                 const clickY = rect.top + (rect.height / 2);
 
-                console.log(`[Win98 Img Click] Detected click on: ${imgSrc}`);
+                console.log(`[Win98 Img Click] Detected click for popup: ${imgSrc}`);
                 createWindow(title, imgSrc, {
                     isImagePopup: true,
                     sourceX: clickX,
@@ -562,23 +604,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // --- Handle Link Clicks (Desktop Icons or Internal Links in regular windows) ---
-            // Link selector ensures it's a desktop icon OR an internal link within a regular window body
              const link = target.closest(
-                'a.desktop-icon[data-window-title], .window-body:not(.image-popup-body) a[href^="/"]:not([href="/"]):not(.no-window)'
+                 'a.desktop-icon[data-window-title][href^="/"], .window-body:not(.image-popup-body) a[href^="/"]:not([href="/"]):not(.no-window)'
+                 // Selects desktop icons OR links starting with / inside regular window bodies,
+                 // excluding the root link "/" and links with class "no-window"
              );
 
-
-            // Check if the found link is valid and within the scope of this listener
             if (link && parentElement.contains(link)) {
-                 // Ensure we are not processing a click *on* an image that might be *inside* a link
-                 // (The image click handler above should catch clicks inside regular windows first)
-                if (target.tagName === 'IMG' && link.contains(target)) {
-                    // If it's a desktop icon image, let the link logic proceed.
-                    // If it's an image inside a regular window link, it should have been handled above.
-                    if (!link.classList.contains('desktop-icon')) {
-                         console.log("[Win98 Link Click] Ignoring click on image within link (handled by image click logic).");
-                         return;
-                    }
+                 // Prevent acting on image clicks that were handled above
+                if (target.tagName === 'IMG') {
+                    console.log("[Win98 Link Click] Ignoring click event target that is an image (should be handled by img popup logic or is desktop icon img).");
+                    // If it was a desktop icon image, the link logic below will still proceed because 'link' is valid.
+                    // If it was an image inside a window link, the img popup handler above should have caught it.
                 }
 
                 event.preventDefault();
@@ -586,19 +623,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = link.getAttribute('href');
                 const title = link.dataset.windowTitle || link.textContent.trim() || '窗口';
                 let existingWindow = null;
+
                 const windows = windowContainer.querySelectorAll('.window');
                 for (let win of windows) {
-                    // Match only windows with a contentUrl (ignore image popups for finding existing pages)
+                    // Match only windows with the same contentUrl (ignore image popups)
                     if (win.dataset.contentUrl === url) {
                         existingWindow = win;
                         break;
                     }
                 }
+
                 if (existingWindow) {
+                    // Bring existing window to front and give feedback
                     existingWindow.dispatchEvent(new Event('pointerdown', { bubbles: true })); // Trigger bringToFront
                     existingWindow.classList.add('window-shake');
                     setTimeout(() => existingWindow.classList.remove('window-shake'), 300);
                 } else {
+                    // Create new window
                     const rect = link.getBoundingClientRect();
                     const clickX = rect.left + (rect.width / 2);
                     const clickY = rect.top + (rect.height / 2);
@@ -610,16 +651,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         isImagePopup: false // Ensure this is false for links
                     });
                 }
+                 return; // Handled link click
             }
-        });
 
-        // ***** CORRECTED SECTION START *****
-        // Mark as attached only if parentElement has a dataset (elements only, not document)
+            // --- Handle External Links (Open in new tab) ---
+            const externalLink = target.closest('a[href^="http"]:not([target="_self"]), a[target="_blank"]');
+             if (externalLink && parentElement.contains(externalLink)) {
+                 console.log("[Win98 External Link] Opening in new tab:", externalLink.href);
+                 // Browser default behavior handles target="_blank" or external links automatically
+                 // We don't preventDefault() here.
+                 return;
+             }
+
+        }); // End of click listener
+
+        // Mark as attached only if parentElement is an Element (not Document)
         if (parentElement.dataset) {
              parentElement.dataset.interactionListenerAttached = 'true';
              console.log(`[Win98 Interactions] Marked <${parentElement.tagName}> as attached.`);
         }
-        // ***** CORRECTED SECTION END *****
     }
 
 
@@ -631,172 +681,192 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Auto Open Logic ---
     const currentPath = window.location.pathname;
+    // Normalize path: remove trailing slash unless it's the root '/'
     const normalizedPath = (currentPath !== '/' && currentPath.endsWith('/')) ? currentPath.slice(0, -1) : currentPath;
-    const isHomePage = (normalizedPath === '/' || normalizedPath.endsWith('/index.html') || normalizedPath === '');
+    const isHomePage = (normalizedPath === '/' || normalizedPath === '' || normalizedPath.endsWith('/index.html'));
     let autoOpenTitle = null;
     let autoOpenUrl = null;
+    // Map normalized paths (without trailing slash, except root) to titles
     const pathMap = { "/about": "关于我", "/links": "友情链接", "/archives": "存档", "/guestbook": "留言板" };
 
-    // --- Check for GitHub OAuth Callback Parameters ---
-    const currentUrlParams = new URLSearchParams(window.location.search);
-    const githubCode = currentUrlParams.get('code');
-    const githubState = currentUrlParams.get('state'); // Gitalk uses state parameter as well
 
     if (pathMap[normalizedPath]) {
         autoOpenTitle = pathMap[normalizedPath];
-        autoOpenUrl = normalizedPath.endsWith('/') ? normalizedPath : normalizedPath + '/';
+        // Ensure URL passed to createWindow includes trailing slash for consistency
+        autoOpenUrl = normalizedPath + '/';
     } else if (!isHomePage) {
-        autoOpenTitle = "加载中...";
-        autoOpenUrl = currentPath;
+        // Auto-open other non-mapped paths (likely blog posts)
+        autoOpenTitle = "加载中..."; // Title will be updated from content
+        autoOpenUrl = currentPath; // Use the original path
     }
 
+
     if (autoOpenTitle && autoOpenUrl) {
+        // createWindow call will use safeHistoryCall internally
         createWindow(autoOpenTitle, autoOpenUrl, {
-             animateFromSource: false,
+             animateFromSource: false, // Don't animate auto-opened windows
              isAutoOpen: true,
              isImagePopup: false
         });
-        // Note: isInitialLoad flag might be set inside createWindow or handled by its logic
+        // isInitialLoad flag is handled within createWindow now
     } else {
-         isInitialLoad = false; // Set flag if no window is auto-opened initially
+        isInitialLoad = false; // Set flag if no window is auto-opened
 
-         // --- MODIFIED SECTION START ---
-         // Only clean up the URL (replaceState) on the homepage IF it's NOT a GitHub OAuth callback
-         if (isHomePage && !githubCode && !githubState) {
-            // Check if history state needs update (e.g., first load on homepage)
-            if (!history.state || history.state.windowUrl !== location.pathname) {
-                try {
-                    // Use replaceState to set the initial state for the homepage without adding to history
-                    history.replaceState({ windowUrl: location.pathname }, baseTitle, location.pathname);
-                    console.log("[Win98 Init] Set initial history state for homepage:", location.pathname);
-                } catch(error) {
-                    console.error("[History API] Error replacing state for homepage:", error);
-                }
+        // --- Set initial state for the base page if necessary ---
+        // Only manage state for the homepage if no window opened and not during Gitalk callback
+        if (isHomePage) {
+            const expectedBaseState = { windowUrl: '/' }; // Base state represents root
+            if (!history.state || history.state.windowUrl !== expectedBaseState.windowUrl) {
+                 // Use location.pathname for URL to preserve potential query strings initially
+                 safeHistoryCall('replaceState', expectedBaseState, baseTitle, location.pathname + location.search);
             }
-            // Ensure document title is correct for the homepage when no window is open
+            // Ensure document title is correct if no windows and not in callback
             if (document.title !== baseTitle && windowContainer.querySelectorAll('.window').length === 0) {
-                document.title = baseTitle;
+                 if (!isGitalkCallback) document.title = baseTitle;
             }
-         } else if (isHomePage && (githubCode || githubState)) {
-             // If it IS the homepage AND it IS a GitHub callback, DO NOTHING here.
-             // Let Gitalk handle the URL parameters. Gitalk usually cleans them up itself after processing.
-             console.log("[Win98 Init] Detected GitHub OAuth callback. Skipping initial URL cleanup to allow Gitalk processing.");
-             // Optional: Add a delayed check/cleanup if Gitalk fails to clean the URL, but start without it.
-             // setTimeout(() => {
-             //    const paramsAfterGitalk = new URLSearchParams(window.location.search);
-             //    if (paramsAfterGitalk.has('code') || paramsAfterGitalk.has('state')) {
-             //        console.warn("[Win98 Delayed Check] Gitalk might not have cleaned up URL params. Cleaning now.");
-             //        history.replaceState(history.state, document.title, window.location.pathname);
-             //    }
-             // }, 3000); // Wait 3 seconds
-         }
-         // --- MODIFIED SECTION END ---
+        }
+        // For non-homepage, non-auto-open cases, let the initial browser-provided state stand.
+        // safeHistoryCall prevents interference during callback.
     }
+
 
     // --- 添加 CSS 样式 (不变) ---
     const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
+    // Basic styles needed by JS logic
     styleSheet.innerText = `
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
         .window-shake { animation: shake 0.3s ease-in-out; }
-        body.is-dragging-window { user-select: none; -webkit-user-select: none; }
-        #window-container > .window > div[style*="cursor: nwse-resize"] { touch-action: none; }
+        body.is-dragging-window { user-select: none; -webkit-user-select: none; cursor: grabbing !important; }
+        /* Ensure title bar also shows grabbing cursor when body class is active */
+        body.is-dragging-window .title-bar { cursor: grabbing !important; }
+        /* Resizer touch action */
+        .window-resizer { touch-action: none; }
+        /* Opening animation class */
+        .window-opening {
+            transition: opacity 0.25s ease-out, transform 0.25s ease-out,
+                        left 0.25s ease-out, top 0.25s ease-out,
+                        width 0.25s ease-out, height 0.25s ease-out;
+        }
     `;
     document.head.appendChild(styleSheet);
 
 
-    // --- PopState listener (更新以处理标题, ignore image popups implicitly) ---
+    // --- PopState listener (Handles Back/Forward browser buttons) ---
     window.addEventListener('popstate', (event) => {
         console.log('[PopState] Navigated:', event.state);
+
+        // If Gitalk callback flag is still somehow active, ignore popstate
+        // This is a fallback, ideally the flag is short-lived.
+        if (isGitalkCallback) {
+             console.warn("[PopState] Ignoring popstate event during Gitalk callback phase.");
+             return;
+        }
+
         const stateUrl = event.state ? event.state.windowUrl : null;
-        const stateTitle = event.state ? event.state.windowTitle : null; // Title might be in state
+        const stateWindowId = event.state ? event.state.windowId : null; // Get ID from state
+        const stateTitle = event.state ? event.state.windowTitle : null; // Get Title from state
 
         if (stateUrl) {
+            // Target URL from history state
             const targetUrl = stateUrl;
-            const targetWindowId = event.state.windowId;
             let windowToFocus = null;
 
-            // Try finding by ID first, then by URL (only for non-image windows)
-            if (targetWindowId) {
-                 windowToFocus = document.getElementById(targetWindowId);
-                 // Verify it's not an image popup by checking dataset.contentUrl
-                 if (windowToFocus && !windowToFocus.dataset.contentUrl) {
-                     windowToFocus = null; // Don't focus image popups via history
+            // Try finding window by ID first (more reliable if IDs are stable)
+            if (stateWindowId) {
+                 windowToFocus = document.getElementById(stateWindowId);
+                 // Verify it's a content window and its URL matches the state
+                 if (windowToFocus && (!windowToFocus.dataset.contentUrl || windowToFocus.dataset.contentUrl !== targetUrl)) {
+                    console.warn(`[PopState] Found window by ID ${stateWindowId} but its URL (${windowToFocus.dataset.contentUrl}) doesn't match state URL (${targetUrl}). Ignoring ID match.`);
+                    windowToFocus = null; // Don't trust ID if URL mismatch
                  }
             }
+
+            // If not found by ID, try finding by URL (only content windows)
             if (!windowToFocus) {
-                const windows = windowContainer.querySelectorAll('.window');
-                for (let win of windows) {
-                    if (win.dataset.contentUrl === targetUrl) { // Match only windows with contentUrl
-                        windowToFocus = win;
-                        break;
-                    }
-                }
+                 const windows = windowContainer.querySelectorAll('.window[data-content-url]');
+                 for (let win of windows) {
+                     if (win.dataset.contentUrl === targetUrl) {
+                         windowToFocus = win;
+                         break; // Found first match by URL
+                     }
+                 }
             }
 
             if (windowToFocus) {
+                // --- Existing Window Found ---
                 console.log('[PopState] Found existing content window, bringing to front:', targetUrl);
-                 const windowTitle = windowToFocus.querySelector('.title-bar-text').textContent || baseTitle;
+                const windowTitle = windowToFocus.querySelector('.title-bar-text').textContent || stateTitle || baseTitle; // Prefer live title
+
+                // Bring to front visually
                  if (parseInt(windowToFocus.style.zIndex) < highestZIndex) {
                      highestZIndex++;
                      windowToFocus.style.zIndex = highestZIndex;
                  }
+                 // Sync browser title to the focused window's title
                  if (document.title !== windowTitle) {
                     document.title = windowTitle;
                  }
+                 // Optional: Visual feedback like shake?
+                 // windowToFocus.classList.add('window-shake');
+                 // setTimeout(() => windowToFocus.classList.remove('window-shake'), 300);
+
             } else {
-                 // Window not found, recreate it (if it's not supposed to be an image popup)
-                 console.log('[PopState] Content window not found for URL, attempting to recreate:', targetUrl);
-                 let title = '窗口'; // Default title
-                 // Try to get title from known mappings or state
-                 const knownTitle = pathMap[targetUrl.endsWith('/') ? targetUrl.slice(0, -1) : targetUrl] || stateTitle;
-                 if (knownTitle) title = knownTitle;
+                 // --- Window Not Found ---
+                 // Recreate the window if the state represents a specific page (not the root '/')
+                 if (targetUrl !== '/') {
+                    console.log('[PopState] Content window not found for state, recreating:', targetUrl);
 
-                 // Check if a corresponding desktop icon exists to get a title
-                 const matchingIcon = document.querySelector(`.desktop-icon[href="${targetUrl}"]`);
-                 if(matchingIcon && matchingIcon.dataset.windowTitle) {
-                    title = matchingIcon.dataset.windowTitle;
-                 } else if (targetUrl === '/') {
-                     title = baseTitle;
+                    // Determine title: Use state > mapping > default
+                    let title = stateTitle || pathMap[targetUrl.endsWith('/') ? targetUrl.slice(0, -1) : targetUrl] || '窗口';
+
+                    // If still default, check desktop icon as last resort
+                    if (title === '窗口') {
+                        const matchingIcon = document.querySelector(`.desktop-icon[href="${targetUrl}"]`);
+                         if(matchingIcon && matchingIcon.dataset.windowTitle) {
+                            title = matchingIcon.dataset.windowTitle;
+                         } else {
+                             title = targetUrl; // Fallback to URL if no title found
+                         }
+                    }
+
+                    // Recreate the window. It will get the highest z-index.
+                    // History state already reflects this URL, so createWindow shouldn't pushState.
+                    // It might replaceState if title needs updating, handled by safeHistoryCall.
+                    createWindow(title, targetUrl, {
+                       animateFromSource: false, // No animation for history navigation
+                       isAutoOpen: false,
+                       isImagePopup: false
+                    });
+                    // Ensure title syncs immediately if createWindow didn't set it
+                    if (document.title !== title) {
+                         document.title = title;
+                    }
+                 } else {
+                      // --- Navigated Back to Base URL State ---
+                      console.log('[PopState] Reached base URL state ("/" or equivalent).');
+                      // Optional: Close all windows? Or just ensure title? Let's just sync title.
+                      if (document.title !== baseTitle) {
+                           document.title = baseTitle;
+                      }
+                      // Ensure no windows are accidentally active visually? (Find highest z-index and check if it matches base?)
                  }
-
-                 // Recreate only if it's a content URL, not implicitly an image
-                 createWindow(title, targetUrl, {
-                    animateFromSource: false,
-                    isAutoOpen: false,
-                    isImagePopup: false // Ensure false when recreating from history
-                 });
-                 // createWindow will handle setting the document.title
             }
         } else {
-             // State is null or invalid (likely means back to base URL state)
-             console.log('[PopState] State is null or URL invalid. Reverting to base state.');
-             const remainingWindows = windowContainer.querySelectorAll('.window[data-content-url]'); // Only count content windows
-             if (remainingWindows.length === 0) {
-                 if (document.title !== baseTitle) {
-                     document.title = baseTitle;
-                 }
-                 if(location.pathname !== '/') {
-                      try {
-                         history.replaceState({ windowUrl: '/' }, baseTitle, '/');
-                      } catch(e) {/*ignore*/}
-                 }
-             } else {
-                 // Find top content window and sync title
-                 let topWin = null, maxZ = 0;
-                 remainingWindows.forEach(win => {
-                     const z = parseInt(win.style.zIndex || '0');
-                     if (z > maxZ) { maxZ = z; topWin = win; }
-                 });
-                 if (topWin) {
-                     const topTitle = topWin.querySelector('.title-bar-text').textContent || baseTitle;
-                     if (document.title !== topTitle) document.title = topTitle;
-                 } else if (document.title !== baseTitle) {
-                     document.title = baseTitle;
-                 }
+             // --- State is null or invalid ---
+             // This usually happens when navigating back past the initial entry point or to a page before JS modified history.
+             // Treat it as the base desktop state.
+             console.log('[PopState] State is null or invalid. Assuming base state.');
+             if (document.title !== baseTitle) {
+                 document.title = baseTitle;
+             }
+             // If the URL isn't the root, force replace state to match the base
+             if (location.pathname !== '/') {
+                 safeHistoryCall('replaceState', { windowUrl: '/' }, baseTitle, '/');
              }
         }
-    });
+    }); // End of PopState listener
 
 }); // End of DOMContentLoaded listener
+
 
