@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let highestZIndex = 10;
     let isInitialLoad = true;
     const blogTitle = document.body.dataset.blogTitle;
-    const pathMap = { "/about/": "关于我", "/links/": "友情链接", "/archives/": "存档", "/guestbook/": "留言板" };
     const DESKTOP_TITLE_PLACEHOLDER = "Desktop";
 
     function setDocumentTitle(pageTitle) {
@@ -516,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 event.stopPropagation();
                 const url = link.getAttribute('href');
                 const targetPath = (url.endsWith('/') || url.includes('?') || url.includes('#')) ? url : url + '/';
-                const title = link.dataset.windowTitle || link.textContent.trim() || pathMap[targetPath] || '窗口';
+                const title = link.dataset.windowTitle || link.textContent.trim() || '窗口';
                 let existingWindow = null;
 
                 const windows = windowContainer.querySelectorAll('.window');
@@ -559,10 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let autoOpenTitle = null;
     let autoOpenUrl = null;
 
-    if (pathMap[currentPath]) {
-        autoOpenTitle = pathMap[currentPath];
-        autoOpenUrl = currentPath;
-    } else if (!isHomePage && !currentPath.includes('.')) {
+    if (!isHomePage && !currentPath.includes('.')) {
         autoOpenTitle = "加载中...";
         autoOpenUrl = currentPath;
     }
@@ -630,12 +626,9 @@ document.addEventListener('DOMContentLoaded', () => {
                  windowToFocus.dispatchEvent(new Event('pointerdown', { bubbles: true }));
             } else {
                  let title = '窗口';
-                 const titleFromMap = pathMap[canonicalPath];
                  const fullTitleFromState = stateObject ? stateObject.title : null; // History state often stores the full title string
 
-                 if (titleFromMap) {
-                     title = titleFromMap;
-                 } else if (fullTitleFromState) {
+                 if (fullTitleFromState) {
                     // Attempt to extract base title from full state title
                     const expectedSuffix = ` — ${blogTitle}`;
                     const expectedPrefix = "「";

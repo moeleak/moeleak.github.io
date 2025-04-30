@@ -1,6 +1,7 @@
 ---
-title: About
-date: 2024-09-27 17:22:37
+title: 我的文档
+layout: page
+comments: true
 ---
 
 **MOTD:** Welcome to my digital playground. Feel free to explore the filesystem.
