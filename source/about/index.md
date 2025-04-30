@@ -25,7 +25,7 @@ comments: true
     *   `steam` / `ffxiv-launcher` / `minecraft-launcher` / `visual-novel-reader`
     *   `photography`
     *   `calibre` / `zathura`
-*   **System Logs:** `../archives/`。
+*   **System Logs:** `../archives/`
 
 ---
 
