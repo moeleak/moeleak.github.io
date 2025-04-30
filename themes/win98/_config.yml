@@ -13,3 +13,8 @@ gitalk:
   # 可以考虑部署一个 CORS 代理，然后取消下面的注释并填入代理地址
   proxy: 'https://proxy-gitalk-api.netlify.app/github_access_token'
 
+favicon:
+  enable: true
+  icon: /images/favicon.ico
+  touch_icon: /images/apple-touch-icon.png
+

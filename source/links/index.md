@@ -7,6 +7,7 @@ date: 2024-09-27 19:47:15
 [猎风](https://www.northarea.tech)
 [圈圈](https://blog.tse.moe)
 [小南](https://xnmoe.com)
+[小桂桂](https://aza.moe)
 
 如果你想跟我交换友联，可以 [email](mailto://i@leak.moe) 我或在这下面留言。
 ```
