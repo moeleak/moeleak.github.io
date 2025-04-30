@@ -11,6 +11,5 @@ gitalk:
   distractionFreeMode: false # 是否启用无干扰模式（类似全屏编辑）
   # 如果你的博客部署在 GitHub Pages 以外的地方，可能会遇到 CORS 问题
   # 可以考虑部署一个 CORS 代理，然后取消下面的注释并填入代理地址
-  # proxy: 'https://your-cors-proxy.herokuapp.com/https://github.com/login/oauth/access_token'
-  #
+  proxy: 'https://proxy-gitalk-api.netlify.app/github_access_token'
 
