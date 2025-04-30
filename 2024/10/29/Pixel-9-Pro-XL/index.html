@@ -202,7 +202,7 @@
             id: uniquePageId, // Use the passed unique ID (contentUrl from win98.js)
             language: 'zh-CN',
             distractionFreeMode: false,
-            // proxy: ''
+            proxy: 'https://proxy-gitalk-api.netlify.app/github_access_token'
           });
 
           console.log(`[Gitalk Global] Instance created for #${targetContainerId}. Rendering...`);
