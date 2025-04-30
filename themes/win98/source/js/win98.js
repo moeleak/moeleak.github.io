@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
              const link = target.closest(
-                'a.desktop-icon[data-window-title], .window-body:not(.image-popup-body) a[href^="/"]:not([href="/"]):not(.no-window):not([target="_blank"])'
+                'a.desktop-icon, .window-body:not(.image-popup-body) a[href^="/"]:not([href="/"]):not(.no-window):not([target="_blank"])'
              );
 
             if (link && parentElement.contains(link)) {
