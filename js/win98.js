@@ -629,18 +629,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupWindowInteractions(document); // Setup interactions for desktop icons initially
 
-    // --- Auto Open Logic (不变, title passed to createWindow) ---
+    // --- Auto Open Logic ---
     const currentPath = window.location.pathname;
     const normalizedPath = (currentPath !== '/' && currentPath.endsWith('/')) ? currentPath.slice(0, -1) : currentPath;
     const isHomePage = (normalizedPath === '/' || normalizedPath.endsWith('/index.html') || normalizedPath === '');
     let autoOpenTitle = null;
     let autoOpenUrl = null;
     const pathMap = { "/about": "关于我", "/links": "友情链接", "/archives": "存档", "/guestbook": "留言板" };
+
+    // --- Check for GitHub OAuth Callback Parameters ---
+    const currentUrlParams = new URLSearchParams(window.location.search);
+    const githubCode = currentUrlParams.get('code');
+    const githubState = currentUrlParams.get('state'); // Gitalk uses state parameter as well
+
     if (pathMap[normalizedPath]) {
         autoOpenTitle = pathMap[normalizedPath];
         autoOpenUrl = normalizedPath.endsWith('/') ? normalizedPath : normalizedPath + '/';
     } else if (!isHomePage) {
-        autoOpenTitle = "加载中..."; // Initial title before content loads
+        autoOpenTitle = "加载中...";
         autoOpenUrl = currentPath;
     }
 
@@ -648,20 +654,43 @@ document.addEventListener('DOMContentLoaded', () => {
         createWindow(autoOpenTitle, autoOpenUrl, {
              animateFromSource: false,
              isAutoOpen: true,
-             isImagePopup: false // Ensure this is false
+             isImagePopup: false
         });
+        // Note: isInitialLoad flag might be set inside createWindow or handled by its logic
     } else {
-         isInitialLoad = false;
-         if (isHomePage && (!history.state || history.state.windowUrl !== location.pathname)) {
-             try {
-                history.replaceState({ windowUrl: location.pathname }, baseTitle, location.pathname);
-                if (document.title !== baseTitle && !autoOpenUrl) {
-                    document.title = baseTitle;
+         isInitialLoad = false; // Set flag if no window is auto-opened initially
+
+         // --- MODIFIED SECTION START ---
+         // Only clean up the URL (replaceState) on the homepage IF it's NOT a GitHub OAuth callback
+         if (isHomePage && !githubCode && !githubState) {
+            // Check if history state needs update (e.g., first load on homepage)
+            if (!history.state || history.state.windowUrl !== location.pathname) {
+                try {
+                    // Use replaceState to set the initial state for the homepage without adding to history
+                    history.replaceState({ windowUrl: location.pathname }, baseTitle, location.pathname);
+                    console.log("[Win98 Init] Set initial history state for homepage:", location.pathname);
+                } catch(error) {
+                    console.error("[History API] Error replacing state for homepage:", error);
                 }
-             } catch(error) {
-                 console.error("[History API] Error replacing state/title for homepage:", error);
-             }
+            }
+            // Ensure document title is correct for the homepage when no window is open
+            if (document.title !== baseTitle && windowContainer.querySelectorAll('.window').length === 0) {
+                document.title = baseTitle;
+            }
+         } else if (isHomePage && (githubCode || githubState)) {
+             // If it IS the homepage AND it IS a GitHub callback, DO NOTHING here.
+             // Let Gitalk handle the URL parameters. Gitalk usually cleans them up itself after processing.
+             console.log("[Win98 Init] Detected GitHub OAuth callback. Skipping initial URL cleanup to allow Gitalk processing.");
+             // Optional: Add a delayed check/cleanup if Gitalk fails to clean the URL, but start without it.
+             // setTimeout(() => {
+             //    const paramsAfterGitalk = new URLSearchParams(window.location.search);
+             //    if (paramsAfterGitalk.has('code') || paramsAfterGitalk.has('state')) {
+             //        console.warn("[Win98 Delayed Check] Gitalk might not have cleaned up URL params. Cleaning now.");
+             //        history.replaceState(history.state, document.title, window.location.pathname);
+             //    }
+             // }, 3000); // Wait 3 seconds
          }
+         // --- MODIFIED SECTION END ---
     }
 
     // --- 添加 CSS 样式 (不变) ---
