@@ -10,11 +10,11 @@ comments: true
 [小南](https://xnmoe.com)
 [小桂桂](https://aza.moe)
 
-如果你想跟我交换友联，可以 [email](mailto://i@leak.moe) 我或在这下面留言。
+如果你想跟我交换友联，可以 [email](mailto://i@leak.moe) 我或长毛象或在这下面留言。
 ```
 link: https://leak.moe
 name: 静静's Blog
 description: 偶尔有电波信号出没。
-avator: https://leak.moe/images/avator.png
+avator: https://leak.moe/images/avatar.png
 banner: https://leak.moe/images/banner.png
 ```
