@@ -15,4 +15,6 @@ comments: true
 link: https://leak.moe
 name: 静静's Blog
 description: 偶尔有电波信号出没。
+avator: https://leak.moe/images/avator.png
+banner: https://leak.moe/images/banner.png
 ```
