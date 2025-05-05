@@ -140,6 +140,11 @@ body.windows-desktop {
     image-rendering: crisp-edges;
 }
 
+
+table > tbody > tr > * {
+  font-family: "Zpix", "Tahoma", "SimSun", "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
 /* --- Image Popup Window Body Specific Styles --- */
 #window-container > .window > .window-body.image-popup-body {
     display: flex;
