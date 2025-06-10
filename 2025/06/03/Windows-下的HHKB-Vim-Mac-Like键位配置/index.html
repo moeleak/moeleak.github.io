@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+  <link rel="icon" href="/images/favicon.ico">
+
+  <!-- 98.css -->
+  <link rel="stylesheet" href="https://unpkg.com/98.css" />
+  <!-- hexo win98 CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+
+  
+  
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+  
+
+  
+<!-- hexo injector head_end start -->
+  <!-- Mastodon Verification Link (Standard method using <link> tag) -->
+  <link rel="me" href="https://m.cmx.im/@moeleak">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="静静's Blog" type="application/atom+xml">
+</head>
+
+
+<body class="windows-desktop" data-blog-title="静静&#39;s Blog">
+
+  <!-- Hexo 渲染的初始内容，默认隐藏，仅供 JS fetch 读取 -->
+  <div id="initial-content-wrapper" style="display: none;">
+    <article class="win98-content" id="content-main">
+  <h1>Windows 下的HHKB+Vim+Mac-Like键位配置</h1>
+  
+    <p class="post-meta">发布于: 2025-06-03</p>
+  
+  <hr>
+  <div class="post-content">
+    <p>折腾了一圈 PowerToys 的改键，但是不可以编程，自定义的功能比较少，最后还是用 AutoHotkey 实现了一下，吐槽一下 ahk 的神经病语法，幸好现在是 ai 时代，ai就可以帮我实现我的需求，遇到问题再修改一下就可以了。</p>
+<p>附上我的配置文件：</p>
+<figure class="highlight ahk"><table><tr><td class="code"><pre><code class="hljs ahk">full_command_line := DllCall(<span class="hljs-string">&quot;GetCommandLine&quot;</span>, <span class="hljs-string">&quot;str&quot;</span>)<br>if <span class="hljs-literal">not</span> (<span class="hljs-built_in">A_IsAdmin</span> <span class="hljs-literal">or</span> RegExMatch(full_command_line, <span class="hljs-string">&quot; /restart(?!\S)&quot;</span>))<br>&#123;<br>        try<br>        &#123;<br>                if <span class="hljs-built_in">A_IsCompiled</span><br>                        Run *RunAs <span class="hljs-string">&quot;%A_ScriptFullPath%&quot;</span> /restart<br>                else<br>                        Run *RunAs <span class="hljs-string">&quot;%A_AhkPath%&quot;</span> /restart <span class="hljs-string">&quot;%A_ScriptFullPath%&quot;</span><br>        &#125;<br>        <span class="hljs-keyword">ExitApp</span><br>&#125;<br><br><br>CTRL_ESC_TIMEOUT := <span class="hljs-number">200</span><br><span class="hljs-built_in"></span><br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> Code.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> Obsidian.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> chrome.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> alacritty.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> idea64.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> WindowsTerminal.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> zen.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> PowerToys.PowerLauncher.exe<br><span class="hljs-keyword">Return</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">#IfWinActive ahk_group TargetApps</span><br><br><span class="hljs-title">~LControl::</span><br>  pressedTime := <span class="hljs-built_in">A_TickCount</span><br><span class="hljs-built_in"></span><br><span class="hljs-built_in">  KeyWait,</span> LControl<br><br>  if ((<span class="hljs-built_in">A_TickCount</span> - pressedTime &lt; CTRL_ESC_TIMEOUT) &amp;&amp; (<span class="hljs-built_in">A_PriorKey</span> = <span class="hljs-string">&quot;LControl&quot;</span>))<br>  &#123;<br>    SendInput &#123;Blind&#125;&#123;Escape&#125;<br>  &#125;<br><br><span class="hljs-keyword">Return</span><br><span class="hljs-meta">#IfWinActive</span><br><br><span class="hljs-title">^Space::</span><br><span class="hljs-built_in">Run,</span> C:\Tools\im-select\im-select.exe locale, , Hide<br><span class="hljs-keyword">Return</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">#IfWinActive ahk_exe WindowsTerminal.exe</span><br><span class="hljs-title">#c::</span><br><span class="hljs-built_in">  SendInput,</span> ^+c <span class="hljs-comment">; ^ for Ctrl, + for Shift</span><br><span class="hljs-keyword">Return</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">#v::</span><br><span class="hljs-built_in">  SendInput,</span> ^+v<br><span class="hljs-keyword">Return</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">#t::</span><br><span class="hljs-built_in">  SendInput,</span> ^+t<br><span class="hljs-keyword">Return</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">#w::</span><br><span class="hljs-built_in">  SendInput,</span> ^+w<br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; 将 Win+1 映射到 Ctrl+Alt+1</span><br><span class="hljs-title">#1::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">1</span><br><span class="hljs-keyword">return</span><br><br><span class="hljs-comment">; 将 Win+2 映射到 Ctrl+Alt+2</span><br><span class="hljs-title">#2::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">2</span><br><span class="hljs-keyword">return</span><br><br><span class="hljs-comment">; 将 Win+3 映射到 Ctrl+Alt+3</span><br><span class="hljs-title">#3::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">3</span><br><span class="hljs-keyword">return</span><br><br><span class="hljs-comment">; 将 Win+4 映射到 Ctrl+Alt+4</span><br><span class="hljs-title">#4::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">4</span><br><span class="hljs-keyword">return</span><br><br><span class="hljs-comment">; 将 Win+5 映射到 Ctrl+Alt+5</span><br><span class="hljs-title">#5::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">5</span><br><span class="hljs-keyword">return</span><br><br><span class="hljs-comment">; 将 Win+6 映射到 Ctrl+Alt+6</span><br><span class="hljs-title">#6::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">6</span><br><span class="hljs-keyword">return</span><br><br><span class="hljs-comment">; 将 Win+7 映射到 Ctrl+Alt+7</span><br><span class="hljs-title">#7::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">7</span><br><span class="hljs-keyword">return</span><br><br><span class="hljs-comment">; 将 Win+8 映射到 Ctrl+Alt+8</span><br><span class="hljs-title">#8::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">8</span><br><span class="hljs-keyword">return</span><br><br><span class="hljs-comment">; 将 Win+9 映射到 Ctrl+Alt+9</span><br><span class="hljs-title">#9::</span><br><span class="hljs-built_in">    SendInput,</span> ^!<span class="hljs-number">9</span><br><span class="hljs-keyword">return</span><br><span class="hljs-meta">#IfWinActive</span><br><br><span class="hljs-comment">; Win+C 映射为 Ctrl+C (复制) - 全局默认</span><br><span class="hljs-title">#c::</span><br><span class="hljs-built_in">    SendInput,</span> ^c<br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; Win+V 映射为 Ctrl+V (粘贴) - 全局默认</span><br><span class="hljs-title">#v::</span><br><span class="hljs-built_in">    SendInput,</span> ^v<br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; Win+A 映射为 Ctrl+A (全选)</span><br><span class="hljs-title">#a::</span><br><span class="hljs-built_in">    SendInput,</span> ^a<br><span class="hljs-keyword">Return</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">#z::</span><br><span class="hljs-built_in">  SendInput,</span> ^z<br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; Win+W 映射为 Alt+F4 (关闭窗口)</span><br><span class="hljs-title">#w::</span><br><span class="hljs-built_in">    SendInput,</span> !&#123;F4&#125;<br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; Win+M 映射为 最小化当前窗口</span><br><span class="hljs-title">#m::</span><br><span class="hljs-built_in">    WinMinimize,</span> A <span class="hljs-comment">; A 代表当前活动窗口</span><br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; ===================================</span><br><span class="hljs-comment">; Vim 风格 Win + HJKL 光标移动</span><br><span class="hljs-comment">; ===================================</span><br><span class="hljs-meta"></span><br><span class="hljs-meta">#h::SendInput, &#123;Left&#125;</span><br><span class="hljs-keyword">Return</span><br><span class="hljs-title">#j::</span>SendInput, &#123;Down&#125;<br><span class="hljs-keyword">Return</span><br><span class="hljs-title">#k::</span>SendInput, &#123;Up&#125;<br><span class="hljs-keyword">Return</span><br><br><span class="hljs-title">$#l::</span>SendInput, &#123;Right&#125; <span class="hljs-comment">; $ 强制使用键盘钩子</span><br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; ===================================</span><br><span class="hljs-comment">; Win+Tab -&gt; Alt+Tab</span><br><span class="hljs-comment">; ===================================</span><br><span class="hljs-title">$#Tab::</span><br>    SendInput &#123;Blind&#125;&#123;LAlt Down&#125;&#123;Tab&#125;<br><span class="hljs-built_in">    KeyWait,</span> LWin<br>    SendInput &#123;LAlt Up&#125;<br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; ===================================</span><br><span class="hljs-comment">; Group Applications</span><br><span class="hljs-comment">; ===================================</span><br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> Code.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> Obsidian.exe<br><span class="hljs-built_in">GroupAdd,</span> TargetApps, <span class="hljs-keyword">ahk_exe</span> chrome.exe<br><span class="hljs-built_in"></span><br><span class="hljs-built_in">GroupAdd,</span> TerminalApps, <span class="hljs-keyword">ahk_exe</span> WindowsTerminal.exe<br><span class="hljs-built_in">GroupAdd,</span> TerminalApps, <span class="hljs-keyword">ahk_exe</span> alacritty.exe<br><span class="hljs-built_in">GroupAdd,</span> TerminalApps, <span class="hljs-keyword">ahk_exe</span> cmd.exe<br><span class="hljs-built_in">GroupAdd,</span> TerminalApps, <span class="hljs-keyword">ahk_exe</span> powershell.exe<br><span class="hljs-built_in">GroupAdd,</span> TerminalApps, <span class="hljs-keyword">ahk_exe</span> pwsh.exe<br><span class="hljs-built_in">GroupAdd,</span> TerminalApps, <span class="hljs-keyword">ahk_exe</span> conhost.exe<br><span class="hljs-built_in">GroupAdd,</span> TerminalApps, <span class="hljs-keyword">ahk_exe</span> mintty.exe<br><span class="hljs-built_in">GroupAdd,</span> TerminalApps, <span class="hljs-keyword">ahk_exe</span> putty.exe<br><br><span class="hljs-keyword">Return</span><br><br><span class="hljs-comment">; ===================================</span><br><span class="hljs-comment">; Zen Browser</span><br><span class="hljs-comment">; ===================================</span><br><span class="hljs-meta">#IfWinActive ahk_exe zen.exe</span><br><span class="hljs-title">    #t::</span>SendInput, ^t<br><span class="hljs-title">    #f::</span>SendInput, ^f<br><span class="hljs-meta">#IfWinActive</span><br></code></pre></td></tr></table></figure>
+
+
+  </div>
+</article>
+
+  </div>
+
+  <!-- 桌面图标 -->
+  <div class="desktop-icons">
+      <!-- 我的电脑 (存档) -->
+      <a href="/archives/" class="desktop-icon" id="icon-mycomputer">
+        <img src="/images/icon_mycomputer.png" alt="我的电脑">
+        <span>我的电脑</span>
+      </a>
+      <!-- 我的文档 (关于) -->
+      <a href="/about/" class="desktop-icon" id="icon-mydocuments">
+        <img src="/images/icon_mydocuments.png" alt="我的文档">
+        <span>我的文档</span>
+      </a>
+      <!-- 网上邻居 (友链) -->
+      <a href="/links/" class="desktop-icon" id="icon-network">
+        <img src="/images/icon_network.png" alt="网上邻居">
+        <span>网上邻居</span>
+      </a>
+      <!-- 记事本 (留言板) -->
+      <a href="/guestbook/" class="desktop-icon" id="icon-guestbook">
+        <img src="/images/icon_notepad.png" alt="留言板">
+        <span>留言板</span>
+      </a>
+  </div>
+
+  <!-- 这个容器用来放置动态创建的窗口 -->
+  <div id="window-container"></div>
+
+  
+  
+    <script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+    
+    <script>
+      function initializeGitalkForWindow(targetContainerId, uniquePageId) {
+        console.log(`[Gitalk Global] Attempting init for container #${targetContainerId}, page ID: ${uniquePageId}`);
+        const containerElement = document.getElementById(targetContainerId);
+
+        if (!containerElement) {
+          console.error(`[Gitalk Global] Error: Container #${targetContainerId} not found.`);
+          return;
+        }
+        if (typeof Gitalk === 'undefined') {
+          console.error("[Gitalk Global] Error: Gitalk library not loaded.");
+          containerElement.innerHTML = '<p style="color:red;">错误：Gitalk 库未加载！</p>';
+          return;
+        }
+
+        // --- Prevent re-initialization on the same container ---
+        if (containerElement.dataset.gitalkInitialized === 'true') {
+             console.log(`[Gitalk Global] Info: Gitalk already initialized for #${targetContainerId}. Skipping.`);
+             return;
+        }
+
+
+        try {
+          const gitalkInstance = new Gitalk({
+            clientID: 'Ov23li6aKnpjnSs3ubxq',
+            clientSecret: '7b6d9108eb12053eac6eb4737b4fe43438dcafaa',
+            repo: 'leak.moe',
+            owner: 'moeleak',
+            admin: ["moeleak"],
+            id: uniquePageId,
+            language: 'zh-CN',
+            distractionFreeMode: false,
+            proxy: 'https://proxy-gitalk-api.netlify.app/github_access_token'
+          });
+
+          console.log(`[Gitalk Global] Instance created for #${targetContainerId}. Rendering...`);
+          gitalkInstance.render(targetContainerId);
+          containerElement.dataset.gitalkInitialized = 'true'; // Mark as initialized
+          console.log(`[Gitalk Global] Render command issued for #${targetContainerId}.`);
+
+        } catch (error) {
+          console.error(`[Gitalk Global] Error during Gitalk init/render for #${targetContainerId}:`, error);
+          containerElement.innerHTML = `<p style="color:red;">Gitalk 初始化/渲染出错: ${error.message}</p>`;
+        }
+      }
+    </script>
+  
+
+
+  <!-- 引入交互逻辑的 JS -->
+  <script src="/js/win98.js"></script>
+</body>
+</html>
+
+
