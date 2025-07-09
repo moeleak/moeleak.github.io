@@ -10,7 +10,6 @@ comments: true
 [小南](https://xnmoe.com)
 [小桂桂](https://aza.moe)
 [咖啡冰河](https://blog.mysto.cyou)
-[Sdegreeの小站](https://www.sdegree.cn)
 
 如果你想跟我交换友联，可以 [email](mailto://i@leak.moe) 我或长毛象或在这下面留言。
 ```
