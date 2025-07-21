@@ -1,0 +1,162 @@
+diff --git a/source/css/style.css b/source/css/style.css
+index a4e7381..c311181 100644
+--- a/source/css/style.css
++++ b/source/css/style.css
+@@ -432,3 +432,60 @@
+ }
+ 
+ /* --- End of Styles --- */
++
++/* --- Responsive Tables --- */
++.table-wrapper {
++  overflow-x: auto;
++  margin: 1em 0;
++  /* 模仿 <pre> 的凹陷边框效果，提示这是一个可滚动区域 */
++  border-top: 2px solid #808080;
++  border-left: 2px solid #808080;
++  border-right: 2px solid #FFF;
++  border-bottom: 2px solid #FFF;
++  padding: 1px; /* 给内部表格留出一点空间 */
++}
++
++.table-wrapper table {
++  /* 确保表格不会被强制压缩 */
++  width: 100%;
++  min-width: 500px; /* 或者一个你认为合适的最小宽度 */
++  border-collapse: collapse;
++  margin: 0; /* 移除表格自身的外边距，由 wrapper 控制 */
++}
++
++
++/* --- Code Block Copy Button --- */
++.code-block-wrapper {
++  position: relative;
++  margin: 1em 0; /* 与 <pre> 的原始 margin 保持一致 */
++}
++
++/* 移除 <pre> 自身的 margin，因为它的父级 wrapper 已经有了 */
++.code-block-wrapper pre {
++  margin: 0 !important;
++}
++
++.copy-code-button {
++  position: absolute;
++  top: 5px;
++  right: 5px;
++  z-index: 10;
++  opacity: 0; /* 默认隐藏 */
++  transition: opacity 0.2s ease-in-out;
++
++  /* --- 关键：Win98 按钮样式 (参考 .gt-btn) --- */
++  background: silver;
++  border: none;
++  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
++  box-sizing: border-box;
++  color: #222;
++  min-height: 21px;
++  min-width: 60px;
++  padding: 0 10px;
++  font-family: "Zpix", "Pixelated MS Sans Serif", Arial;
++  font-size: 11px;
++  -webkit-font-smoothing: none;
++  font-weight: normal;
++  user-select: none;
++  cursor: default;
++}
++
++/* 当鼠标悬停在代码块上时显示按钮 */
++.code-block-wrapper:hover .copy-code-button {
++  opacity: 1;
++}
++
++/* 按钮按下状态 */
++.copy-code-button:active:not([disabled]) {
++  box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff, inset 2px 2px grey, inset -2px -2px #dfdfdf;
++  padding-top: 2px;
++  padding-left: 11px;
++}
++
++/* 按钮禁用状态 */
++.copy-code-button:disabled {
++  color: grey;
++  text-shadow: 1px 1px 0 #fff;
++}
+diff --git a/source/js/win98.js b/source/js/win98.js
+index 2854b73..91a6d71 100644
+--- a/source/js/win98.js
++++ b/source/js/win98.js
+@@ -429,6 +429,10 @@
+                             gitalkPlaceholder.innerHTML = '<p style="color:red;">错误：无法找到 Gitalk 初始化函数！</p>';
+                         }
+ 
++                        // 在设置交互之前，先增强内容的格式（代码块、表格等）
++                        enhanceContentLoaded(contentDiv);
++
+                         setupWindowInteractions(contentDiv);
+ 
+                     } else {
+@@ -597,6 +601,46 @@
+         if (handle.ondragstart !== undefined) { handle.ondragstart = () => false; } // Prevent native drag
+     }
+ 
++    function enhanceContentLoaded(parentElement) {
++        if (!parentElement) return;
++
++        // 1. 处理代码块：添加包裹层和复制代码按钮
++        const codeBlocks = parentElement.querySelectorAll('pre');
++        codeBlocks.forEach(pre => {
++            // 防止重复添加
++            if (pre.parentNode.classList.contains('code-block-wrapper')) {
++                return;
++            }
++
++            const wrapper = document.createElement('div');
++            wrapper.className = 'code-block-wrapper';
++
++            // 将 pre 元素移动到 wrapper 中
++            pre.parentNode.insertBefore(wrapper, pre);
++            wrapper.appendChild(pre);
++
++            const button = document.createElement('button');
++            button.className = 'copy-code-button';
++            button.textContent = '复制';
++            wrapper.appendChild(button);
++
++            button.addEventListener('click', () => {
++                const code = pre.querySelector('code')?.innerText || pre.innerText;
++                navigator.clipboard.writeText(code).then(() => {
++                    button.textContent = '已复制!';
++                    button.disabled = true;
++                    setTimeout(() => {
++                        button.textContent = '复制';
++                        button.disabled = false;
++                    }, 2000);
++                }).catch(err => {
++                    button.textContent = '失败';
++                    console.error('复制失败', err);
++                    setTimeout(() => {
++                        button.textContent = '复制';
++                    }, 2000);
++                });
++            });
++        });
++
++        // 2. 处理表格：添加包裹层以实现水平滚动
++        const tables = parentElement.querySelectorAll('table');
++        tables.forEach(table => {
++            // 防止重复包裹
++            if (table.parentNode.classList.contains('table-wrapper')) {
++                return;
++            }
++            const wrapper = document.createElement('div');
++            wrapper.className = 'table-wrapper';
++            table.parentNode.insertBefore(wrapper, table);
++            wrapper.appendChild(table);
++        });
++    }
++
+     function setupWindowInteractions(parentElement) {
+         if (!parentElement || (parentElement.dataset && parentElement.dataset.interactionListenerAttached === 'true')) {
+              return;
+
+
