@@ -2,6 +2,7 @@
 title: 重玩 Minecraft
 date: 2024-11-29 15:32:33
 tags: [game, memory]
+comments: true
 ---
 
 好久没玩了！

@@ -2,7 +2,7 @@
 title: Build Android Kernel for Pixel 9 Pro XL
 date: 2025-02-15 17:23:31
 tags: [tech, android]
-
+comments: true
 ---
 
 # 配置环境

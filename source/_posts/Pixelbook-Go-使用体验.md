@@ -1,7 +1,8 @@
 ---
 title: Pixelbook Go 使用体验
 date: 2025-04-08 08:43:06
-tags:
+tags: [tech]
+comments: true
 ---
 
 最近在海鲜市场花不到500买了 Pixelbook Go，来简单分享一下使用体验，总的来说比较超出我的预期。

@@ -2,6 +2,7 @@
 title: 重拾blog
 date: 2024-09-27 19:31:09
 tags: [memory]
+comments: true
 ---
 
 

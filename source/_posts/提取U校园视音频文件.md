@@ -2,6 +2,7 @@
 title: 提取U校园视音频文件
 date: 2025-01-13 15:06:27
 tags: [tech, android]
+comments: true
 ---
 
 需要 root 权限，一次比较无聊的经历。
