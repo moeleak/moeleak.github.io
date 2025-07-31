@@ -367,23 +367,7 @@ body.is-dragging-window {
 }
 
 .copy-code-button {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  z-index: 10;
-  opacity: 0; /* 默认隐藏 */
-  transition: opacity 0.2s ease-in-out;
-
-  background: silver;
-  border: none;
-  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
-  box-sizing: border-box;
-  color: #222;
-  min-height: 21px;
-  min-width: 60px;
-  padding: 0 10px;
   font-family: "Zpix", "Pixelated MS Sans Serif", Arial;
-  font-size: 11px;
   -webkit-font-smoothing: none;
   font-weight: normal;
   user-select: none;
@@ -395,25 +379,12 @@ body.is-dragging-window {
   opacity: 1;
 }
 
-/* 按钮按下状态 */
-.copy-code-button:active:not([disabled]) {
-  box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff, inset 2px 2px grey, inset -2px -2px #dfdfdf;
-  padding-top: 2px;
-  padding-left: 11px;
-}
-
-/* 按钮禁用状态 */
-.copy-code-button:disabled {
-  color: grey;
-  text-shadow: 1px 1px 0 #fff;
-}
 
 /* --- Code Block Language Label --- */
 .code-language-label {
   position: absolute;
-  top: 5px;
+  top: 0px;
   left: 8px;
-  z-index: 10; /* 与复制按钮在同一层级 */
   color: grey;
   text-shadow: 1px 1px 0 #fff; /* Win98 经典的“雕刻”文字效果 */
   font-family: "Zpix", "Pixelated MS Sans Serif", Arial;
@@ -433,9 +404,6 @@ body.is-dragging-window {
     .window-resizer {
         width: 35px; 
         height: 35px;
-    }
-    .code-block-wrapper .copy-code-button {
-        opacity: 1;
     }
 }
 
