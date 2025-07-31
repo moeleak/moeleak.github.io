@@ -1,9 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
     const musicPlayerIcon = document.getElementById('icon-musicplayer');
-    const webampContainer = document.getElementById('webamp-container');
     let webampInstance = null;
 
-    if (!musicPlayerIcon || !webampContainer) {
+    if (!musicPlayerIcon) {
         console.error('Required elements for music player not found.');
         return;
     }
@@ -125,11 +124,11 @@ document.addEventListener('DOMContentLoaded', function () {
             },
         });
 
-        return webamp.renderWhenReady(webampContainer).then(() => {
-            webampInstance = webamp;
-            setTimeout(manageWebampWindowsZIndex, 0);
-            return webamp;
-        });
+        return webamp.renderWhenReady(document.getElementById('webamp-container')).then(() => {
+             webampInstance = webamp;
+             setTimeout(manageWebampWindowsZIndex, 0);
+             return webamp;
+         });
     };
 
     musicPlayerIcon.addEventListener('click', (e) => {
