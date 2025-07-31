@@ -8,6 +8,40 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
+    const manageWebampWindowsZIndex = () => {
+        const webampWindowSelectors = ['#main-window', '#playlist-window', '#equalizer-window'];
+
+        const bringWebampGroupToFront = () => {
+            if (typeof window.getWin98HighestZIndex === 'function') {
+                const newZIndex = window.getWin98HighestZIndex();
+                const webampRoot = document.getElementById('webamp');
+                if (webampRoot) {
+                    console.log(`[Music Player] Setting z-index for #webamp ROOT container: ${newZIndex}`);
+                    webampRoot.style.zIndex = newZIndex;
+                } else {
+                    console.error('[Music Player] CRITICAL: Could not find #webamp root container!');
+                }
+                // ==========================================================
+
+            } else {
+                console.error('[Music Player] FATAL: window.getWin98HighestZIndex function not found!');
+            }
+        };
+
+        webampWindowSelectors.forEach(selector => {
+            const el = document.querySelector(selector);
+            if (el) {
+                console.log(`[Music Player] Successfully found and attached listener to ${selector}`);
+                el.addEventListener('pointerdown', bringWebampGroupToFront);
+            } else {
+                console.warn(`[Music Player] Could not find element ${selector} to attach listener.`);
+            }
+        });
+
+        // 首次打开时，也触发一次置顶
+        bringWebampGroupToFront();
+    };
+
     const initWebamp = () => {
         if (webampInstance) {
             webampInstance.dispose();
@@ -89,17 +123,11 @@ document.addEventListener('DOMContentLoaded', function () {
             initialSkin: {
               url: "/skins/SamuraiCory-Homura2.wsz",
             },
-            
-            /*
-            __initialWindowLayout: {
-                main: { position: { x: 20, y: 20 } },
-                playlist: { position: { x: 20, y: 135 } },
-            },
-            */
         });
 
         return webamp.renderWhenReady(webampContainer).then(() => {
             webampInstance = webamp;
+            setTimeout(manageWebampWindowsZIndex, 0);
             return webamp;
         });
     };
@@ -108,16 +136,26 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
         e.stopImmediatePropagation();
 
-        const webampWindow = webampContainer.querySelector('#main-window');
+        const webampWindow = document.querySelector('#main-window');
 
         if (webampWindow) {
-            webampWindow.style.display = 'block';
-            if (webampInstance) {
-                const playlist = webampContainer.querySelector('#playlist-window');
-                if(playlist) playlist.style.display = 'block';
-            }
+             const webampRoot = document.getElementById('webamp');
+             if (webampRoot && typeof window.getWin98HighestZIndex === 'function') {
+                const newZIndex = window.getWin98HighestZIndex();
+                webampRoot.style.zIndex = newZIndex;
+                
+                // 确保所有窗口都可见
+                const selectors = ['#main-window', '#playlist-window', '#equalizer-window'];
+                selectors.forEach(selector => {
+                    const el = document.querySelector(selector);
+                    if (el && el.style.display === 'none') {
+                       el.style.display = 'block';
+                    }
+                });
+             }
         } else {
             initWebamp();
         }
     });
 });
+
