@@ -2,7 +2,6 @@
 title: Windows 下的HHKB+Vim+Mac-Like键位配置
 date: 2025-06-03 01:28:33
 tags: [tech, Windows]
-comments: true
 ---
 
 折腾了一圈 PowerToys 的改键，但是不可以编程，自定义的功能比较少，最后还是用 AutoHotkey 实现了一下，吐槽一下 ahk 的神经病语法，幸好现在是 ai 时代，ai就可以帮我实现我的需求，遇到问题再修改一下就可以了。

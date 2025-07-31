@@ -1,7 +1,6 @@
 ---
 title: 我的文档
 layout: page
-comments: true
 ---
 
 **MOTD:** Welcome to my digital playground. Feel free to explore the filesystem.
