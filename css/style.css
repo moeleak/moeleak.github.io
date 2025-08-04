@@ -656,7 +656,6 @@ body.is-dragging-window {
 
 .copy-code-button {
   padding: 2px 8px;
-  color: black;
   font-size: 11px;
   font-family: "Zpix", "Pixelated MS Sans Serif", Arial;
   -webkit-font-smoothing: none;
@@ -665,15 +664,9 @@ body.is-dragging-window {
   cursor: default;
 }
 
-/* 当鼠标悬停在代码块上时显示按钮 */
-.code-block-wrapper:hover .copy-code-button {
-  opacity: 1;
-}
-
 .copy-code-button:active {
     border-color: #808080 #dfdfdf #dfdfdf #808080;
 }
-
 
 /* --- Code Block Language Label --- */
 .code-language-label {
