@@ -422,6 +422,10 @@ table > tbody > tr > * {
     display: none
 }
 
+#window-container .window .window-body .gt-comment-edit {
+    display: none
+}
+
 
 /* Common style for ALL icons using mask */
 #window-container .window .window-body .gt-comment-like .gt-ico::before,
