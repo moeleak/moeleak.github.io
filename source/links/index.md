@@ -11,7 +11,7 @@ comments: true
 [小桂桂](https://aza.moe)
 [咖啡冰河](https://blog.mysto.cyou)
 [东东's Blog](https://blog.yasking.org)
-[Sana's Blog](http://www.sana-honoka.top)
+[Sana's Blog](https://www.sana-honoka.top)
 
 如果你想跟我交换友联，可以 [email](mailto://i@leak.moe) 我或长毛象或在这下面留言。
 ```
