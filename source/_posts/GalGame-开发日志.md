@@ -18,3 +18,13 @@ tags: [memory, tech, game]
 
 本来打算用 renpy 作为游戏引擎，但是那个rpy脚本实在太难写了，修改 UI 十分不容易，换了个思路打算用 C++ sdl2 自己写一套 UI 和脚本语言，这样定制 UI 也方便一些。
 
+# 2025.8.28
+
+剧本要求实现一个剧本编辑器，正好之前有用过 Comfyui 和 UE4 的节点编辑器，就想能不能把 GalGame 的剧本做成一个有向图。
+
+# 2025.8.28 - 2025.10.15
+
+一直在跟 NodeEditor 肝，现在把基本功能都实现了，支持角色编号编辑，变量系统。（用std::map映射字符串实现的，其实很简单）主要是用 SDL2 从头手搓真的很麻烦，还要适配高分辨率屏，适配高分屏真的好复杂，我还去学习了一下 DPI PPI这些概念。演示视频在[这里](https://www.bilibili.com/video/BV1seHFz1E3u)。
+
+![](https://s2.loli.net/2025/10/15/MbR3sT6AvVhUkHP.png)
+
