@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
       ],
       initialSkin: {
-        url: "/skins/SamuraiCory-Homura2.wsz",
+        url: "/skins/dango_takegasuki.wsz",
       },
       });
 
