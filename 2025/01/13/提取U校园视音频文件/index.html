@@ -6,10 +6,48 @@
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
   <link rel="icon" href="/images/favicon.ico">
 
+  <script>
+    (function () {
+      document.documentElement.classList.add('fonts-loading');
+    }());
+  </script>
+  <style>
+    html.fonts-loading body {
+      opacity: 0;
+    }
+    html.fonts-ready body {
+      opacity: 1;
+      transition: opacity 0.2s ease-in-out;
+    }
+  </style>
+  <noscript>
+    <style>
+      @font-face {
+        font-family: 'Zpix';
+        src: url('/fonts/zpix.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+    </style>
+  </noscript>
+
   <!-- 98.css -->
   <link rel="stylesheet" href="https://unpkg.com/98.css" />
   <!-- hexo win98 CSS -->
   <link rel="stylesheet" href="/css/style.css">
+
+  <script>
+    window.__WIN98_FONT_CONFIG = {
+      family: 'Zpix',
+      url: '/fonts/zpix.ttf',
+      cacheKey: 'win98-zpix-font-v1',
+      loadingClass: 'fonts-loading',
+      readyClass: 'fonts-ready',
+      weight: '400',
+      style: 'normal'
+    };
+  </script>
+  <script src="/js/font-loader.js"></script>
 
   
   
@@ -170,5 +208,4 @@
   <script src="/js/music-player.js"></script>
 </body>
 </html>
-
 

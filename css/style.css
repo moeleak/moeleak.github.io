@@ -1,14 +1,5 @@
 /* source/css/style.css */
 
-/* --- Zpix Font Definition --- */
-@font-face {
-  font-family: 'Zpix';
-  src: url('../fonts/zpix.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* --- Desktop Background and Font --- */
 body.windows-desktop {
   background-color: #008080;
@@ -807,4 +798,3 @@ code * {
 }
 
 /* --- End of Styles --- */
-
