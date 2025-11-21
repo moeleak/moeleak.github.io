@@ -233,6 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
          if (animateFromSource) {
             windowDiv.classList.add('window-opening');
+            // Force reflow so Firefox actually animates from the initial state.
+            void windowDiv.offsetWidth;
             requestAnimationFrame(() => {
                 windowDiv.style.left = `${finalLeft}px`;
                 windowDiv.style.top = `${finalTop}px`;
@@ -365,20 +367,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function makeDraggable(element, handle) {
          let isDragging = false, pointerId = null, startX, startY, initialLeft, initialTop;
+         let viewportWidth = 0, viewportHeight = 0, elementWidth = 0, elementHeight = 0;
+         let handleHeight = 0, minTop = 0, maxTopAllowed = 0, minLeftBound = 0, maxLeftBound = 0;
+         let rafId = null, pendingLeft = 0, pendingTop = 0;
+        let transitionsDisabled = false;
+        let previousTransition = '';
+
+        const schedulePositionUpdate = () => {
+            if (rafId !== null) {
+                return;
+            }
+            rafId = requestAnimationFrame(() => {
+                element.style.left = `${pendingLeft}px`;
+                element.style.top = `${pendingTop}px`;
+                rafId = null;
+            });
+        };
+
+        const disableTransitionsForDrag = (isTrustedEvent) => {
+            if (transitionsDisabled) {
+                return;
+            }
+            transitionsDisabled = true;
+            previousTransition = element.style.transition || '';
+            element.style.transition = 'none';
+            if (isTrustedEvent !== false && element.classList.contains('window-opening')) {
+                element.classList.remove('window-opening');
+            }
+        };
+
         const onPointerMove = (e) => {
             if (!isDragging || e.pointerId !== pointerId) return;
             e.preventDefault();
+            disableTransitionsForDrag(e.isTrusted);
             const deltaX = e.clientX - startX, deltaY = e.clientY - startY;
-            let newLeft = initialLeft + deltaX, newTop = initialTop + deltaY;
-            const VpWidth = window.innerWidth, VpHeight = window.innerHeight;
-            const elWidth = element.offsetWidth, elHeight = element.offsetHeight;
-            const handleHeight = handle.offsetHeight;
-            const minTop = -handleHeight + 10;
-            const maxTopAllowed = VpHeight - handleHeight - 5;
-            newLeft = Math.max(0 - elWidth + 50, Math.min(newLeft, VpWidth - 50));
+            let newLeft = initialLeft + deltaX;
+            let newTop = initialTop + deltaY;
+            newLeft = Math.max(minLeftBound, Math.min(newLeft, maxLeftBound));
             newTop = Math.max(minTop, Math.min(newTop, maxTopAllowed));
-            element.style.left = `${newLeft}px`;
-            element.style.top = `${newTop}px`;
+            pendingLeft = newLeft;
+            pendingTop = newTop;
+            schedulePositionUpdate();
         };
         const onPointerUp = (e) => {
             if (!isDragging || e.pointerId !== pointerId) return;
@@ -387,6 +416,17 @@ document.addEventListener('DOMContentLoaded', () => {
             element.style.removeProperty('user-select');
             document.body.style.removeProperty('user-select');
             document.body.classList.remove('is-dragging-window');
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+                element.style.left = `${pendingLeft}px`;
+                element.style.top = `${pendingTop}px`;
+            }
+            if (transitionsDisabled) {
+                transitionsDisabled = false;
+                element.style.transition = previousTransition;
+                previousTransition = '';
+            }
             if (handle.hasPointerCapture(pointerId)) {
                 try { handle.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
             }
@@ -404,6 +444,15 @@ document.addEventListener('DOMContentLoaded', () => {
             pointerId = e.pointerId;
             startX = e.clientX; startY = e.clientY;
             initialLeft = element.offsetLeft; initialTop = element.offsetTop;
+            viewportWidth = window.innerWidth;
+            viewportHeight = window.innerHeight;
+            elementWidth = element.offsetWidth;
+            elementHeight = element.offsetHeight;
+            handleHeight = handle.offsetHeight;
+            minTop = -handleHeight + 10;
+            maxTopAllowed = viewportHeight - handleHeight - 5;
+            minLeftBound = 0 - elementWidth + 50;
+            maxLeftBound = viewportWidth - 50;
             handle.style.cursor = 'grabbing';
             element.style.userSelect = 'none'; // Prevent text selection during drag
             document.body.style.userSelect = 'none'; // Prevent text selection on body
