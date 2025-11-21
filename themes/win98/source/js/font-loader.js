@@ -7,9 +7,12 @@
   const CACHE_KEY = globalConfig.cacheKey || 'win98-font-cache';
   const FONT_WEIGHT = globalConfig.weight || '400';
   const FONT_STYLE = globalConfig.style || 'normal';
+  const FONT_FORMAT = globalConfig.format || 'truetype';
   const FONT_DISPLAY = globalConfig.display || 'swap';
+  const FONT_MIME = globalConfig.mime || 'font/ttf';
   const LOADING_CLASS = globalConfig.loadingClass || 'fonts-loading';
   const READY_CLASS = globalConfig.readyClass || 'fonts-ready';
+  const FALLBACK_STYLE_ID = 'win98-font-face-fallback';
   const docEl = document.documentElement;
 
   function markReady() {
@@ -18,103 +21,69 @@
   }
 
   function ensureFallbackFontFace() {
-    if (document.getElementById('win98-font-face-fallback')) {
+    if (document.getElementById(FALLBACK_STYLE_ID)) {
       return;
     }
     const styleEl = document.createElement('style');
-    styleEl.id = 'win98-font-face-fallback';
+    styleEl.id = FALLBACK_STYLE_ID;
     styleEl.textContent = (
       '@font-face {' +
       `font-family: '${FONT_FAMILY}';` +
-      `src: url('${FONT_URL}') format('truetype');` +
+      `src: url('${FONT_URL}') format('${FONT_FORMAT}');` +
       `font-weight: ${FONT_WEIGHT};` +
       `font-style: ${FONT_STYLE};` +
+      `font-display: ${FONT_DISPLAY};` +
       '}'
     );
     (document.head || document.documentElement).appendChild(styleEl);
   }
 
-  function getLocalStorage() {
-    try {
-      return window.localStorage || null;
-    } catch (error) {
-      console.warn('[FontLoader] LocalStorage unavailable:', error);
-      return null;
-    }
+  function isCacheStorageAvailable() {
+    return typeof window !== 'undefined' && 'caches' in window;
   }
 
-  function base64ToArrayBuffer(base64) {
-    const binary = window.atob(base64);
-    const buffer = new ArrayBuffer(binary.length);
-    const view = new Uint8Array(buffer);
-    for (let i = 0; i < binary.length; i += 1) {
-      view[i] = binary.charCodeAt(i);
-    }
-    return buffer;
-  }
-
-  function arrayBufferToBase64(buffer) {
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 0x8000;
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode.apply(null, chunk);
-    }
-    return window.btoa(binary);
-  }
-
-  function readFromCache(storage) {
-    if (!storage || !CACHE_KEY) {
-      return null;
-    }
-    const cached = storage.getItem(CACHE_KEY);
-    if (!cached) {
+  async function readFromCache() {
+    if (!isCacheStorageAvailable() || !CACHE_KEY) {
       return null;
     }
     try {
-      return base64ToArrayBuffer(cached);
+      const cache = await window.caches.open(CACHE_KEY);
+      const cachedResponse = await cache.match(FONT_URL);
+      if (!cachedResponse) {
+        return null;
+      }
+      return cachedResponse.arrayBuffer();
     } catch (error) {
-      console.warn('[FontLoader] Failed to parse cached font, clearing cache.', error);
-      storage.removeItem(CACHE_KEY);
+      console.warn('[FontLoader] Failed to read from CacheStorage.', error);
       return null;
     }
   }
 
-  async function fetchAndPersist(storage) {
+  async function persistCache(buffer) {
+    if (!isCacheStorageAvailable() || !CACHE_KEY) {
+      return;
+    }
+    try {
+      const cache = await window.caches.open(CACHE_KEY);
+      const clone = buffer.slice(0);
+      const response = new Response(clone, {
+        headers: { 'Content-Type': FONT_MIME }
+      });
+      await cache.put(FONT_URL, response);
+    } catch (error) {
+      console.warn('[FontLoader] Failed to persist font cache (CacheStorage).', error);
+    }
+  }
+
+  async function fetchFontBuffer() {
     const response = await fetch(FONT_URL, { cache: 'force-cache', credentials: 'omit' });
     if (!response.ok) {
       throw new Error(`[FontLoader] Unable to fetch font: ${response.status} ${response.statusText}`);
     }
-    const buffer = await response.arrayBuffer();
-    if (storage && CACHE_KEY) {
-      try {
-        storage.setItem(CACHE_KEY, arrayBufferToBase64(buffer));
-      } catch (error) {
-        console.warn('[FontLoader] Failed to persist font cache:', error);
-      }
-    }
-    return buffer;
+    return response.arrayBuffer();
   }
 
-  async function getFontBuffer(storage) {
-    const cachedBuffer = readFromCache(storage);
-    if (cachedBuffer) {
-      return cachedBuffer;
-    }
-    return fetchAndPersist(storage);
-  }
-
-  async function ensureFontIsReady() {
-    if (!('fonts' in document) || !window.FontFace) {
-      ensureFallbackFontFace();
-      throw new Error('[FontLoader] Font loading API not supported.');
-    }
-    if (document.fonts.check(`1em "${FONT_FAMILY}"`)) {
-      return;
-    }
-    const storage = getLocalStorage();
-    const buffer = await getFontBuffer(storage);
+  async function loadFontFromBuffer(buffer) {
     const fontFace = new FontFace(FONT_FAMILY, buffer, {
       weight: FONT_WEIGHT,
       style: FONT_STYLE,
@@ -122,6 +91,33 @@
     });
     const loadedFont = await fontFace.load();
     document.fonts.add(loadedFont);
+  }
+
+  async function loadFontWithCache() {
+    const cachedBuffer = await readFromCache();
+    if (cachedBuffer) {
+      try {
+        await loadFontFromBuffer(cachedBuffer);
+        return;
+      } catch (error) {
+        console.warn('[FontLoader] Failed to load cached font, ignoring cache.', error);
+      }
+    }
+    const buffer = await fetchFontBuffer();
+    await loadFontFromBuffer(buffer);
+    persistCache(buffer);
+  }
+
+  async function ensureFontWithCssOnly() {
+    ensureFallbackFontFace();
+  }
+
+  async function ensureFontIsReady() {
+    if (!('fonts' in document) || typeof FontFace === 'undefined') {
+      await ensureFontWithCssOnly();
+      throw new Error('[FontLoader] Font loading API not supported.');
+    }
+    await loadFontWithCache();
   }
 
   (async function run() {
