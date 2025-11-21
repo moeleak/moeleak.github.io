@@ -54,8 +54,6 @@ body.windows-desktop {
   padding: 1px 3px;
   font-size: 11px;
   font-family: "Zpix", "SimSun", "Microsoft YaHei", sans-serif;
-  font-smooth: never;
-  -webkit-font-smoothing: none;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
@@ -125,9 +123,6 @@ body.windows-desktop {
     font-size: 12px;
     line-height: 1.6;
     font-family: "Zpix", "Tahoma", "SimSun", "Microsoft YaHei", "PingFang SC", sans-serif;
-    /* General content font smoothing */
-    font-smooth: never;
-    -webkit-font-smoothing: none;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
 }
@@ -206,8 +201,6 @@ table > tbody > tr > * {
     border-radius: 0;
     font-family: "Zpix", "SimSun", "Microsoft YaHei", sans-serif !important;
     font-size: 13px !important;
-    -webkit-font-smoothing: none;
-    font-smooth: never;
     image-rendering: pixelated;
     min-height: 80px;
     padding: 5px;
@@ -223,8 +216,6 @@ table > tbody > tr > * {
     font-family: "Zpix", "SimSun", "Microsoft YaHei", sans-serif;
     font-size: 13px;
     line-height: 1.6;
-    font-smooth: never;
-    -webkit-font-smoothing: none;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
 }
@@ -381,7 +372,7 @@ table > tbody > tr > * {
 #window-container .window .window-body .gt-comment-delete {
     color: #0000FF; /* Classic link blue */
     text-decoration: none; /* Remove underline from the container */
-    cursor: default; /* Win98 cursor */
+    cursor: pointer; /* Ensure the action feels clickable */
     display: inline-flex;
     align-items: center;
     vertical-align: middle;
@@ -438,6 +429,12 @@ table > tbody > tr > * {
     mask-repeat: no-repeat;
     -webkit-mask-position: center;
     mask-position: center;
+    pointer-events: none; /* Never block clicks on the parent action */
+}
+
+#window-container .window .window-body .gt-comment-like .gt-ico,
+#window-container .window .window-body .gt-comment-reply .gt-ico {
+    pointer-events: none; /* Let clicks go straight to Gitalk's handler */
 }
 
 #window-container .window .window-body .gt-comment-like .gt-ico .gt-svg {
@@ -522,7 +519,6 @@ table > tbody > tr > * {
     /* Font properties (ensure consistency) */
     font-family: "Zpix","Pixelated MS Sans Serif", Arial;
     font-size: 11px;
-    -webkit-font-smoothing: none;
     font-weight: normal; /* Explicitly normal weight */
 }
 
@@ -649,7 +645,6 @@ body.is-dragging-window {
   padding: 2px 8px;
   font-size: 11px;
   font-family: "Zpix", "Pixelated MS Sans Serif", Arial;
-  -webkit-font-smoothing: none;
   font-weight: normal;
   user-select: none;
   cursor: default;
@@ -668,7 +663,6 @@ body.is-dragging-window {
   text-shadow: 1px 1px 0 #fff; /* Win98 经典的“雕刻”文字效果 */
   font-family: "Zpix", "Pixelated MS Sans Serif", Arial;
   font-size: 11px;
-  -webkit-font-smoothing: none;
   font-weight: normal;
   padding: 1px 5px;
   user-select: none;
