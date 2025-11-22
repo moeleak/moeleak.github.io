@@ -10,8 +10,9 @@ comments: true
 [小南](https://xnmoe.com)
 [小桂桂](https://aza.moe)
 [咖啡冰河](https://blog.mysto.cyou)
-[东东's Blog](https://blog.yasking.org)
-[Sana's Blog](https://www.sana-honoka.top)
+[东东](https://blog.yasking.org)
+[Sana](https://www.sana-honoka.top)
+[Guanran928](https://blog.ny4.dev)
 
 如果你想跟我交换友联，可以 [email](mailto://i@leak.moe) 我或长毛象或在这下面留言。
 ```
