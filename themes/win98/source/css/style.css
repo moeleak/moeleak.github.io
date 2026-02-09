@@ -1,17 +1,16 @@
-/* source/css/style.css */
-
-/* --- Desktop Background and Font --- */
 body.windows-desktop {
   background-color: #008080;
-  /* background-image: url('../images/desktop_bg.png'); */
   background-repeat: no-repeat;
   background-size: cover;
   overflow: hidden;
   height: 100vh;
   margin: 0;
+  font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* --- Desktop Icons Layout --- */
 .desktop-icons {
   position: absolute;
   top: 20px;
@@ -53,9 +52,7 @@ body.windows-desktop {
 .desktop-icon span {
   padding: 1px 3px;
   font-size: 11px;
-  font-family: "Zpix", "SimSun", "Microsoft YaHei", sans-serif;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+  font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", sans-serif;
 }
 
 .desktop-icon.selected span {
@@ -64,7 +61,6 @@ body.windows-desktop {
    outline: 1px dotted white;
 }
 
-/* --- Window Container --- */
 #window-container {
     position: absolute;
     top: 0;
@@ -74,7 +70,6 @@ body.windows-desktop {
     pointer-events: none;
 }
 
-/* --- General Window Styling --- */
 #window-container > .window {
     position: absolute;
     pointer-events: auto;
@@ -86,7 +81,6 @@ body.windows-desktop {
     transform-origin: center center;
 }
 
-/* --- Window Opening Animation --- */
 .window-opening {
     transition: opacity 0.25s ease-out,
                 transform 0.25s ease-out,
@@ -96,9 +90,8 @@ body.windows-desktop {
                 height 0.25s ease-out;
 }
 
-/* --- Window Title Bar --- */
 #window-container > .window > .title-bar {
-  font-family: "Zpix", "Tahoma", "SimSun", "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
   cursor: grab;
   user-select: none;
   flex-shrink: 0;
@@ -107,32 +100,26 @@ body.windows-desktop {
     cursor: grabbing;
 }
 
-/* --- Window Resize Handle --- */
 #window-container > .window > div[style*="cursor: nwse-resize"] {
      touch-action: none;
 }
 
-/* --- Window Body (General Content Area) --- */
 #window-container > .window > .window-body {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden; /* Hide by default, code block can enable scroll */
+    overflow-x: hidden;
     box-sizing: border-box;
     padding: 8px;
     min-height: 0;
     font-size: 12px;
     line-height: 1.6;
-    font-family: "Zpix", "Tahoma", "SimSun", "Microsoft YaHei", "PingFang SC", sans-serif;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+    font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
 }
-
 
 table > tbody > tr > * {
-  font-family: "Zpix", "Tahoma", "SimSun", "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
 }
 
-/* --- Image Popup Window Body Specific Styles --- */
 #window-container > .window > .window-body.image-popup-body {
     display: flex;
     justify-content: center;
@@ -142,7 +129,6 @@ table > tbody > tr > * {
     overflow: hidden;
 }
 
-/* --- Headings within Regular Window Body --- */
 #window-container > .window > .window-body:not(.image-popup-body) h1,
 #window-container > .window > .window-body:not(.image-popup-body) h2,
 #window-container > .window > .window-body:not(.image-popup-body) h3,
@@ -155,7 +141,6 @@ table > tbody > tr > * {
 #window-container > .window > .window-body:not(.image-popup-body) h3 { font-size: 1.2em; margin: 0.8em 0 0.3em 0; }
 #window-container > .window > .window-body:not(.image-popup-body) h4 { font-size: 1.1em; margin: 0.7em 0 0.2em 0; }
 
-/* --- Images within Regular Window Body --- */
 #window-container > .window > .window-body:not(.image-popup-body) img {
     display: block;
     margin-left: auto;
@@ -166,7 +151,6 @@ table > tbody > tr > * {
     margin-bottom: 1em;
 }
 
-/* --- Image within Image Popup Window Body --- */
 #window-container > .window > .window-body.image-popup-body img {
     display: block;
     max-width: 100%;
@@ -179,10 +163,6 @@ table > tbody > tr > * {
     box-shadow: 0 0 5px rgba(0,0,0,0.3);
 }
 
-
-/* --- Gitalk Styles (Enhanced for Win98 Look) --- */
-
-/* Reset base container - no extra borders/padding */
 #window-container .window .window-body .gt-container {
     padding: 0;
     margin: 0;
@@ -190,7 +170,6 @@ table > tbody > tr > * {
     background: transparent;
 }
 
-/* Style the main input textarea like a Win98 control */
 #window-container .window .window-body .gt-header-textarea {
     background: #FFF;
     border-top: 1px solid #808080;
@@ -199,9 +178,8 @@ table > tbody > tr > * {
     border-bottom: 1px solid #FFF;
     box-shadow: none;
     border-radius: 0;
-    font-family: "Zpix", "SimSun", "Microsoft YaHei", sans-serif !important;
+    font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", sans-serif !important;
     font-size: 13px !important;
-    image-rendering: pixelated;
     min-height: 80px;
     padding: 5px;
     margin-top: 8px;
@@ -210,17 +188,13 @@ table > tbody > tr > * {
     outline: none;
 }
 
-/* General font settings for Gitalk comments */
 #window-container .window .window-body:not(.image-popup-body) .gt-comment-body,
 #window-container .window .window-body:not(.image-popup-body) .markdown-body {
-    font-family: "Zpix", "SimSun", "Microsoft YaHei", sans-serif;
+    font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", sans-serif;
     font-size: 13px;
     line-height: 1.6;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
 }
 
-/* Hide useless "Markdown is supported" tip */
 #window-container .window .window-body:not(.image-popup-body) .gt-header-controls-tip {
   display: none !important;
 }
@@ -230,7 +204,6 @@ table > tbody > tr > * {
     font-family: inherit !important;
 }
 
-/* Comment list separator */
 #window-container .window .window-body .gt-comments {
   overflow-x: auto;
   margin: 1em 0;
@@ -238,50 +211,45 @@ table > tbody > tr > * {
   border-left: 2px solid #808080;
   border-right: 2px solid #FFF;
   border-bottom: 2px solid #FFF;
-  /*padding: 1px;*/
+
 }
 
-/* Comment layout using Flexbox for proper alignment */
 #window-container .window .window-body .gt-comment {
     box-shadow: none !important;
     border-radius: 0 !important;
     padding: 10px;
     margin-bottom: 10px;
 
-    /* --- MODIFIED: Style to match the sunken code block from the image --- */
-    background: #C0C0C0 !important; /* Use Win98 gray for the background */
+    background: #C0C0C0 !important;
     border-style: solid;
     border-width: 2px;
-    border-top-color: #808080;   /* Shadow */
-    border-left-color: #808080;  /* Shadow */
-    border-bottom-color: #FFF;   /* Highlight */
-    border-right-color: #FFF;    /* Highlight */
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-bottom-color: #FFF;
+    border-right-color: #FFF;
 
-    /* --- Alignment Fix --- */
     display: flex;
-    align-items: flex-start; /* Vertically align to the top */
-    gap: 12px; /* Space between avatar and text */
+    align-items: flex-start;
+    gap: 12px;
 }
 #window-container .window .window-body .gt-comment:last-child {
     margin-bottom: 0;
 }
 
-/* Avatar styling with positioning reset for Flexbox (border removed) */
 #window-container .window .window-body .gt-comment-avatar {
-    position: static; /* Override Gitalk's default 'position: absolute' */
-    flex-shrink: 0;   /* Prevent avatar from shrinking */
-    border: none;     /* Remove the 3D border as requested */
+    position: static;
+    flex-shrink: 0;
+    border: none;
 }
 
-/* Main comment area flex properties */
 #window-container .window .window-body .gt-comment-main {
     background: transparent !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    margin-left: 0 !important; /* Override Gitalk's default margin */
-    flex-grow: 1;              /* Allow content to fill remaining space */
-    min-width: 0;              /* Prevents overflow issues with long content in flex items */
+    margin-left: 0 !important;
+    flex-grow: 1;
+    min-width: 0;
 }
 
 #window-container .window .window-body .gt-comment-content {
@@ -289,10 +257,9 @@ table > tbody > tr > * {
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    margin-left: 0 !important; /* Ensure no residual margin */
+    margin-left: 0 !important;
 }
 
-/* Comment header (username, time) */
 #window-container .window .window-body .gt-comment-header {
     background: transparent;
     border-bottom: none;
@@ -300,18 +267,16 @@ table > tbody > tr > * {
 }
 #window-container .window .window-body .gt-comment-username {
     font-weight: bold;
-    color: #000080; /* Dark blue for username */
+    color: #000080;
 }
 #window-container .window .window-body .gt-comment-meta {
     padding-left: 10px;
 }
 
-/* Comment body text styling */
 #window-container .window .window-body .gt-comment-body {
     color: #000;
 }
 
-/* --- NEW: Style for @mentions --- */
 #window-container .window .window-body .gt-comment-body .user-mention {
     color: #000080;
     font-weight: bold;
@@ -321,19 +286,16 @@ table > tbody > tr > * {
     text-decoration: underline;
 }
 
-/* --- NEW: Style for blockquotes in replies --- */
 #window-container .window .window-body .gt-comment-body blockquote {
     border-left: 2px solid #C0C0C0;
     padding-left: 10px;
-    margin: 8px 0; /* Replaces default browser margin */
-    color: #555; /* Slightly muted text for quotes */
+    margin: 8px 0;
+    color: #555;
 }
 #window-container .window .window-body .gt-comment-body blockquote p {
-    margin: 0; /* Remove paragraph margin inside quote */
+    margin: 0;
 }
 
-
-/* Code within comments styling */
 #window-container .window .window-body .gt-comment-body code {
     background: #C0C0C0;
     font-family: "Courier New", monospace !important;
@@ -343,7 +305,7 @@ table > tbody > tr > * {
     font-size: 12px !important;
 }
 #window-container .window .window-body .gt-comment-body pre {
-    /* Reuse existing pre style */
+
     background: #C0C0C0;
     font-family: "Courier New", monospace;
     font-weight: bold;
@@ -356,8 +318,6 @@ table > tbody > tr > * {
     overflow-x: auto;
 }
 
-
-/* --- Replacing Icons with Custom SVGs --- */
 #window-container .window .window-body .gt-comment-actions {
     margin-top: 8px;
 }
@@ -365,42 +325,37 @@ table > tbody > tr > * {
     margin-right: 15px;
 }
 
-/* General style for ALL action links (like, reply, edit, etc.) */
-#window-container .window .window-body .gt-comment-like,
+#window-container .window .window-body .gt-comment-like {
+    display: none !important;
+}
+
 #window-container .window .window-body .gt-comment-reply,
 #window-container .window .window-body .gt-comment-edit,
 #window-container .window .window-body .gt-comment-delete {
-    color: #0000FF; /* Classic link blue */
-    text-decoration: none; /* Remove underline from the container */
-    cursor: pointer; /* Ensure the action feels clickable */
+    color: #0000FF;
+    text-decoration: none;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     vertical-align: middle;
 }
 
-/* Hover state for ALL action links */
-#window-container .window .window-body .gt-comment-like:hover,
 #window-container .window .window-body .gt-comment-reply:hover,
 #window-container .window .window-body .gt-comment-edit:hover,
 #window-container .window .window-body .gt-comment-delete:hover {
-    color: #FF0000; /* Red on hover for text and icons */
+    color: #FF0000;
 }
 
-/* --- NEW / CORRECTED: Icon Styling with SVG Masks --- */
-
-/* Prepare the icon container inside the links */
-/* Prepare the icon container inside the links */
-#window-container .window .window-body .gt-comment-like .gt-ico,
 #window-container .window .window-body .gt-comment-reply .gt-ico {
     display: inline-block;
-    position: relative; /* [保持] 父元素作为定位参考 */
+    position: relative;
     width: 16px;
     height: 16px;
-    margin-right: 8px; /* --- 修改：从 4px 增加到 8px，增大图标和文字的间距 --- */
-    vertical-align: middle; /* [优化] 确保图标与文字垂直对齐 */
+    margin-right: 8px;
+    vertical-align: middle;
 }
 
-#window-container .window .window-body .gt-comment-like .gt-ico .gt-ico-text {
+#window-container .window .window-body .gt-comment-reply .gt-ico .gt-ico-text {
     display: none
 }
 
@@ -408,181 +363,118 @@ table > tbody > tr > * {
     display: none
 }
 
-
-/* Common style for ALL icons using mask */
-#window-container .window .window-body .gt-comment-like .gt-ico::before,
 #window-container .window .window-body .gt-comment-reply .gt-ico::before {
-    content: ''; /* [关键] 创建伪元素 */
-    position: absolute; /* [关键] 绝对定位以填充父元素 */
+    content: '';
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    
-    /* [核心修复] 使用 currentColor 作为背景，它会继承父链接的颜色 */
-    background-color: currentColor; 
 
-    /* [优化] 确保 mask-size 适应容器 */
+    background-color: currentColor;
+
     -webkit-mask-size: contain;
     mask-size: contain;
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
     -webkit-mask-position: center;
     mask-position: center;
-    pointer-events: none; /* Never block clicks on the parent action */
+    pointer-events: none;
 }
 
-#window-container .window .window-body .gt-comment-like .gt-ico,
 #window-container .window .window-body .gt-comment-reply .gt-ico {
-    pointer-events: none; /* Let clicks go straight to Gitalk's handler */
-}
-
-#window-container .window .window-body .gt-comment-like .gt-ico .gt-svg {
-  display: none
+    pointer-events: none;
 }
 
 #window-container .window .window-body .gt-comment-reply .gt-ico .gt-svg {
   display: none
 }
 
-/* Load Heart SVG using mask-image */
-
-#window-container .window .window-body .gt-comment-like .gt-ico::before {
-    -webkit-mask-image: url(/svgs/heart.svg);
-    mask-image: url(/svgs/heart.svg);
-}
-
-/* Load Reply SVG using mask-image */
 #window-container .window .window-body .gt-comment-reply .gt-ico::before {
     -webkit-mask-image: url(/svgs/reply.svg);
     mask-image: url(/svgs/reply.svg);
 }
 
-
-/* Remove text labels for icon-based actions */
-#window-container .window .window-body a.gt-comment-reply::after,
-#window-container .window .window-body a.gt-comment-like::after {
+#window-container .window .window-body a.gt-comment-reply::after {
     display: none;
 }
 
-/* Keep text for others */
 #window-container .window .window-body a.gt-comment-edit::after,
 #window-container .window .window-body a.gt-comment-delete::after {
-    content: attr(title); /* Use title attribute for text */
+    content: attr(title);
     text-decoration: underline;
 }
 
-/* Hover for text-based actions */
 #window-container .window .window-body a.gt-comment-edit:hover::after,
 #window-container .window .window-body a.gt-comment-delete:hover::after {
     color: #FF0000;
 }
 
-
-/* Fix for reaction count */
-#window-container .window .window-body .gt-action-count {
-    color: #000;
-    text-decoration: underline;
-    margin-left: 5px;
-}
-
-#window-container .window .window-body .gt-comment-like:hover .gt-action-count,
-#window-container .window .window-body .gt-comment-reply:hover .gt-action-count {
-    color: #FF0000;
-}
-
-
-/* --- Gitalk Button Styling (Strict 98.css Style) --- */
-
-/* General style for all Gitalk buttons inside windows */
 #window-container .window .window-body .gt-btn {
-    /* Base styles from 98.css button */
     background: silver;
-    border: none; /* Border effect is via box-shadow */
+    border: none;
     border-radius: 0;
     box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
     box-sizing: border-box;
-    color: #222; /* Use direct color instead of transparent + text-shadow trick */
+    color: #222;
     min-height: 23px;
     min-width: 75px;
     padding: 0 12px;
-    text-shadow: none; /* Reset Gitalk's possible text-shadow */
-    cursor: default; /* Standard Win98 cursor */
+    text-shadow: none;
+    cursor: default;
     user-select: none;
-    line-height: normal; /* Ensure proper vertical alignment */
-    text-transform: none; /* Prevent uppercase if Gitalk does it */
-    transition: none; /* Remove smooth transitions */
-    display: inline-flex; /* Better alignment for content inside */
+    line-height: normal;
+    text-transform: none;
+    transition: none;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    /* Font properties (ensure consistency) */
-    font-family: "Zpix","Pixelated MS Sans Serif", Arial;
+    font-family: "Zpix", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
     font-size: 11px;
-    font-weight: normal; /* Explicitly normal weight */
+    font-weight: normal;
 }
 
-/* Remove background image/gradient from login button if present */
 #window-container .window .window-body .gt-btn {
     background-image: none;
 }
 
-/* Style the primary button (like '评论') and Login button as 'default' */
-/* Target: Second public button in header, and the login button */
-#window-container .window .window-body .gt-header-controls .gt-btn-public:nth-of-type(2),
-#window-container .window .window-body .gt-btn-login {
-  /*
-    box-shadow: inset -2px -2px #0a0a0a, inset 1px 1px #0a0a0a, inset 2px 2px #fff, inset -3px -3px grey, inset 3px 3px #dfdfdf;
-  */
-    /* Optional: default buttons might be bold in some Win98 contexts */
-    /* font-weight: bold; */
-}
-
-/* Active (pressed) state for standard Gitalk buttons */
 #window-container .window .window-body .gt-btn:not([aria-disabled="true"]):active {
     box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px grey;
-    /* Simulate text shift */
-    padding-top: 2px;
-    padding-left: 13px;
-    padding-bottom: 0px; /* Adjust padding for pressed effect */
-    padding-right: 11px;
-}
 
-/* Active (pressed) state for 'default' Gitalk buttons */
-#window-container .window .window-body .gt-header-controls .gt-btn-public:nth-of-type(2):not([aria-disabled="true"]):active,
-#window-container .window .window-body .gt-btn:not([aria-disabled="true"]):active {
-    box-shadow: inset 2px 2px #0a0a0a, inset -1px -1px #0a0a0a, inset -2px -2px #fff, inset 3px 3px grey, inset -3px -3px #dfdfdf;
-    /* Simulate text shift for default button */
     padding-top: 2px;
     padding-left: 13px;
     padding-bottom: 0px;
     padding-right: 11px;
 }
 
-/* Focus state (using focus-visible for better accessibility) */
+#window-container .window .window-body .gt-header-controls .gt-btn-public:nth-of-type(2):not([aria-disabled="true"]):active,
+#window-container .window .window-body .gt-btn:not([aria-disabled="true"]):active {
+    box-shadow: inset 2px 2px #0a0a0a, inset -1px -1px #0a0a0a, inset -2px -2px #fff, inset 3px 3px grey, inset -3px -3px #dfdfdf;
+
+    padding-top: 2px;
+    padding-left: 13px;
+    padding-bottom: 0px;
+    padding-right: 11px;
+}
+
 #window-container .window .window-body .gt-btn:focus-visible {
      outline: 1px dotted #000;
      outline-offset: -4px;
 }
-/* Remove default browser outline when not using keyboard navigation */
+
 #window-container .window .window-body .gt-btn:focus:not(:focus-visible) {
      outline: none;
 }
 
-
-/* Disabled state for Gitalk buttons (assuming aria-disabled="true") */
 #window-container .window .window-body .gt-btn[aria-disabled="true"] {
     color: grey;
     text-shadow: 1px 1px 0 #fff;
-    /* Reset box-shadow or use a specific disabled look if needed */
-    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf; /* Keep standard shadow for consistency unless specified otherwise */
-    /* background-color: #some-disabled-grey; /* Optional: slightly different background? */
+
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+
 }
 
-/* --- End Gitalk Styles --- */
-
-
-/* --- Optional Shake Animation --- */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-3px); }
@@ -590,28 +482,23 @@ table > tbody > tr > * {
 }
 .window-shake { animation: shake 0.3s ease-in-out; }
 
-/* --- Utility Styles --- */
 body.is-dragging-window {
     user-select: none;
     -webkit-user-select: none;
 }
 
-
 #window-container > .window > .window-body:not(.image-popup-body) pre code.hljs {
-    white-space: pre-wrap !important;   /* Preserve whitespace but wrap lines */
-    word-break: break-word !important;  /* Break long words/strings if necessary */
-    overflow-x: hidden !important;      /* Prevent internal horizontal scrollbar */
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-x: hidden !important;
 }
 
-/* --- Window Resizer Handle Styling --- */
 .window-resizer {
-    /* 默认 (桌面端) 尺寸 */
     width: 15px;
     height: 15px;
     transition: width 0.1s ease, height 0.1s ease;
 }
 
-/* --- Responsive Tables --- */
 .table-wrapper {
   overflow-x: auto;
   margin: 1em 0;
@@ -623,15 +510,12 @@ body.is-dragging-window {
 }
 
 .table-wrapper table {
-  /* 确保表格不会被强制压缩 */
   width: 100%;
   min-width: 500px;
   border-collapse: collapse;
   margin: 0;
 }
 
-
-/* --- Code Block Copy Button --- */
 .code-block-wrapper {
   position: relative;
   margin: 1em 0;
@@ -644,7 +528,7 @@ body.is-dragging-window {
 .copy-code-button {
   padding: 2px 8px;
   font-size: 11px;
-  font-family: "Zpix", "Pixelated MS Sans Serif", Arial;
+  font-family: "Zpix", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
   font-weight: normal;
   user-select: none;
   cursor: default;
@@ -654,45 +538,37 @@ body.is-dragging-window {
     border-color: #808080 #dfdfdf #dfdfdf #808080;
 }
 
-/* --- Code Block Language Label --- */
 .code-language-label {
   position: absolute;
   top: 0px;
   left: 8px;
   color: grey;
-  text-shadow: 1px 1px 0 #fff; /* Win98 经典的“雕刻”文字效果 */
-  font-family: "Zpix", "Pixelated MS Sans Serif", Arial;
+  text-shadow: 1px 1px 0 #fff;
+  font-family: "Zpix", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
   font-size: 11px;
   font-weight: normal;
   padding: 1px 5px;
   user-select: none;
-  pointer-events: none; /* 确保标签不可点击 */
-  text-transform: uppercase; /* 让语言名称大写，如 JS, CSS */
+  pointer-events: none;
+  text-transform: uppercase;
 }
-
-
-/* --- Media Checking For Mobiles --- */
 
 @media (pointer: coarse) {
     .window-resizer {
-        width: 35px; 
+        width: 35px;
         height: 35px;
     }
 }
 
-/* --- HighlightJS Styles --- */
-
-/* 去掉 highlight.js / Rouge 生成的外框 */
 figure.highlight,
 figure.highlight table {
-  background: #C0C0C0 !important;   /* 跟 pre 保持一致 */
-  border: none !important;          /* 去边框 */
+  background: #C0C0C0 !important;
+  border: none !important;
   border-collapse: collapse;
-  margin: 0 !important;             /* 去默认外距 */
-  padding: 0 !important;            /* 去默认内距 */
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-/* 如果你用的是 Rouge（Jekyll 默认）会有 .gutter / .code 两列 */
 figure.highlight td,
 figure.highlight .gutter,
 figure.highlight .code {
@@ -700,10 +576,9 @@ figure.highlight .code {
   border: none !important;
 }
 
-/* 让真正的 <pre> 继续保留 3D 凹凸效果 */
 figure.highlight pre {
-  margin: 0;        /* 别再留空隙 */
-  padding: 8px;     /* 和你原先一样 */
+  margin: 0;
+  padding: 8px;
 }
 
 pre code.hljs {
@@ -714,11 +589,7 @@ pre code.hljs {
 code.hljs {
   padding: 3px 5px
 }
-/*
 
-Visual Studio-like style based on original C# coloring by Jason Diamond <jason@diamond.name>
-
-*/
 .hljs {
   background: #C0C0C0;
   color: black
@@ -770,25 +641,21 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   font-weight: bold
 }
 
-
 pre {
-  background: #C0C0C0;          /* Win98 灰 */
+  background: #C0C0C0;
   font-family: "Courier New", monospace;
   font-weight: bold;
-  padding: 8px;                 /* 内边距 */
-  border-top:    2px solid #FFF;      /* 高光（上） */
-  border-left:   2px solid #FFF;      /* 高光（左） */
-  border-right:  2px solid #808080;   /* 阴影（右） */
-  border-bottom: 2px solid #808080;   /* 阴影（下） */
-  margin: 1em 0;                 /* 与正文留白，可按需调 */
-  overflow-x: auto;              /* 代码过长时横向滚动 */
+  padding: 8px;
+  border-top:    2px solid #FFF;
+  border-left:   2px solid #FFF;
+  border-right:  2px solid #808080;
+  border-bottom: 2px solid #808080;
+  margin: 1em 0;
+  overflow-x: auto;
 }
 
 code,
 code * {
   font-family: 'Courier New', monospace !important;
   font-weight: bold !important;
-  image-rendering:pixelated;
 }
-
-/* --- End of Styles --- */

@@ -63,11 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const clampedHeight = Math.min(targetHeight, window.innerHeight - 2 * margin - 30);
         const maxLeft = screenWidth - clampedWidth - margin;
         const maxTop = window.innerHeight - clampedHeight - margin - 30;
-        const placementOffset = (windowContainer.childElementCount % 5) * 20;
-        const randomLeft = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxLeft - 100)) + placementOffset);
-        const randomTop = Math.max(margin, Math.floor(Math.random() * Math.max(margin, maxTop - 100)) + placementOffset);
-        const finalLeft = randomLeft;
-        const finalTop = randomTop;
+        const cascadeStep = 24;
+        const cascadeIndex = windowContainer.childElementCount % 6;
+        const baseLeft = Math.round((screenWidth - clampedWidth) / 2);
+        const baseTop = Math.round((window.innerHeight - clampedHeight) / 2);
+        let finalLeft = baseLeft + cascadeIndex * cascadeStep;
+        let finalTop = baseTop + cascadeIndex * cascadeStep;
+        finalLeft = Math.max(margin, Math.min(finalLeft, maxLeft));
+        finalTop = Math.max(margin, Math.min(finalTop, maxTop));
         const finalWidth = clampedWidth;
         const finalHeight = clampedHeight;
 
@@ -149,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         const baseUrl = '/';
                         const targetUrl = baseUrl + (currentPath === baseUrl && (currentSearch.includes('code=') || currentSearch.includes('state=')) ? currentSearch : '');
-                        // If the top window is non-content (e.g. image), revert to desktop title unless it has its own title bar text
                         const titleForNonContent = newTopTitle || null; // Use title bar text if available, else null for desktop
                         const expectedFullTitle = setDocumentTitle(titleForNonContent);
                         if (currentFullUrl !== targetUrl || document.title !== expectedFullTitle) {
@@ -159,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                  } else {
-                     // Should not happen if remainingWindows.length > 0, but handle defensively
                      const baseUrl = '/';
                      const targetUrl = baseUrl + (currentPath === baseUrl && (currentSearch.includes('code=') || currentSearch.includes('state=')) ? currentSearch : '');
                      const expectedFullDesktopTitle = setDocumentTitle(null);
@@ -188,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 highestZIndex++;
                 windowDiv.style.zIndex = highestZIndex;
             }
-            // Always ensure title is correct for the top window, even if z-index didn't change (e.g., content loaded)
              const windowUrlPath = windowDiv.dataset.contentUrl;
              const currentTitleInBar = titleText.textContent;
 
@@ -210,15 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
              } else { // Non-content window (image popup etc.) or Desktop background interaction
                  const expectedFullTitle = setDocumentTitle(currentTitleInBar); // Use title bar text
-                 // Don't change URL, just update title if needed
                  if (document.title !== expectedFullTitle) {
-                    // setDocumentTitle handles setting document.title
                  } else {
                     setDocumentTitle(currentTitleInBar); // Ensure it's set even if not changed
                  }
              }
         };
-        // Attach bringToFront to pointerdown. Use capture phase to ensure it runs before drag starts.
         windowDiv.addEventListener('pointerdown', bringToFront, true);
 
         makeDraggable(windowDiv, titleBar);
@@ -233,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
          if (animateFromSource) {
             windowDiv.classList.add('window-opening');
-            // Force reflow so Firefox actually animates from the initial state.
             void windowDiv.offsetWidth;
             requestAnimationFrame(() => {
                 windowDiv.style.left = `${finalLeft}px`;
@@ -272,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
            }
         } else if (isInitialLoad && isAutoOpen) {
              isInitialLoad = false; // Mark initial load done even for non-content auto-open
-             // Ensure title is set correctly if this non-content window is the only one
              if(windowContainer.querySelectorAll('.window').length === 1) {
                  setDocumentTitle(title);
              }
@@ -356,11 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Ensure bringToFront is called once after creation if it's the top window
         if (parseInt(windowDiv.style.zIndex) === highestZIndex) {
              bringToFront();
         }
-
 
         return windowDiv;
     }
@@ -436,9 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.removeEventListener('pointercancel', onPointerUp);
         };
         const onPointerDown = (e) => {
-            // Prevent drag initiation on controls, resize handle, or non-left mouse clicks
             if (e.target.closest('.title-bar-controls') || (e.pointerType === 'mouse' && e.button !== 0) || e.target.classList.contains('window-resizer')) return;
-            // Also ensure pointerdown on window activates it first (handled by capture phase listener)
 
             isDragging = true;
             pointerId = e.pointerId;
@@ -457,7 +448,6 @@ document.addEventListener('DOMContentLoaded', () => {
             element.style.userSelect = 'none'; // Prevent text selection during drag
             document.body.style.userSelect = 'none'; // Prevent text selection on body
             document.body.classList.add('is-dragging-window'); // Add class for potential global styles
-            // e.preventDefault(); // Don't prevent default here, let capture phase listener run first
             e.stopPropagation(); // Stop propagation after handling
             handle.style.touchAction = 'none'; // Disable scrolling etc. on the handle during drag
             try { handle.setPointerCapture(pointerId); } catch (err) { /* ignore */ } // Capture pointer events to the handle
@@ -484,10 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const minHeight = parseInt(computedStyle.minHeight || '100', 10);
             newWidth = Math.max(minWidth, newWidth);
             newHeight = Math.max(minHeight, newHeight);
-            // Prevent resizing that pushes the window off-screen negatively
-            // Note: This simple check doesn't prevent resizing off right/bottom, more complex checks needed if required
-            // newWidth = Math.max(minWidth, initialLeft + newWidth > 0 ? newWidth : minWidth);
-            // newHeight = Math.max(minHeight, initialTop + newHeight > 0 ? newHeight : minHeight);
             element.style.width = `${newWidth}px`;
             element.style.height = `${newHeight}px`;
         };
@@ -506,7 +492,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const onPointerDown = (e) => {
             if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left mouse button
-             // Ensure pointerdown on window activates it first (handled by capture phase listener)
             isResizing = true;
             pointerId = e.pointerId;
             startX = e.clientX;
@@ -531,28 +516,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function enhanceContentLoaded(parentElement) {
       if (!parentElement) return;
-    
-      // 1. 处理代码块：添加包裹层、复制代码按钮和语言标签
+
       const codeBlocks = parentElement.querySelectorAll('pre');
       codeBlocks.forEach(pre => {
-        // 防止重复添加
         if (pre.parentNode.classList.contains('code-block-wrapper')) {
           return;
         }
-    
+
         const wrapper = document.createElement('div');
         wrapper.className = 'code-block-wrapper';
-    
-        // 将 pre 元素移动到 wrapper 中
+
         pre.parentNode.insertBefore(wrapper, pre);
         wrapper.appendChild(pre);
-    
-        // --- 创建并添加“复制代码”按钮 ---
+
         const button = document.createElement('button');
         button.className = 'copy-code-button';
         button.textContent = '复制';
         wrapper.appendChild(button);
-    
+
         button.addEventListener('click', () => {
           const code = pre.querySelector('code')?.innerText || pre.innerText;
           navigator.clipboard.writeText(code).then(() => {
@@ -570,14 +551,12 @@ document.addEventListener('DOMContentLoaded', () => {
               }, 2000);
             });
         });
-    
-        // --- 新增：创建并添加语言标签 ---
+
         const codeElement = pre.querySelector('code');
         if (codeElement) {
-            // 从 class 中匹配 "language-xxx"
             const langMatch = codeElement.className.match(/hljs (\S+)/);
             const language = langMatch ? langMatch[1] : null;
-    
+
             if (language) {
                 const langLabel = document.createElement('span');
                 langLabel.className = 'code-language-label';
@@ -586,11 +565,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
       });
-    
-      // 2. 处理表格：添加包裹层以实现水平滚动
+
       const tables = parentElement.querySelectorAll('table');
       tables.forEach(table => {
-        // 防止重复包裹
         if (table.parentNode.classList.contains('table-wrapper')) {
           return;
         }
@@ -600,7 +577,6 @@ document.addEventListener('DOMContentLoaded', () => {
         wrapper.appendChild(table);
       });
     }
-
 
     function setupWindowInteractions(parentElement) {
         if (!parentElement || (parentElement.dataset && parentElement.dataset.interactionListenerAttached === 'true')) {
@@ -756,7 +732,6 @@ document.addEventListener('DOMContentLoaded', () => {
                  const fullTitleFromState = stateObject ? stateObject.title : null; // History state often stores the full title string
 
                  if (fullTitleFromState) {
-                    // Attempt to extract base title from full state title
                     const expectedSuffix = ` — ${blogTitle}`;
                     const expectedPrefix = "「";
                     const expectedSuffixEnd = "」";
@@ -787,7 +762,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     windowIdToUse: targetWindowId
                  });
 
-                 // Ensure history state is accurate after potential creation/update
                  const finalUrlForHistory = currentFullUrl; // Use the actual current URL
                  const finalTitle = newWindow.querySelector('.title-bar-text').textContent || title;
                  const finalWindowId = newWindow.id;
@@ -809,11 +783,8 @@ document.addEventListener('DOMContentLoaded', () => {
              });
 
              if (topWin) {
-                  // If a content window still exists, navigating to '/' likely means we should focus it.
-                  // Dispatching pointerdown will trigger bringToFront, which updates URL/title correctly.
                   topWin.dispatchEvent(new Event('pointerdown', { bubbles: true }));
              } else {
-                 // No content windows left, ensure state is root URL and desktop title.
                  const rootUrl = currentFullUrl; // Use the actual current URL (which is '/' + search)
                  const expectedFullRootTitle = setDocumentTitle(null); // Desktop title
                  if (!history.state || history.state.windowUrl !== rootUrl || document.title !== expectedFullRootTitle) {
