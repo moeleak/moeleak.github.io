@@ -115,17 +115,8 @@ search:
   field: post
   content: true
 
-# Deployment
-## Docs: https://hexo.io/docs/one-command-deployment
-deploy:
-  type: 'git'
-  repo: 'git@github.com:moeleak/moeleak.github.io.git'
-  branch: master
-
-
 feed:
   type: atom
   path: atom.xml
   limit: 20
-
 
