@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
           console.error('[Music Player] CRITICAL: Could not find #webamp root container!');
         }
-        // ==========================================================
 
       } else {
         console.error('[Music Player] FATAL: window.getWin98HighestZIndex function not found!');
@@ -37,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
 
-    // 首次打开时，也触发一次置顶
     bringWebampGroupToFront();
   };
 
@@ -116,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
             artist: "宋冬野",
             title: "董小姐",
           },
-          url: "https://download.leak.moe/files/69034184a25a8/ClariS%20-%20%E3%82%B3%E3%83%8D%E3%82%AF%E3%83%88.mp3"
+          url: "https://download.leak.moe/share/6903446d50625/%E8%91%A3%E5%B0%8F%E5%A7%90%20-%20%E5%AE%8B%E5%86%AC%E9%87%8E.m4a"
         },
       ],
       initialSkin: {
@@ -143,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const newZIndex = window.getWin98HighestZIndex();
         webampRoot.style.zIndex = newZIndex;
 
-        // 确保所有窗口都可见
         const selectors = ['#main-window', '#playlist-window', '#equalizer-window'];
         selectors.forEach(selector => {
           const el = document.querySelector(selector);
