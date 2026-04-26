@@ -1,6 +1,113 @@
 document.addEventListener('DOMContentLoaded', function () {
   const musicPlayerIcon = document.getElementById('icon-musicplayer');
   let webampInstance = null;
+  let musicTask = null;
+  const webampWindowSelectors = ['#main-window', '#playlist-window', '#equalizer-window'];
+
+  const getWebampRoot = () => document.getElementById('webamp');
+  const getMainWindow = () => document.querySelector('#main-window') || getWebampRoot();
+  const getWebampWindows = () => webampWindowSelectors
+    .map((selector) => document.querySelector(selector))
+    .filter(Boolean);
+
+  const isMusicVisible = () => {
+    const root = getWebampRoot();
+    const mainWindow = document.querySelector('#main-window');
+    return !!root && root.style.display !== 'none' && !!mainWindow && mainWindow.style.display !== 'none';
+  };
+
+  const registerMusicTask = () => {
+    if (musicTask || !window.Win98Shell?.registerTask) return musicTask;
+
+    musicTask = window.Win98Shell.registerTask({
+      id: 'music-player',
+      title: '音乐播放器',
+      iconSrc: musicPlayerIcon.querySelector('img')?.getAttribute('src') || '/images/icon_musicplayer.png',
+      onClick: () => {
+        if (!webampInstance && !document.querySelector('#main-window')) {
+          initWebamp();
+          return;
+        }
+
+        if (isMusicVisible() && musicTask?.button.classList.contains('is-active')) {
+          minimizeMusicPlayer();
+        } else {
+          showMusicPlayer();
+        }
+      }
+    });
+
+    return musicTask;
+  };
+
+  const setMusicTaskState = ({ active, minimized }) => {
+    const task = registerMusicTask();
+    task?.setActive(active);
+    task?.setMinimized(minimized);
+  };
+
+  const setWebampVisible = (visible) => {
+    const root = getWebampRoot();
+    if (root) root.style.display = visible ? 'block' : 'none';
+
+    getWebampWindows().forEach((element) => {
+      if (visible && element.style.display === 'none') {
+        element.style.display = 'block';
+      }
+    });
+  };
+
+  const bringMusicToFront = () => {
+    const root = getWebampRoot();
+    if (!root || typeof window.getWin98HighestZIndex !== 'function') return;
+    root.style.zIndex = window.getWin98HighestZIndex();
+    setMusicTaskState({ active: true, minimized: false });
+  };
+
+  const showMusicPlayer = () => {
+    if (!webampInstance && !document.querySelector('#main-window')) {
+      initWebamp();
+      return;
+    }
+
+    const task = registerMusicTask();
+    setWebampVisible(true);
+    const root = getWebampRoot();
+    const mainWindow = getMainWindow();
+
+    if (root && mainWindow && task?.animateFromButton) {
+      root.style.visibility = 'hidden';
+      task.animateFromButton(mainWindow, () => {
+        root.style.visibility = '';
+        bringMusicToFront();
+      });
+    } else {
+      bringMusicToFront();
+    }
+  };
+
+  const minimizeMusicPlayer = () => {
+    const task = registerMusicTask();
+    const root = getWebampRoot();
+    const mainWindow = getMainWindow();
+
+    if (!root) return;
+
+    const finish = () => {
+      setWebampVisible(false);
+      setMusicTaskState({ active: false, minimized: true });
+    };
+
+    if (mainWindow && task?.animateToButton) {
+      root.style.visibility = 'hidden';
+      task.animateToButton(mainWindow, () => {
+        root.style.visibility = '';
+        finish();
+      });
+    } else {
+      finish();
+    }
+  };
 
   if (!musicPlayerIcon) {
     console.error('Required elements for music player not found.');
@@ -8,35 +115,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   const manageWebampWindowsZIndex = () => {
-    const webampWindowSelectors = ['#main-window', '#playlist-window', '#equalizer-window'];
-
-    const bringWebampGroupToFront = () => {
-      if (typeof window.getWin98HighestZIndex === 'function') {
-        const newZIndex = window.getWin98HighestZIndex();
-        const webampRoot = document.getElementById('webamp');
-        if (webampRoot) {
-          console.log(`[Music Player] Setting z-index for #webamp ROOT container: ${newZIndex}`);
-          webampRoot.style.zIndex = newZIndex;
-        } else {
-          console.error('[Music Player] CRITICAL: Could not find #webamp root container!');
-        }
-
-      } else {
-        console.error('[Music Player] FATAL: window.getWin98HighestZIndex function not found!');
-      }
-    };
-
-    webampWindowSelectors.forEach(selector => {
-      const el = document.querySelector(selector);
-      if (el) {
-        console.log(`[Music Player] Successfully found and attached listener to ${selector}`);
-        el.addEventListener('pointerdown', bringWebampGroupToFront);
-      } else {
-        console.warn(`[Music Player] Could not find element ${selector} to attach listener.`);
-      }
+    getWebampWindows().forEach((element) => {
+      element.addEventListener('pointerdown', bringMusicToFront);
     });
 
-    bringWebampGroupToFront();
+    bringMusicToFront();
   };
 
   const initWebamp = () => {
@@ -124,6 +207,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     return webamp.renderWhenReady(document.getElementById('webamp-container')).then(() => {
       webampInstance = webamp;
+      registerMusicTask();
+      setWebampVisible(true);
       setTimeout(manageWebampWindowsZIndex, 0);
       return webamp;
     });
@@ -132,26 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
   musicPlayerIcon.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
-
-    const webampWindow = document.querySelector('#main-window');
-
-    if (webampWindow) {
-      const webampRoot = document.getElementById('webamp');
-      if (webampRoot && typeof window.getWin98HighestZIndex === 'function') {
-        const newZIndex = window.getWin98HighestZIndex();
-        webampRoot.style.zIndex = newZIndex;
-
-        const selectors = ['#main-window', '#playlist-window', '#equalizer-window'];
-        selectors.forEach(selector => {
-          const el = document.querySelector(selector);
-          if (el && el.style.display === 'none') {
-            el.style.display = 'block';
-          }
-        });
-      }
-    } else {
-      initWebamp();
-    }
+    showMusicPlayer();
   });
 });
 

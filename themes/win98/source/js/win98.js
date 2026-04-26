@@ -1,799 +1,1173 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const windowContainer = document.getElementById('window-container');
-    if (!windowContainer) {
-        return;
+  const windowContainer = document.getElementById('window-container');
+  if (!windowContainer) return;
+
+  const blogTitle = document.body.dataset.blogTitle || document.title || 'Blog';
+  const desktopTitle = 'Desktop';
+  const mobileBreakpoint = 768;
+  const windowMargin = 10;
+  const cascadeStep = 24;
+  const animationDuration = 160;
+  const defaultDocumentIcon = '/images/icon_notepad.png';
+  const defaultImageIcon = '/images/icon_image.png';
+
+  let highestZIndex = 10;
+  let isInitialLoad = true;
+  let activeExternalTaskId = null;
+  const taskbarIconCache = new Map();
+
+  window.getWin98HighestZIndex = () => ++highestZIndex;
+
+  const taskbar = ensureTaskbar();
+  function ensureTaskbar() {
+    let bar = document.getElementById('win98-taskbar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'win98-taskbar';
+      bar.className = 'win98-taskbar';
+      document.body.appendChild(bar);
     }
-    let highestZIndex = 10;
-    window.getWin98HighestZIndex = () => {
-      highestZIndex++;
-      return highestZIndex;
+
+    bar.querySelector('.win98-start-button')?.remove();
+
+    let taskList = bar.querySelector('.win98-task-list');
+    if (!taskList) {
+      taskList = document.createElement('div');
+      taskList.className = 'win98-task-list';
+      taskList.setAttribute('aria-label', '打开的窗口');
+      bar.prepend(taskList);
+    }
+
+    bar.querySelector('.win98-task-clock')?.remove();
+
+    return bar;
+  }
+
+  function getTaskList() {
+    return taskbar.querySelector('.win98-task-list');
+  }
+
+  function getTaskbarHeight() {
+    return taskbar ? taskbar.offsetHeight || 30 : 0;
+  }
+
+  function setDocumentTitle(title) {
+    const currentTitle = title || desktopTitle;
+    const fullTitle = `[${currentTitle}] - ${blogTitle}`;
+    document.title = fullTitle;
+    return fullTitle;
+  }
+
+  function normalizePath(path) {
+    if (path !== '/' && !path.endsWith('/') && !path.includes('.')) {
+      return `${path}/`;
+    }
+    return path;
+  }
+
+  function isRoutablePath(path) {
+    return path !== '/' && !path.endsWith('/index.html') && !path.includes('.');
+  }
+
+  function currentRoutePath() {
+    return normalizePath(location.pathname);
+  }
+
+  function currentFullUrl() {
+    return `${location.pathname}${location.search}${location.hash}`;
+  }
+
+  function hasGitalkQuery() {
+    return location.search.includes('code=') || location.search.includes('state=');
+  }
+
+  function getWindowTitle(win) {
+    return win.dataset.windowTitle || win.querySelector('.title-bar-text')?.textContent || '窗口';
+  }
+
+  function getWindowIcon(win) {
+    return win.dataset.iconSrc || defaultDocumentIcon;
+  }
+
+  function getIconFromLink(link) {
+    const image = link.querySelector('img');
+    if (image) return image.getAttribute('src') || image.currentSrc || image.src;
+    return getIconForUrl(link.getAttribute('href'));
+  }
+
+  function getIconForUrl(url) {
+    try {
+      const path = normalizePath(new URL(url, location.origin).pathname);
+      const matchingIcon = Array.from(document.querySelectorAll('.desktop-icon[href]')).find((icon) => {
+        return normalizePath(new URL(icon.getAttribute('href'), location.origin).pathname) === path;
+      });
+      const image = matchingIcon?.querySelector('img');
+      return image?.getAttribute('src') || image?.currentSrc || image?.src || defaultDocumentIcon;
+    } catch (error) {
+      return defaultDocumentIcon;
+    }
+  }
+
+  function setTaskButtonContent(button, label, iconSrc) {
+    const icon = document.createElement('img');
+    const text = document.createElement('span');
+    const resolvedIconSrc = iconSrc || defaultDocumentIcon;
+
+    icon.className = 'win98-task-icon';
+    icon.src = resolvedIconSrc;
+    icon.alt = '';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.dataset.iconSource = resolvedIconSrc;
+    applyPixelPerfectTaskIcon(icon, resolvedIconSrc);
+
+    text.className = 'win98-task-title';
+    text.textContent = label;
+
+    button.replaceChildren(icon, text);
+    button.title = label;
+  }
+
+  function applyPixelPerfectTaskIcon(image, src) {
+    if (!(image instanceof HTMLImageElement) || !src) return;
+
+    const cachedIcon = taskbarIconCache.get(src);
+    if (cachedIcon) {
+      image.src = cachedIcon;
+      return;
+    }
+
+    const source = new Image();
+    source.decoding = 'sync';
+    source.addEventListener('load', () => {
+      const canvas = document.createElement('canvas');
+      const size = 16;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      canvas.width = size;
+      canvas.height = size;
+      context.imageSmoothingEnabled = false;
+
+      const scale = Math.min(size / source.naturalWidth, size / source.naturalHeight);
+      const drawWidth = Math.max(1, Math.round(source.naturalWidth * scale));
+      const drawHeight = Math.max(1, Math.round(source.naturalHeight * scale));
+      const offsetX = Math.floor((size - drawWidth) / 2);
+      const offsetY = Math.floor((size - drawHeight) / 2);
+
+      context.clearRect(0, 0, size, size);
+      context.drawImage(source, offsetX, offsetY, drawWidth, drawHeight);
+
+      const rasterizedIcon = canvas.toDataURL('image/png');
+      taskbarIconCache.set(src, rasterizedIcon);
+      if (image.dataset.iconSource === src) image.src = rasterizedIcon;
+    }, { once: true });
+    source.src = src;
+  }
+
+  function setWindowTitle(win, title) {
+    const nextTitle = title || '窗口';
+    win.dataset.windowTitle = nextTitle;
+    win.querySelector('.title-bar-text').textContent = nextTitle;
+    updateTaskButton(win);
+  }
+
+  function getHistoryUrl(win) {
+    const contentUrl = win.dataset.contentUrl;
+    if (!contentUrl) return '/';
+
+    const contentPath = normalizePath(new URL(contentUrl, location.origin).pathname);
+    if (contentPath === currentRoutePath() && hasGitalkQuery()) {
+      return `${contentPath}${location.search}`;
+    }
+    return contentUrl;
+  }
+
+  function writeHistory(win, method = 'replaceState') {
+    if (!win.dataset.contentUrl) {
+      setDocumentTitle(getWindowTitle(win));
+      return;
+    }
+
+    const url = getHistoryUrl(win);
+    const title = getWindowTitle(win);
+    const fullTitle = setDocumentTitle(title);
+    const state = { windowUrl: url, windowId: win.id, title };
+    const realMethod = method === 'pushState' && currentFullUrl() !== url ? 'pushState' : 'replaceState';
+
+    try {
+      history[realMethod](state, fullTitle, url);
+    } catch (error) {
+      // Keep navigation usable when History API rejects an edge-case URL.
+    }
+  }
+
+  function writeDesktopHistory() {
+    activeExternalTaskId = null;
+    const url = currentRoutePath() === '/' && hasGitalkQuery() ? `/${location.search}` : '/';
+    const title = setDocumentTitle(null);
+    try {
+      history.replaceState({ windowUrl: url, title: desktopTitle }, title, url);
+    } catch (error) {
+      // Ignore History API failures.
+    }
+  }
+
+  function getDesktopArea() {
+    return {
+      width: window.innerWidth,
+      height: Math.max(0, window.innerHeight - getTaskbarHeight())
     };
-    let isInitialLoad = true;
-    const blogTitle = document.body.dataset.blogTitle;
-    const DESKTOP_TITLE_PLACEHOLDER = "Desktop";
+  }
 
-    function setDocumentTitle(pageTitle) {
-        const effectiveTitle = pageTitle || DESKTOP_TITLE_PLACEHOLDER;
-        const fullTitle = `[${effectiveTitle}] - ${blogTitle}`;
-        document.title = fullTitle;
-        return fullTitle;
+  function getWindowPlacement() {
+    const area = getDesktopArea();
+    const defaultWidth = area.width < mobileBreakpoint ? Math.min(area.width - 20, 300) : 530;
+    const defaultHeight = area.width < mobileBreakpoint ? Math.min(area.height - 20, 400) : 640;
+    const width = Math.max(200, Math.min(defaultWidth, area.width - windowMargin * 2));
+    const height = Math.max(150, Math.min(defaultHeight, area.height - windowMargin * 2));
+    const cascadeIndex = getOpenWindows().length % 6;
+    const maxLeft = Math.max(windowMargin, area.width - width - windowMargin);
+    const maxTop = Math.max(windowMargin, area.height - height - windowMargin);
+    const baseLeft = Math.round((area.width - width) / 2);
+    const baseTop = Math.round((area.height - height) / 2);
+
+    return {
+      width,
+      height,
+      left: Math.max(windowMargin, Math.min(baseLeft + cascadeIndex * cascadeStep, maxLeft)),
+      top: Math.max(windowMargin, Math.min(baseTop + cascadeIndex * cascadeStep, maxTop))
+    };
+  }
+
+  function getMaximizedPlacement() {
+    const area = getDesktopArea();
+    return {
+      left: 0,
+      top: 0,
+      width: area.width,
+      height: area.height
+    };
+  }
+
+  function createWindow(title, contentIdentifier, options = {}) {
+    const {
+      sourceX,
+      sourceY,
+      animateFromSource = false,
+      isAutoOpen = false,
+      isImagePopup = false,
+      windowIdToUse,
+      historyMode = 'pushState',
+      iconSrc
+    } = options;
+
+    const existingWindow = windowIdToUse ? document.getElementById(windowIdToUse) : null;
+    if (existingWindow) {
+      activateWindow(existingWindow, { updateHistory: historyMode !== 'none' });
+      return existingWindow;
     }
 
-    function createWindow(title, contentIdentifier, options = {}) {
-        const {
-            sourceX,
-            sourceY,
-            animateFromSource = false,
-            isAutoOpen = false,
-            isImagePopup = false,
-            windowIdToUse
-        } = options;
+    const win = document.createElement('div');
+    const body = document.createElement('div');
+    const placement = getWindowPlacement();
+    const titleBar = createTitleBar(title, {
+      onMinimize: () => minimizeWindow(win),
+      onMaximize: () => toggleMaximizeWindow(win),
+      onClose: () => closeWindow(win)
+    });
+    const windowId = windowIdToUse || `window-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-        highestZIndex++;
-        const windowId = windowIdToUse || `window-${Date.now()}`;
-        const contentUrl = !isImagePopup ? contentIdentifier : null;
-        const imageSrc = isImagePopup ? contentIdentifier : null;
+    win.className = 'window';
+    win.id = windowId;
+    win.dataset.windowTitle = title;
+    win.dataset.iconSrc = iconSrc || (isImagePopup ? defaultImageIcon : getIconForUrl(contentIdentifier));
+    win.style.position = 'absolute';
+    win.style.zIndex = String(++highestZIndex);
 
-        if (document.getElementById(windowId)) {
-            const existingWindow = document.getElementById(windowId);
-            existingWindow.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-            return existingWindow;
-        }
-
-        const windowDiv = document.createElement('div');
-        windowDiv.className = 'window';
-        windowDiv.id = windowId;
-        windowDiv.style.position = 'absolute';
-        windowDiv.style.zIndex = highestZIndex;
-        if (contentUrl) {
-            windowDiv.dataset.contentUrl = contentUrl;
-        }
-        if (imageSrc) {
-             windowDiv.dataset.imageSrc = imageSrc;
-        }
-
-        const screenWidth = window.innerWidth;
-        const mobileBreakpoint = 768;
-        const defaultWidth = screenWidth < mobileBreakpoint ? Math.min(screenWidth - 20, 300) : 530;
-        const defaultHeight = screenWidth < mobileBreakpoint ? Math.min(window.innerHeight - 50, 400) : 640;
-        const targetWidth = defaultWidth;
-        const targetHeight = defaultHeight;
-        const margin = 10;
-        const clampedWidth = Math.min(targetWidth, screenWidth - 2 * margin);
-        const clampedHeight = Math.min(targetHeight, window.innerHeight - 2 * margin - 30);
-        const maxLeft = screenWidth - clampedWidth - margin;
-        const maxTop = window.innerHeight - clampedHeight - margin - 30;
-        const cascadeStep = 24;
-        const cascadeIndex = windowContainer.childElementCount % 6;
-        const baseLeft = Math.round((screenWidth - clampedWidth) / 2);
-        const baseTop = Math.round((window.innerHeight - clampedHeight) / 2);
-        let finalLeft = baseLeft + cascadeIndex * cascadeStep;
-        let finalTop = baseTop + cascadeIndex * cascadeStep;
-        finalLeft = Math.max(margin, Math.min(finalLeft, maxLeft));
-        finalTop = Math.max(margin, Math.min(finalTop, maxTop));
-        const finalWidth = clampedWidth;
-        const finalHeight = clampedHeight;
-
-         if (animateFromSource && sourceX !== undefined && sourceY !== undefined) {
-            windowDiv.style.left = `${sourceX}px`;
-            windowDiv.style.top = `${sourceY}px`;
-            windowDiv.style.width = '32px';
-            windowDiv.style.height = '32px';
-            windowDiv.style.opacity = '0';
-            windowDiv.style.transform = 'scale(0.1)';
-            windowDiv.style.transformOrigin = 'center center';
-        } else {
-            windowDiv.style.left = `${finalLeft}px`;
-            windowDiv.style.top = `${finalTop}px`;
-            windowDiv.style.width = `${finalWidth}px`;
-            windowDiv.style.height = `${finalHeight}px`;
-            windowDiv.style.opacity = '1';
-            windowDiv.style.transform = 'scale(1)';
-        }
-
-        const titleBar = document.createElement('div');
-        titleBar.className = 'title-bar';
-        const titleText = document.createElement('div');
-        titleText.className = 'title-bar-text';
-        titleText.textContent = title;
-        titleBar.appendChild(titleText);
-        const buttonsDiv = document.createElement('div');
-        buttonsDiv.className = 'title-bar-controls';
-        const closeButton = document.createElement('button');
-        closeButton.setAttribute('aria-label', 'Close');
-        closeButton.onclick = (e) => {
-            e.stopPropagation();
-            const windowIdToRemove = windowDiv.id;
-            const closedWindowUrlPath = windowDiv.dataset.contentUrl;
-            windowDiv.remove();
-            const remainingWindows = windowContainer.querySelectorAll('.window');
-            const currentPath = location.pathname;
-            const currentSearch = location.search;
-            const currentFullUrl = location.pathname + location.search;
-
-            if (remainingWindows.length === 0) {
-                const baseUrl = '/';
-                const targetUrl = baseUrl + (currentPath === baseUrl && (currentSearch.includes('code=') || currentSearch.includes('state=')) ? currentSearch : '');
-                const expectedFullDesktopTitle = setDocumentTitle(null); // 获取桌面标题
-                if (currentFullUrl !== targetUrl || document.title !== expectedFullDesktopTitle) {
-                    try {
-                        history.replaceState({ windowUrl: targetUrl }, expectedFullDesktopTitle, targetUrl);
-                    } catch (error) { /* ignore */ }
-                }
-            } else {
-                 let newTopWindow = null;
-                 let maxZ = 0;
-                 remainingWindows.forEach(win => {
-                     const z = parseInt(win.style.zIndex || '0');
-                     if (z > maxZ) {
-                         maxZ = z;
-                         newTopWindow = win;
-                     }
-                 });
-
-                 if (newTopWindow) {
-                    const newTopIsActive = (parseInt(newTopWindow.style.zIndex || '0') === maxZ);
-                    const newTopUrlPath = newTopWindow.dataset.contentUrl;
-                    const newTopTitle = newTopWindow.querySelector('.title-bar-text').textContent; // Use title bar text
-                    const newTopWindowId = newTopWindow.id;
-
-                    if (newTopUrlPath) {
-                        const hasGitalkParams = currentSearch.includes('code=') || currentSearch.includes('state=');
-                        let targetUrl = newTopUrlPath;
-                        if (newTopUrlPath === currentPath && hasGitalkParams) {
-                            targetUrl += currentSearch;
-                        }
-                        const expectedFullNewTopTitle = setDocumentTitle(newTopTitle);
-                        if (currentFullUrl !== targetUrl || document.title !== expectedFullNewTopTitle) {
-                            try {
-                                history.replaceState({ windowUrl: targetUrl, windowId: newTopWindowId }, expectedFullNewTopTitle, targetUrl);
-                            } catch (error) { /* ignore */ }
-                        }
-                    } else {
-                        const baseUrl = '/';
-                        const targetUrl = baseUrl + (currentPath === baseUrl && (currentSearch.includes('code=') || currentSearch.includes('state=')) ? currentSearch : '');
-                        const titleForNonContent = newTopTitle || null; // Use title bar text if available, else null for desktop
-                        const expectedFullTitle = setDocumentTitle(titleForNonContent);
-                        if (currentFullUrl !== targetUrl || document.title !== expectedFullTitle) {
-                            try {
-                                history.replaceState({ windowUrl: targetUrl }, expectedFullTitle, targetUrl);
-                            } catch (error) { /* ignore */ }
-                        }
-                    }
-                 } else {
-                     const baseUrl = '/';
-                     const targetUrl = baseUrl + (currentPath === baseUrl && (currentSearch.includes('code=') || currentSearch.includes('state=')) ? currentSearch : '');
-                     const expectedFullDesktopTitle = setDocumentTitle(null);
-                     if (currentFullUrl !== targetUrl || document.title !== expectedFullDesktopTitle) {
-                         try {
-                             history.replaceState({ windowUrl: targetUrl }, expectedFullDesktopTitle, targetUrl);
-                         } catch (error) { /* ignore */ }
-                     }
-                 }
-            }
-        };
-        buttonsDiv.appendChild(closeButton);
-        titleBar.appendChild(buttonsDiv);
-
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'window-body';
-        if (isImagePopup) {
-            contentDiv.classList.add('image-popup-body');
-        }
-
-        windowDiv.appendChild(titleBar);
-        windowDiv.appendChild(contentDiv);
-
-        const bringToFront = () => {
-            if (parseInt(windowDiv.style.zIndex) < highestZIndex) {
-                highestZIndex++;
-                windowDiv.style.zIndex = highestZIndex;
-            }
-             const windowUrlPath = windowDiv.dataset.contentUrl;
-             const currentTitleInBar = titleText.textContent;
-
-             if (windowUrlPath && !isImagePopup) { // Content window
-                 const currentFullUrl = location.pathname + location.search;
-                 const hasGitalkParams = location.search.includes('code=') || location.search.includes('state=');
-                 let targetUrlForHistory = windowUrlPath;
-                 if (windowUrlPath === location.pathname && hasGitalkParams) {
-                     targetUrlForHistory += location.search;
-                 }
-
-                 const stateUrl = targetUrlForHistory;
-                 const expectedFullTitle = setDocumentTitle(currentTitleInBar);
-
-                 if (currentFullUrl !== stateUrl || document.title !== expectedFullTitle) {
-                      try {
-                         history.replaceState({ windowUrl: stateUrl, windowId: windowId }, expectedFullTitle, stateUrl);
-                      } catch (error) { /* ignore */ }
-                 }
-             } else { // Non-content window (image popup etc.) or Desktop background interaction
-                 const expectedFullTitle = setDocumentTitle(currentTitleInBar); // Use title bar text
-                 if (document.title !== expectedFullTitle) {
-                 } else {
-                    setDocumentTitle(currentTitleInBar); // Ensure it's set even if not changed
-                 }
-             }
-        };
-        windowDiv.addEventListener('pointerdown', bringToFront, true);
-
-        makeDraggable(windowDiv, titleBar);
-
-        const resizer = document.createElement('div');
-        resizer.className = 'window-resizer';
-        resizer.style.cssText = `position: absolute; right: 0; bottom: 0; cursor: nwse-resize; z-index: 1; touch-action: none;`;
-        windowDiv.appendChild(resizer);
-        makeResizable(windowDiv, resizer);
-
-        windowContainer.appendChild(windowDiv);
-
-         if (animateFromSource) {
-            windowDiv.classList.add('window-opening');
-            void windowDiv.offsetWidth;
-            requestAnimationFrame(() => {
-                windowDiv.style.left = `${finalLeft}px`;
-                windowDiv.style.top = `${finalTop}px`;
-                windowDiv.style.width = `${finalWidth}px`;
-                windowDiv.style.height = `${finalHeight}px`;
-                windowDiv.style.opacity = '1';
-                windowDiv.style.transform = 'scale(1)';
-            });
-            windowDiv.addEventListener('transitionend', () => {
-                windowDiv.classList.remove('window-opening');
-            }, { once: true });
-        }
-
-        if (contentUrl && !isImagePopup) {
-           const historyMethod = (isInitialLoad && isAutoOpen) ? 'replaceState' : 'pushState';
-           const currentFullUrl = location.pathname + location.search;
-           const hasGitalkParams = location.search.includes('code=') || location.search.includes('state=');
-           let targetUrlForHistory = contentUrl;
-
-           if (isInitialLoad && isAutoOpen && contentUrl === location.pathname && hasGitalkParams) {
-               targetUrlForHistory += location.search;
-           }
-
-           const needsStateUpdate = historyMethod === 'pushState' ? (currentFullUrl !== targetUrlForHistory) : (currentFullUrl !== targetUrlForHistory);
-           const expectedFullTitleOnCreate = setDocumentTitle(title);
-           const titleNeedsUpdate = document.title !== expectedFullTitleOnCreate;
-
-           if (needsStateUpdate || titleNeedsUpdate) {
-                try {
-                   history[historyMethod]({ windowUrl: targetUrlForHistory, windowId: windowId }, expectedFullTitleOnCreate, targetUrlForHistory);
-                } catch (error) { /* ignore */ }
-           }
-           if (isInitialLoad && isAutoOpen) {
-              isInitialLoad = false;
-           }
-        } else if (isInitialLoad && isAutoOpen) {
-             isInitialLoad = false; // Mark initial load done even for non-content auto-open
-             if(windowContainer.querySelectorAll('.window').length === 1) {
-                 setDocumentTitle(title);
-             }
-        }
-
-        if (isImagePopup && imageSrc) {
-            contentDiv.innerHTML = `<img src="${imageSrc}" alt="${title}">`;
-            if (parseInt(windowDiv.style.zIndex) === highestZIndex) {
-                setDocumentTitle(title);
-            }
-        } else if (contentUrl) {
-            contentDiv.innerHTML = '<p>加载中...</p>';
-            fetch(contentUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP 错误！状态: ${response.status}`);
-                    return response.text();
-                })
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const mainContent = doc.querySelector('#content-main');
-
-                    if (mainContent) {
-                        const h1Element = mainContent.querySelector('h1');
-                        let fetchedTitle = title;
-                        if (h1Element && h1Element.textContent.trim()) {
-                            fetchedTitle = h1Element.textContent.trim();
-                            titleText.textContent = fetchedTitle;
-                        }
-
-                        if (parseInt(windowDiv.style.zIndex) === highestZIndex) {
-                             const currentFullUrl = location.pathname + location.search;
-                             const expectedFullFetchedTitle = setDocumentTitle(fetchedTitle);
-                             if (!history.state || history.state.title !== expectedFullFetchedTitle || document.title !== expectedFullFetchedTitle) {
-                                 try {
-                                    history.replaceState({ windowUrl: currentFullUrl, windowId: windowId }, expectedFullFetchedTitle, currentFullUrl);
-                                 } catch (error) { /* ignore */ }
-                             }
-                        }
-
-                        contentDiv.innerHTML = '';
-                        while (mainContent.firstChild) {
-                            contentDiv.appendChild(mainContent.firstChild);
-                        }
-
-                        const gitalkPlaceholder = contentDiv.querySelector('#gitalk-container-placeholder');
-                        if (gitalkPlaceholder && typeof initializeGitalkForWindow === 'function') {
-                            const uniqueGitalkId = `gitalk-container-${windowId}`;
-                            gitalkPlaceholder.id = uniqueGitalkId;
-                            initializeGitalkForWindow(uniqueGitalkId, contentUrl);
-                        } else if (gitalkPlaceholder) {
-                            gitalkPlaceholder.innerHTML = '<p style="color:red;">错误：无法找到 Gitalk 初始化函数！</p>';
-                        }
-
-                        enhanceContentLoaded(contentDiv);
-                        setupWindowInteractions(contentDiv);
-
-                    } else {
-                        contentDiv.innerHTML = '<p>错误：在获取的页面中未找到 #content-main 结构。</p>';
-                        const errorTitle = title + " (内容加载失败)";
-                        titleText.textContent = errorTitle;
-                        if (parseInt(windowDiv.style.zIndex) === highestZIndex) {
-                            setDocumentTitle(errorTitle);
-                        }
-                    }
-                })
-                .catch(error => {
-                    contentDiv.innerHTML = `<p style="color: red;">加载内容出错: ${error.message}</p>`;
-                    const errorTitle = title + " (加载错误)";
-                    titleText.textContent = errorTitle;
-                     if (parseInt(windowDiv.style.zIndex) === highestZIndex) {
-                        setDocumentTitle(errorTitle);
-                    }
-                });
-        } else if (!isImagePopup) {
-            contentDiv.innerHTML = '<p>未提供内容 URL。</p>';
-            const noContentTitle = title + " (无内容)";
-            titleText.textContent = noContentTitle;
-            if (parseInt(windowDiv.style.zIndex) === highestZIndex) {
-                 setDocumentTitle(noContentTitle);
-            }
-        }
-
-        if (parseInt(windowDiv.style.zIndex) === highestZIndex) {
-             bringToFront();
-        }
-
-        return windowDiv;
-    }
-
-    function makeDraggable(element, handle) {
-         let isDragging = false, pointerId = null, startX, startY, initialLeft, initialTop;
-         let viewportWidth = 0, viewportHeight = 0, elementWidth = 0, elementHeight = 0;
-         let handleHeight = 0, minTop = 0, maxTopAllowed = 0, minLeftBound = 0, maxLeftBound = 0;
-         let rafId = null, pendingLeft = 0, pendingTop = 0;
-        let transitionsDisabled = false;
-        let previousTransition = '';
-
-        const schedulePositionUpdate = () => {
-            if (rafId !== null) {
-                return;
-            }
-            rafId = requestAnimationFrame(() => {
-                element.style.left = `${pendingLeft}px`;
-                element.style.top = `${pendingTop}px`;
-                rafId = null;
-            });
-        };
-
-        const disableTransitionsForDrag = (isTrustedEvent) => {
-            if (transitionsDisabled) {
-                return;
-            }
-            transitionsDisabled = true;
-            previousTransition = element.style.transition || '';
-            element.style.transition = 'none';
-            if (isTrustedEvent !== false && element.classList.contains('window-opening')) {
-                element.classList.remove('window-opening');
-            }
-        };
-
-        const onPointerMove = (e) => {
-            if (!isDragging || e.pointerId !== pointerId) return;
-            e.preventDefault();
-            disableTransitionsForDrag(e.isTrusted);
-            const deltaX = e.clientX - startX, deltaY = e.clientY - startY;
-            let newLeft = initialLeft + deltaX;
-            let newTop = initialTop + deltaY;
-            newLeft = Math.max(minLeftBound, Math.min(newLeft, maxLeftBound));
-            newTop = Math.max(minTop, Math.min(newTop, maxTopAllowed));
-            pendingLeft = newLeft;
-            pendingTop = newTop;
-            schedulePositionUpdate();
-        };
-        const onPointerUp = (e) => {
-            if (!isDragging || e.pointerId !== pointerId) return;
-            isDragging = false;
-            handle.style.cursor = 'grab';
-            element.style.removeProperty('user-select');
-            document.body.style.removeProperty('user-select');
-            document.body.classList.remove('is-dragging-window');
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
-                rafId = null;
-                element.style.left = `${pendingLeft}px`;
-                element.style.top = `${pendingTop}px`;
-            }
-            if (transitionsDisabled) {
-                transitionsDisabled = false;
-                element.style.transition = previousTransition;
-                previousTransition = '';
-            }
-            if (handle.hasPointerCapture(pointerId)) {
-                try { handle.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
-            }
-            pointerId = null;
-            document.removeEventListener('pointermove', onPointerMove, { capture: false });
-            document.removeEventListener('pointerup', onPointerUp);
-            document.removeEventListener('pointercancel', onPointerUp);
-        };
-        const onPointerDown = (e) => {
-            if (e.target.closest('.title-bar-controls') || (e.pointerType === 'mouse' && e.button !== 0) || e.target.classList.contains('window-resizer')) return;
-
-            isDragging = true;
-            pointerId = e.pointerId;
-            startX = e.clientX; startY = e.clientY;
-            initialLeft = element.offsetLeft; initialTop = element.offsetTop;
-            viewportWidth = window.innerWidth;
-            viewportHeight = window.innerHeight;
-            elementWidth = element.offsetWidth;
-            elementHeight = element.offsetHeight;
-            handleHeight = handle.offsetHeight;
-            minTop = -handleHeight + 10;
-            maxTopAllowed = viewportHeight - handleHeight - 5;
-            minLeftBound = 0 - elementWidth + 50;
-            maxLeftBound = viewportWidth - 50;
-            handle.style.cursor = 'grabbing';
-            element.style.userSelect = 'none'; // Prevent text selection during drag
-            document.body.style.userSelect = 'none'; // Prevent text selection on body
-            document.body.classList.add('is-dragging-window'); // Add class for potential global styles
-            e.stopPropagation(); // Stop propagation after handling
-            handle.style.touchAction = 'none'; // Disable scrolling etc. on the handle during drag
-            try { handle.setPointerCapture(pointerId); } catch (err) { /* ignore */ } // Capture pointer events to the handle
-            document.addEventListener('pointermove', onPointerMove, { capture: false }); // Use non-capture for move/up
-            document.addEventListener('pointerup', onPointerUp);
-            document.addEventListener('pointercancel', onPointerUp);
-        };
-        handle.addEventListener('pointerdown', onPointerDown); // Use bubbling phase for drag initiation
-        handle.style.cursor = 'grab';
-        if (handle.ondragstart !== undefined) { handle.ondragstart = () => false; } // Prevent native image drag
-    }
-
-    function makeResizable(element, handle) {
-         let isResizing = false, pointerId = null, startX, startY, initialWidth, initialHeight, initialLeft, initialTop;
-        const onPointerMove = (e) => {
-            if (!isResizing || e.pointerId !== pointerId) return;
-            e.preventDefault();
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            let newWidth = initialWidth + deltaX;
-            let newHeight = initialHeight + deltaY;
-            const computedStyle = window.getComputedStyle(element);
-            const minWidth = parseInt(computedStyle.minWidth || '150', 10);
-            const minHeight = parseInt(computedStyle.minHeight || '100', 10);
-            newWidth = Math.max(minWidth, newWidth);
-            newHeight = Math.max(minHeight, newHeight);
-            element.style.width = `${newWidth}px`;
-            element.style.height = `${newHeight}px`;
-        };
-        const onPointerUp = (e) => {
-            if (!isResizing || e.pointerId !== pointerId) return;
-            isResizing = false;
-            document.body.style.removeProperty('user-select');
-            document.body.style.removeProperty('cursor');
-            if (handle.hasPointerCapture(pointerId)) {
-                try { handle.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
-            }
-            pointerId = null;
-            document.removeEventListener('pointermove', onPointerMove, { capture: false });
-            document.removeEventListener('pointerup', onPointerUp);
-            document.removeEventListener('pointercancel', onPointerUp);
-        };
-        const onPointerDown = (e) => {
-            if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left mouse button
-            isResizing = true;
-            pointerId = e.pointerId;
-            startX = e.clientX;
-            startY = e.clientY;
-            initialWidth = element.offsetWidth;
-            initialHeight = element.offsetHeight;
-            initialLeft = element.offsetLeft;
-            initialTop = element.offsetTop;
-            document.body.style.userSelect = 'none'; // Prevent text selection during resize
-            document.body.style.cursor = 'nwse-resize'; // Set appropriate cursor for body
-            e.preventDefault(); // Prevent default actions like text selection
-            e.stopPropagation(); // Stop propagation
-            handle.style.touchAction = 'none'; // Disable scrolling etc. on the handle
-            try { handle.setPointerCapture(pointerId); } catch (err) { /* ignore */ } // Capture pointer events
-            document.addEventListener('pointermove', onPointerMove, { capture: false });
-            document.addEventListener('pointerup', onPointerUp);
-            document.addEventListener('pointercancel', onPointerUp);
-        };
-        handle.addEventListener('pointerdown', onPointerDown);
-        if (handle.ondragstart !== undefined) { handle.ondragstart = () => false; } // Prevent native drag
-    }
-
-    function enhanceContentLoaded(parentElement) {
-      if (!parentElement) return;
-
-      const codeBlocks = parentElement.querySelectorAll('pre');
-      codeBlocks.forEach(pre => {
-        if (pre.parentNode.classList.contains('code-block-wrapper')) {
-          return;
-        }
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'code-block-wrapper';
-
-        pre.parentNode.insertBefore(wrapper, pre);
-        wrapper.appendChild(pre);
-
-        const button = document.createElement('button');
-        button.className = 'copy-code-button';
-        button.textContent = '复制';
-        wrapper.appendChild(button);
-
-        button.addEventListener('click', () => {
-          const code = pre.querySelector('code')?.innerText || pre.innerText;
-          navigator.clipboard.writeText(code).then(() => {
-            button.textContent = '已复制!';
-            button.disabled = true;
-            setTimeout(() => {
-              button.textContent = '复制';
-              button.disabled = false;
-            }, 2000);
-          }).catch(err => {
-              button.textContent = '失败';
-              console.error('复制失败', err);
-              setTimeout(() => {
-                button.textContent = '复制';
-              }, 2000);
-            });
-        });
-
-        const codeElement = pre.querySelector('code');
-        if (codeElement) {
-            const langMatch = codeElement.className.match(/hljs (\S+)/);
-            const language = langMatch ? langMatch[1] : null;
-
-            if (language) {
-                const langLabel = document.createElement('span');
-                langLabel.className = 'code-language-label';
-                langLabel.textContent = language;
-                wrapper.appendChild(langLabel);
-            }
-        }
-      });
-
-      const tables = parentElement.querySelectorAll('table');
-      tables.forEach(table => {
-        if (table.parentNode.classList.contains('table-wrapper')) {
-          return;
-        }
-        const wrapper = document.createElement('div');
-        wrapper.className = 'table-wrapper';
-        table.parentNode.insertBefore(wrapper, table);
-        wrapper.appendChild(table);
-      });
-    }
-
-    function setupWindowInteractions(parentElement) {
-        if (!parentElement || (parentElement.dataset && parentElement.dataset.interactionListenerAttached === 'true')) {
-             return;
-        }
-
-        parentElement.addEventListener('click', (event) => {
-            const target = event.target;
-
-            const windowBody = target.closest('.window-body');
-            if (target.tagName === 'IMG' && windowBody && !windowBody.classList.contains('image-popup-body')) {
-                event.preventDefault();
-                event.stopPropagation();
-                const imgElement = target;
-                const imgSrc = imgElement.src;
-                const imgAlt = imgElement.alt;
-                const filename = imgSrc.substring(imgSrc.lastIndexOf('/') + 1);
-                const title = imgAlt || filename || 'Image Viewer';
-                const rect = imgElement.getBoundingClientRect();
-                createWindow(title, imgSrc, {
-                    isImagePopup: true,
-                    sourceX: rect.left + (rect.width / 2),
-                    sourceY: rect.top + (rect.height / 2),
-                    animateFromSource: true
-                });
-                return;
-            }
-
-             const link = target.closest(
-                'a.desktop-icon, .window-body:not(.image-popup-body) a[href^="/"]:not([href="/"]):not(.no-window):not([target="_blank"])'
-             );
-
-            if (link && parentElement.contains(link)) {
-                if (target.tagName === 'IMG' && link.contains(target) && !link.classList.contains('desktop-icon')) {
-                     return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-                const url = link.getAttribute('href');
-                const targetPath = (url.endsWith('/') || url.includes('?') || url.includes('#')) ? url : url + '/';
-                const title = link.dataset.windowTitle || link.textContent.trim() || '窗口';
-                let existingWindow = null;
-
-                const windows = windowContainer.querySelectorAll('.window');
-                for (let win of windows) {
-                    if (win.dataset.contentUrl === targetPath) {
-                        existingWindow = win;
-                        break;
-                    }
-                }
-
-                if (existingWindow) {
-                    existingWindow.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-                    existingWindow.classList.add('window-shake');
-                    setTimeout(() => existingWindow.classList.remove('window-shake'), 300);
-                } else {
-                    const rect = link.getBoundingClientRect();
-                    createWindow(title, targetPath, {
-                        sourceX: rect.left + (rect.width / 2),
-                        sourceY: rect.top + (rect.height / 2),
-                        animateFromSource: true,
-                        isAutoOpen: false,
-                        isImagePopup: false
-                    });
-                }
-            }
-        });
-
-        if (parentElement.dataset) {
-             parentElement.dataset.interactionListenerAttached = 'true';
-        }
-    }
-
-    setupWindowInteractions(document);
-
-    const currentPathRaw = window.location.pathname;
-    const currentPath = (currentPathRaw !== '/' && !currentPathRaw.endsWith('/') && !currentPathRaw.includes('.')) ? currentPathRaw + '/' : currentPathRaw;
-    const currentSearch = window.location.search;
-    const currentFullUrl = currentPath + currentSearch;
-    const isHomePage = (currentPath === '/' || currentPath.endsWith('/index.html'));
-    let autoOpenTitle = null;
-    let autoOpenUrl = null;
-
-    if (!isHomePage && !currentPath.includes('.')) {
-        autoOpenTitle = "加载中...";
-        autoOpenUrl = currentPath;
-    }
-
-    if (autoOpenUrl) {
-        createWindow(autoOpenTitle, autoOpenUrl, {
-             animateFromSource: false,
-             isAutoOpen: true,
-             isImagePopup: false
-        });
+    if (isImagePopup) {
+      win.dataset.imageSrc = contentIdentifier;
+      body.className = 'window-body image-popup-body';
     } else {
-         isInitialLoad = false;
-         const expectedUrl = currentFullUrl;
-         const expectedFullDesktopTitle = setDocumentTitle(null); // Desktop title
-         if (!history.state || history.state.windowUrl !== expectedUrl || document.title !== expectedFullDesktopTitle) {
-             try {
-                history.replaceState({ windowUrl: expectedUrl }, expectedFullDesktopTitle, expectedUrl);
-             } catch(error) { /* ignore */ }
-         }
+      win.dataset.contentUrl = contentIdentifier;
+      body.className = 'window-body';
     }
 
-    const styleSheet = document.createElement("style");
-    styleSheet.type = "text/css";
-    styleSheet.innerText = `
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
-        .window-shake { animation: shake 0.3s ease-in-out; }
-        body.is-dragging-window { user-select: none; -webkit-user-select: none; cursor: grabbing !important; }
-        body.is-dragging-window * { cursor: grabbing !important; }
+    placeWindow(win, placement);
+    win.append(titleBar, body, createResizer(win));
+    win.addEventListener('pointerdown', () => activateWindow(win), true);
+    makeDraggable(win, titleBar);
+    windowContainer.appendChild(win);
+    addTaskButton(win);
 
-    `;
-    document.head.appendChild(styleSheet);
+    if (animateFromSource && sourceX !== undefined && sourceY !== undefined) {
+      animateWindowOpen(win, rectFromCenter(sourceX, sourceY, 32));
+    }
 
-    window.addEventListener('popstate', (event) => {
-        const stateObject = event.state;
-        const currentPath = location.pathname;
-        const currentSearch = location.search;
-        const currentFullUrl = currentPath + currentSearch;
+    if (isImagePopup) {
+      renderImageWindow(body, contentIdentifier, title);
+    } else {
+      renderContentWindow(win, body, contentIdentifier);
+    }
 
-        const targetUrlFromState = stateObject ? stateObject.windowUrl : null; // Get full URL from state if available
-        const targetWindowId = stateObject ? stateObject.windowId : null;
+    const shouldUpdateHistory = !isImagePopup && historyMode !== 'none';
+    if (shouldUpdateHistory) {
+      writeHistory(win, isInitialLoad && isAutoOpen ? 'replaceState' : historyMode);
+    } else {
+      setDocumentTitle(title);
+    }
 
-        let canonicalPath = (currentPath !== '/' && !currentPath.endsWith('/') && !currentPath.includes('.')) ? currentPath + '/' : currentPath;
+    if (isInitialLoad && isAutoOpen) isInitialLoad = false;
+    updateTaskbar(win);
+    return win;
+  }
 
-        if (canonicalPath !== '/') {
-            let windowToFocus = null;
+  function createTitleBar(title, callbacks) {
+    const titleBar = document.createElement('div');
+    const titleText = document.createElement('div');
+    const controls = document.createElement('div');
+    const minimizeButton = createTitleButton('Minimize', callbacks.onMinimize);
+    const maximizeButton = createTitleButton('Maximize', callbacks.onMaximize);
+    const closeButton = createTitleButton('Close', callbacks.onClose);
 
-            if (targetWindowId) {
-                 windowToFocus = document.getElementById(targetWindowId);
-                 if (windowToFocus && (!windowToFocus.dataset.contentUrl || windowToFocus.dataset.contentUrl !== canonicalPath)) {
-                     windowToFocus = null;
-                 }
-            }
+    titleBar.className = 'title-bar';
+    titleText.className = 'title-bar-text';
+    titleText.textContent = title;
+    controls.className = 'title-bar-controls';
+    maximizeButton.dataset.windowAction = 'maximize';
 
-            if (!windowToFocus) {
-                const windows = windowContainer.querySelectorAll('.window');
-                for (let win of windows) {
-                    if (win.dataset.contentUrl === canonicalPath) {
-                        windowToFocus = win;
-                        break;
-                    }
-                }
-            }
-
-            if (windowToFocus) {
-                 windowToFocus.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-            } else {
-                 let title = '窗口';
-                 const fullTitleFromState = stateObject ? stateObject.title : null; // History state often stores the full title string
-
-                 if (fullTitleFromState) {
-                    const expectedSuffix = ` — ${blogTitle}`;
-                    const expectedPrefix = "「";
-                    const expectedSuffixEnd = "」";
-                     if (typeof fullTitleFromState === 'string' && fullTitleFromState.startsWith(expectedPrefix) && fullTitleFromState.endsWith(expectedSuffix)) {
-                        const endIndex = fullTitleFromState.lastIndexOf(expectedSuffixEnd + expectedSuffix);
-                        if (endIndex > expectedPrefix.length) {
-                           title = fullTitleFromState.substring(expectedPrefix.length, endIndex);
-                        } else {
-                           title = fullTitleFromState; // Fallback if extraction fails
-                        }
-                     } else {
-                         title = fullTitleFromState; // Use directly if format doesn't match
-                     }
-
-                 } else {
-                     const matchingIcon = document.querySelector(`.desktop-icon[href^="${canonicalPath}"]`);
-                     if (matchingIcon && matchingIcon.dataset.windowTitle) {
-                        title = matchingIcon.dataset.windowTitle;
-                     } else {
-                         title = canonicalPath.split('/').filter(Boolean).pop() || '窗口';
-                     }
-                 }
-
-                 const newWindow = createWindow(title, canonicalPath, {
-                    animateFromSource: false,
-                    isAutoOpen: false,
-                    isImagePopup: false,
-                    windowIdToUse: targetWindowId
-                 });
-
-                 const finalUrlForHistory = currentFullUrl; // Use the actual current URL
-                 const finalTitle = newWindow.querySelector('.title-bar-text').textContent || title;
-                 const finalWindowId = newWindow.id;
-                 const expectedFullRecreateTitle = setDocumentTitle(finalTitle);
-
-                 if (!history.state || history.state.windowUrl !== finalUrlForHistory || history.state.windowId !== finalWindowId || document.title !== expectedFullRecreateTitle) {
-                     try {
-                         history.replaceState({ windowUrl: finalUrlForHistory, windowId: finalWindowId }, expectedFullRecreateTitle, finalUrlForHistory);
-                     } catch (error) { /* ignore */ }
-                 }
-            }
-        }
-        else { // Navigated to root '/'
-             const remainingWindows = windowContainer.querySelectorAll('.window[data-content-url]');
-             let topWin = null, maxZ = 0;
-             remainingWindows.forEach(win => {
-                 const z = parseInt(win.style.zIndex || '0');
-                 if (z > maxZ) { maxZ = z; topWin = win; }
-             });
-
-             if (topWin) {
-                  topWin.dispatchEvent(new Event('pointerdown', { bubbles: true }));
-             } else {
-                 const rootUrl = currentFullUrl; // Use the actual current URL (which is '/' + search)
-                 const expectedFullRootTitle = setDocumentTitle(null); // Desktop title
-                 if (!history.state || history.state.windowUrl !== rootUrl || document.title !== expectedFullRootTitle) {
-                     try {
-                         history.replaceState({ windowUrl: rootUrl }, expectedFullRootTitle, rootUrl);
-                     } catch (error) { /* ignore */ }
-                 }
-             }
-        }
+    titleBar.addEventListener('dblclick', (event) => {
+      if (event.target.closest('.title-bar-controls')) return;
+      callbacks.onMaximize();
     });
 
+    controls.append(minimizeButton, maximizeButton, closeButton);
+    titleBar.append(titleText, controls);
+    return titleBar;
+  }
+
+  function createTitleButton(label, onClick) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('aria-label', label);
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      onClick();
+    });
+    return button;
+  }
+
+  function updateMaximizeButton(win) {
+    const button = win.querySelector('[data-window-action="maximize"]');
+    if (!button) return;
+    button.setAttribute('aria-label', win.classList.contains('is-maximized') ? 'Restore' : 'Maximize');
+  }
+
+  function createResizer(win) {
+    const resizer = document.createElement('div');
+    resizer.className = 'window-resizer';
+    makeResizable(win, resizer);
+    return resizer;
+  }
+
+  function placeWindow(win, placement) {
+    Object.assign(win.style, {
+      left: `${placement.left}px`,
+      top: `${placement.top}px`,
+      width: `${placement.width}px`,
+      height: `${placement.height}px`,
+      opacity: '1',
+      transform: 'none'
+    });
+  }
+
+  function rectFromCenter(x, y, size) {
+    return {
+      left: x - size / 2,
+      top: y - size / 2,
+      width: size,
+      height: size
+    };
+  }
+
+  function placementToScreenRect(placement) {
+    const containerRect = windowContainer.getBoundingClientRect();
+    return {
+      left: containerRect.left + placement.left,
+      top: containerRect.top + placement.top,
+      width: placement.width,
+      height: placement.height
+    };
+  }
+
+  function getWindowScreenRect(win) {
+    if (!win.classList.contains('is-minimized')) {
+      return elementRect(win);
+    }
+
+    return placementToScreenRect({
+      left: parseFloat(win.style.left) || 0,
+      top: parseFloat(win.style.top) || 0,
+      width: parseFloat(win.style.width) || 200,
+      height: parseFloat(win.style.height) || 150
+    });
+  }
+
+  function elementRect(element) {
+    const rect = element.getBoundingClientRect();
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: Math.max(1, rect.width),
+      height: Math.max(1, rect.height)
+    };
+  }
+
+  function getTaskButtonRect(win) {
+    const button = getTaskButton(win);
+    if (button) return elementRect(button);
+
+    const taskbarRect = elementRect(taskbar);
+    return {
+      left: taskbarRect.left,
+      top: taskbarRect.top,
+      width: 1,
+      height: taskbarRect.height
+    };
+  }
+
+  function animateWindowOpen(win, sourceRect) {
+    const targetRect = getWindowScreenRect(win);
+    setWindowAnimationHidden(win, true);
+    animateRectTransition(sourceRect, targetRect, () => {
+      setWindowAnimationHidden(win, false);
+      activateWindow(win);
+    });
+  }
+
+  function animateRectTransition(fromRect, toRect, onComplete) {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      onComplete?.();
+      return;
+    }
+
+    const animator = document.createElement('div');
+    let finished = false;
+    animator.className = 'win98-window-animator';
+    applyScreenRect(animator, fromRect);
+    document.body.appendChild(animator);
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      animator.remove();
+      onComplete?.();
+    };
+
+    animator.offsetWidth;
+    requestAnimationFrame(() => {
+      animator.classList.add('is-running');
+      applyScreenRect(animator, toRect);
+    });
+
+    animator.addEventListener('transitionend', finish, { once: true });
+    setTimeout(finish, animationDuration + 80);
+  }
+
+  function applyScreenRect(element, rect) {
+    Object.assign(element.style, {
+      left: `${Math.round(rect.left)}px`,
+      top: `${Math.round(rect.top)}px`,
+      width: `${Math.max(1, Math.round(rect.width))}px`,
+      height: `${Math.max(1, Math.round(rect.height))}px`
+    });
+  }
+
+  function setWindowAnimationHidden(win, hidden) {
+    win.classList.toggle('is-animating-shell', hidden);
+  }
+
+  function activateWindow(win, options = {}) {
+    const { updateHistory = true } = options;
+    activeExternalTaskId = null;
+    if (win.classList.contains('is-minimized')) {
+      restoreMinimizedWindow(win, { updateHistory });
+      return;
+    }
+
+    if (Number(win.style.zIndex || 0) < highestZIndex) {
+      win.style.zIndex = String(++highestZIndex);
+    }
+
+    if (updateHistory) writeHistory(win);
+    else setDocumentTitle(getWindowTitle(win));
+
+    updateTaskbar(win);
+  }
+
+  function minimizeWindow(win) {
+    if (win.classList.contains('is-minimized')) return;
+
+    clearWindowFocus(win);
+    const wasActive = getActiveWindow() === win;
+    const fromRect = getWindowScreenRect(win);
+    const toRect = getTaskButtonRect(win);
+    setWindowAnimationHidden(win, true);
+
+    animateRectTransition(fromRect, toRect, () => {
+      win.classList.add('is-minimized');
+      setWindowAnimationHidden(win, false);
+      updateTaskButton(win);
+
+      const nextWindow = getTopWindow();
+      if (wasActive && nextWindow) {
+        activateWindow(nextWindow);
+      } else if (wasActive) {
+        updateTaskbar(null);
+        writeDesktopHistory();
+      } else {
+        updateTaskbar(getActiveWindow());
+      }
+    });
+  }
+
+  function clearWindowFocus(win) {
+    win.classList.add('is-gitalk-suspended');
+
+    if (win.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+
+    win.querySelectorAll('.gt-container').forEach((container) => {
+      container.classList.remove('gt-input-focused');
+    });
+
+    win.querySelectorAll('.gt-header-textarea').forEach((textarea) => {
+      if (typeof textarea.blur === 'function') textarea.blur();
+    });
+
+    win.querySelectorAll('.gt-header-comment').forEach((commentBox) => {
+      commentBox.dataset.win98Hidden = 'true';
+      commentBox.style.setProperty('display', 'none', 'important');
+      commentBox.style.setProperty('visibility', 'hidden', 'important');
+    });
+  }
+
+  function restoreWindowFocus(win) {
+    win.classList.remove('is-gitalk-suspended');
+
+    win.querySelectorAll('.gt-header-comment[data-win98-hidden="true"]').forEach((commentBox) => {
+      delete commentBox.dataset.win98Hidden;
+      commentBox.style.removeProperty('display');
+      commentBox.style.removeProperty('visibility');
+    });
+  }
+
+  function restoreMinimizedWindow(win, options = {}) {
+    const { updateHistory = true } = options;
+    if (!win.classList.contains('is-minimized')) {
+      activateWindow(win, { updateHistory });
+      return;
+    }
+
+    const fromRect = getTaskButtonRect(win);
+    win.classList.remove('is-minimized');
+    const toRect = getWindowScreenRect(win);
+    setWindowAnimationHidden(win, true);
+    updateTaskButton(win);
+
+    animateRectTransition(fromRect, toRect, () => {
+      setWindowAnimationHidden(win, false);
+      restoreWindowFocus(win);
+      activateWindow(win, { updateHistory });
+    });
+  }
+
+  function toggleMaximizeWindow(win) {
+    if (win.classList.contains('is-minimized')) return;
+    if (win.classList.contains('is-maximized')) restoreMaximizedWindow(win);
+    else maximizeWindow(win);
+  }
+
+  function maximizeWindow(win) {
+    activateWindow(win);
+    win._restorePlacement = {
+      left: parseFloat(win.style.left) || 0,
+      top: parseFloat(win.style.top) || 0,
+      width: parseFloat(win.style.width) || win.offsetWidth,
+      height: parseFloat(win.style.height) || win.offsetHeight
+    };
+
+    const fromRect = getWindowScreenRect(win);
+    const targetPlacement = getMaximizedPlacement();
+    const toRect = placementToScreenRect(targetPlacement);
+    setWindowAnimationHidden(win, true);
+
+    animateRectTransition(fromRect, toRect, () => {
+      placeWindow(win, targetPlacement);
+      win.classList.add('is-maximized');
+      setWindowAnimationHidden(win, false);
+      updateMaximizeButton(win);
+      activateWindow(win);
+    });
+  }
+
+  function restoreMaximizedWindow(win) {
+    const targetPlacement = win._restorePlacement || getWindowPlacement();
+    const fromRect = getWindowScreenRect(win);
+    const toRect = placementToScreenRect(targetPlacement);
+    setWindowAnimationHidden(win, true);
+
+    animateRectTransition(fromRect, toRect, () => {
+      win.classList.remove('is-maximized');
+      placeWindow(win, targetPlacement);
+      setWindowAnimationHidden(win, false);
+      updateMaximizeButton(win);
+      activateWindow(win);
+    });
+  }
+
+  function closeWindow(win) {
+    const wasActive = getActiveWindow() === win;
+    removeTaskButton(win.id);
+    win.remove();
+
+    const nextWindow = getTopWindow();
+    if (nextWindow) {
+      activateWindow(nextWindow, { updateHistory: wasActive });
+    } else {
+      updateTaskbar(null);
+      writeDesktopHistory();
+    }
+  }
+
+  function getOpenWindows() {
+    return Array.from(windowContainer.querySelectorAll('.window'));
+  }
+
+  function getVisibleWindows() {
+    return getOpenWindows().filter((win) => !win.classList.contains('is-minimized'));
+  }
+
+  function getTopWindow() {
+    return getVisibleWindows().reduce((top, win) => {
+      if (!top) return win;
+      return Number(win.style.zIndex || 0) > Number(top.style.zIndex || 0) ? win : top;
+    }, null);
+  }
+
+  function getActiveWindow() {
+    return getTopWindow();
+  }
+
+  function addTaskButton(win) {
+    const taskList = getTaskList();
+    if (!taskList || taskList.querySelector(`[data-window-id="${win.id}"]`)) return;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'win98-task-button';
+    button.dataset.windowId = win.id;
+    button.addEventListener('click', () => {
+      const targetWindow = document.getElementById(button.dataset.windowId);
+      if (!targetWindow) return;
+
+      if (targetWindow.classList.contains('is-minimized')) {
+        restoreMinimizedWindow(targetWindow);
+        return;
+      }
+
+      if (targetWindow === getActiveWindow()) {
+        minimizeWindow(targetWindow);
+        return;
+      }
+
+      activateWindow(targetWindow);
+    });
+
+    taskList.appendChild(button);
+    updateTaskButton(win);
+  }
+
+  function getTaskButton(win) {
+    return getTaskList()?.querySelector(`[data-window-id="${win.id}"]`) || null;
+  }
+
+  function removeTaskButton(windowId) {
+    getTaskList()?.querySelector(`[data-window-id="${windowId}"]`)?.remove();
+  }
+
+  function updateTaskButton(win) {
+    const button = getTaskButton(win);
+    if (!button) return;
+
+    const label = getWindowTitle(win);
+    setTaskButtonContent(button, label, getWindowIcon(win));
+    button.classList.toggle('is-minimized', win.classList.contains('is-minimized'));
+  }
+
+  function updateTaskbar(activeWindow) {
+    const activeId = activeWindow?.id || null;
+
+    getTaskList()?.querySelectorAll('.win98-task-button[data-window-id]').forEach((button) => {
+      const win = document.getElementById(button.dataset.windowId);
+      const isActive = !activeExternalTaskId && button.dataset.windowId === activeId && !win?.classList.contains('is-minimized');
+      button.classList.toggle('is-active', isActive);
+      if (win) button.classList.toggle('is-minimized', win.classList.contains('is-minimized'));
+    });
+
+    getTaskList()?.querySelectorAll('.win98-task-button[data-task-id]').forEach((button) => {
+      button.classList.toggle('is-active', button.dataset.taskId === activeExternalTaskId);
+    });
+  }
+
+  function registerExternalTask(options) {
+    const { id, title, onClick, iconSrc = defaultDocumentIcon } = options;
+    const taskList = getTaskList();
+    if (!taskList || !id) return null;
+
+    let button = taskList.querySelector(`[data-task-id="${id}"]`);
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'win98-task-button';
+      button.dataset.taskId = id;
+      button.dataset.iconSrc = iconSrc;
+      taskList.appendChild(button);
+    }
+    if (!button.dataset.iconSrc) button.dataset.iconSrc = iconSrc;
+
+    const api = {
+      button,
+      setTitle(nextTitle) {
+        setTaskButtonContent(button, nextTitle || title || id, button.dataset.iconSrc || iconSrc);
+      },
+      setIcon(nextIconSrc) {
+        button.dataset.iconSrc = nextIconSrc || defaultDocumentIcon;
+        const label = button.querySelector('.win98-task-title')?.textContent || title || id;
+        setTaskButtonContent(button, label, button.dataset.iconSrc);
+      },
+      setActive(isActive = true) {
+        activeExternalTaskId = isActive ? id : null;
+        updateTaskbar(isActive ? null : getActiveWindow());
+      },
+      setMinimized(isMinimized = true) {
+        button.classList.toggle('is-minimized', isMinimized);
+      },
+      remove() {
+        if (activeExternalTaskId === id) activeExternalTaskId = null;
+        button.remove();
+        updateTaskbar(getActiveWindow());
+      },
+      getRect() {
+        return elementRect(button);
+      },
+      animateToButton(element, onComplete) {
+        animateRectTransition(elementRect(element), elementRect(button), onComplete);
+      },
+      animateFromButton(element, onComplete) {
+        animateRectTransition(elementRect(button), elementRect(element), onComplete);
+      }
+    };
+
+    api.setTitle(title);
+    button.onclick = () => onClick?.(api);
+    return api;
+  }
+
+  window.Win98Shell = {
+    registerTask: registerExternalTask,
+    setActiveTask(taskId) {
+      activeExternalTaskId = taskId || null;
+      updateTaskbar(null);
+    },
+    clearActiveTask() {
+      activeExternalTaskId = null;
+      updateTaskbar(getActiveWindow());
+    },
+    nextZIndex: window.getWin98HighestZIndex,
+    animateRectTransition,
+    elementRect
+  };
+
+  function renderImageWindow(body, src, title) {
+    const image = document.createElement('img');
+    image.src = src;
+    image.alt = title;
+    body.replaceChildren(image);
+  }
+
+  function renderContentWindow(win, body, url) {
+    body.innerHTML = '<p>加载中...</p>';
+
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP 错误！状态: ${response.status}`);
+        return response.text();
+      })
+      .then((html) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const mainContent = doc.querySelector('#content-main');
+
+        if (!mainContent) {
+          setWindowTitle(win, `${getWindowTitle(win)} (内容加载失败)`);
+          body.innerHTML = '<p>错误：在获取的页面中未找到 #content-main 结构。</p>';
+          return;
+        }
+
+        const heading = mainContent.querySelector('h1');
+        if (heading?.textContent.trim()) {
+          setWindowTitle(win, heading.textContent.trim());
+        }
+
+        body.replaceChildren(...Array.from(mainContent.childNodes));
+        initializeGitalk(body, win.id, url);
+        enhanceContent(body);
+        setupWindowInteractions(body);
+
+        if (getActiveWindow() === win) writeHistory(win);
+      })
+      .catch((error) => {
+        setWindowTitle(win, `${getWindowTitle(win)} (加载错误)`);
+        body.innerHTML = `<p style="color: red;">加载内容出错: ${error.message}</p>`;
+      });
+  }
+
+  function initializeGitalk(body, windowId, contentUrl) {
+    const placeholder = body.querySelector('#gitalk-container-placeholder');
+    if (!placeholder) return;
+
+    if (typeof initializeGitalkForWindow !== 'function') {
+      placeholder.innerHTML = '<p style="color:red;">错误：无法找到 Gitalk 初始化函数！</p>';
+      return;
+    }
+
+    const gitalkId = `gitalk-container-${windowId}`;
+    placeholder.id = gitalkId;
+    placeholder.classList.remove('gitalk-placeholder');
+    initializeGitalkForWindow(gitalkId, contentUrl);
+  }
+
+  function makeDraggable(win, handle) {
+    let pointerId = null;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    let frame = null;
+    let pendingLeft = 0;
+    let pendingTop = 0;
+    let previousTransition = '';
+
+    const commitPosition = () => {
+      win.style.left = `${pendingLeft}px`;
+      win.style.top = `${pendingTop}px`;
+      frame = null;
+    };
+
+    const onMove = (event) => {
+      if (event.pointerId !== pointerId) return;
+      event.preventDefault();
+
+      const area = getDesktopArea();
+      const minTop = -handle.offsetHeight + 10;
+      const maxTop = area.height - handle.offsetHeight - 5;
+      const minLeft = 50 - win.offsetWidth;
+      const maxLeft = area.width - 50;
+
+      pendingLeft = clamp(startLeft + event.clientX - startX, minLeft, maxLeft);
+      pendingTop = clamp(startTop + event.clientY - startY, minTop, maxTop);
+
+      if (frame === null) frame = requestAnimationFrame(commitPosition);
+    };
+
+    const stopDrag = (event) => {
+      if (event.pointerId !== pointerId) return;
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+        commitPosition();
+      }
+
+      document.body.classList.remove('is-dragging-window');
+      win.style.transition = previousTransition;
+      pointerId = null;
+
+      try { handle.releasePointerCapture(event.pointerId); } catch (error) { /* ignore */ }
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', stopDrag);
+      document.removeEventListener('pointercancel', stopDrag);
+    };
+
+    handle.addEventListener('pointerdown', (event) => {
+      if (win.classList.contains('is-maximized')) return;
+      if (event.target.closest('.title-bar-controls') || event.target.classList.contains('window-resizer')) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+      activateWindow(win);
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
+      startLeft = win.offsetLeft;
+      startTop = win.offsetTop;
+      pendingLeft = startLeft;
+      pendingTop = startTop;
+      previousTransition = win.style.transition || '';
+      win.style.transition = 'none';
+      document.body.classList.add('is-dragging-window');
+
+      event.preventDefault();
+      event.stopPropagation();
+      try { handle.setPointerCapture(pointerId); } catch (error) { /* ignore */ }
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', stopDrag);
+      document.addEventListener('pointercancel', stopDrag);
+    });
+
+    handle.ondragstart = () => false;
+  }
+
+  function makeResizable(win, handle) {
+    let pointerId = null;
+    let startX = 0;
+    let startY = 0;
+    let startWidth = 0;
+    let startHeight = 0;
+
+    const onMove = (event) => {
+      if (event.pointerId !== pointerId) return;
+      event.preventDefault();
+
+      const area = getDesktopArea();
+      const minWidth = parseInt(getComputedStyle(win).minWidth || '200', 10);
+      const minHeight = parseInt(getComputedStyle(win).minHeight || '150', 10);
+      const maxWidth = area.width - win.offsetLeft - windowMargin;
+      const maxHeight = area.height - win.offsetTop - windowMargin;
+
+      win.style.width = `${clamp(startWidth + event.clientX - startX, minWidth, maxWidth)}px`;
+      win.style.height = `${clamp(startHeight + event.clientY - startY, minHeight, maxHeight)}px`;
+    };
+
+    const stopResize = (event) => {
+      if (event.pointerId !== pointerId) return;
+      document.body.classList.remove('is-resizing-window');
+      pointerId = null;
+
+      try { handle.releasePointerCapture(event.pointerId); } catch (error) { /* ignore */ }
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', stopResize);
+      document.removeEventListener('pointercancel', stopResize);
+    };
+
+    handle.addEventListener('pointerdown', (event) => {
+      if (win.classList.contains('is-maximized')) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+      activateWindow(win);
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
+      startWidth = win.offsetWidth;
+      startHeight = win.offsetHeight;
+      document.body.classList.add('is-resizing-window');
+
+      event.preventDefault();
+      event.stopPropagation();
+      try { handle.setPointerCapture(pointerId); } catch (error) { /* ignore */ }
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', stopResize);
+      document.addEventListener('pointercancel', stopResize);
+    });
+
+    handle.ondragstart = () => false;
+  }
+
+  function enhanceContent(parent) {
+    if (!parent) return;
+
+    parent.querySelectorAll('.post-content ul, .page-body ul').forEach((list) => {
+      if (list.parentElement?.closest('ul')) return;
+      list.classList.add('tree-view');
+    });
+
+    parent.querySelectorAll('pre').forEach((pre) => {
+      if (pre.parentElement?.classList.contains('code-block-wrapper')) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'code-block-wrapper';
+      pre.before(wrapper);
+      wrapper.appendChild(pre);
+
+      const copyButton = document.createElement('button');
+      copyButton.type = 'button';
+      copyButton.className = 'copy-code-button';
+      copyButton.textContent = '复制';
+      copyButton.addEventListener('click', () => copyCode(pre, copyButton));
+      wrapper.appendChild(copyButton);
+
+      const language = pre.querySelector('code')?.className.match(/hljs\s+(\S+)/)?.[1];
+      if (language) {
+        wrapper.classList.add('has-language-label');
+        const label = document.createElement('span');
+        label.className = 'code-language-label';
+        label.textContent = language;
+        wrapper.appendChild(label);
+      }
+    });
+
+    parent.querySelectorAll('table').forEach((table) => {
+      if (table.closest('figure.highlight')) return;
+      if (table.parentElement?.classList.contains('table-wrapper')) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-wrapper';
+      table.before(wrapper);
+      wrapper.appendChild(table);
+    });
+  }
+
+  function copyCode(pre, button) {
+    if (!navigator.clipboard?.writeText) {
+      setTemporaryButtonText(button, '不可用');
+      return;
+    }
+
+    const code = pre.querySelector('code')?.innerText || pre.innerText;
+    navigator.clipboard.writeText(code)
+      .then(() => setTemporaryButtonText(button, '已复制!'))
+      .catch(() => setTemporaryButtonText(button, '失败'));
+  }
+
+  function setTemporaryButtonText(button, text) {
+    const originalText = button.textContent;
+    button.textContent = text;
+    button.disabled = true;
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.disabled = false;
+    }, 2000);
+  }
+
+  function setupWindowInteractions(parent) {
+    if (!parent || parent.dataset?.interactionListenerAttached === 'true') return;
+
+    parent.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      if (openImageFromClick(target, event)) return;
+      openInternalLinkFromClick(target, event);
+    });
+
+    if (parent.dataset) parent.dataset.interactionListenerAttached = 'true';
+  }
+
+  function openImageFromClick(target, event) {
+    const body = target.closest('.window-body');
+    if (target.tagName !== 'IMG' || !body || body.classList.contains('image-popup-body')) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const rect = target.getBoundingClientRect();
+    createWindow(target.alt || target.src.split('/').pop() || 'Image Viewer', target.src, {
+      isImagePopup: true,
+      sourceX: rect.left + rect.width / 2,
+      sourceY: rect.top + rect.height / 2,
+      animateFromSource: true,
+      historyMode: 'none',
+      iconSrc: defaultImageIcon
+    });
+    return true;
+  }
+
+  function openInternalLinkFromClick(target, event) {
+    const link = target.closest('a.desktop-icon, .window-body:not(.image-popup-body) a[href^="/"]:not([href="/"]):not(.no-window):not([target="_blank"])');
+    if (!link) return;
+
+    if (target.tagName === 'IMG' && link.contains(target) && !link.classList.contains('desktop-icon')) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const url = new URL(link.getAttribute('href'), location.origin);
+    const path = normalizePath(url.pathname);
+    const targetUrl = `${path}${url.search}${url.hash}`;
+    const title = link.dataset.windowTitle || link.textContent.trim() || '窗口';
+    const iconSrc = getIconFromLink(link);
+    const existingWindow = findWindowByContentUrl(targetUrl);
+
+    if (existingWindow) {
+      activateWindow(existingWindow);
+      existingWindow.classList.add('window-shake');
+      setTimeout(() => existingWindow.classList.remove('window-shake'), 280);
+      return;
+    }
+
+    const rect = link.getBoundingClientRect();
+    createWindow(title, targetUrl, {
+      sourceX: rect.left + rect.width / 2,
+      sourceY: rect.top + rect.height / 2,
+      animateFromSource: true,
+      iconSrc
+    });
+  }
+
+  function findWindowByContentUrl(url) {
+    return getOpenWindows().find((win) => win.dataset.contentUrl === url) || null;
+  }
+
+  function findWindowForRoute(path, windowId) {
+    if (windowId) {
+      const win = document.getElementById(windowId);
+      if (win?.dataset.contentUrl && normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === path) {
+        return win;
+      }
+    }
+
+    return getOpenWindows().find((win) => {
+      if (!win.dataset.contentUrl) return false;
+      return normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === path;
+    }) || null;
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(value, max));
+  }
+
+  function bootFromCurrentRoute() {
+    const path = currentRoutePath();
+    if (isRoutablePath(path)) {
+      createWindow('加载中...', path, {
+        animateFromSource: false,
+        isAutoOpen: true,
+        historyMode: 'replaceState'
+      });
+      return;
+    }
+
+    isInitialLoad = false;
+    writeDesktopHistory();
+  }
+
+  function handlePopState(event) {
+    const state = event.state || {};
+    const path = currentRoutePath();
+
+    if (isRoutablePath(path)) {
+      const title = state.title || document.querySelector(`.desktop-icon[href^="${path}"]`)?.dataset.windowTitle || path.split('/').filter(Boolean).pop() || '窗口';
+      const win = findWindowForRoute(path, state.windowId) || createWindow(title, path, {
+        animateFromSource: false,
+        windowIdToUse: state.windowId,
+        historyMode: 'none'
+      });
+      activateWindow(win, { updateHistory: false });
+      return;
+    }
+
+    const topWindow = getTopWindow();
+    if (topWindow) activateWindow(topWindow, { updateHistory: false });
+    else writeDesktopHistory();
+  }
+
+  setupWindowInteractions(document);
+  bootFromCurrentRoute();
+  window.addEventListener('popstate', handlePopState);
 });

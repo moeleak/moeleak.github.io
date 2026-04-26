@@ -1,3 +1,20 @@
+@font-face {
+  font-family: "Win98 VGA";
+  src: url("/fonts/win98-vga.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --win98-font: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
+  --win98-system-font: "Zpix", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
+  --win98-code-font: "Win98 VGA", "Zpix", "Fixedsys", "Terminal", "Lucida Console", "Courier New", monospace;
+  --win98-silver: #C0C0C0;
+  --win98-blue: #000080;
+  --win98-taskbar-height: 30px;
+}
+
 body.windows-desktop {
   background-color: #008080;
   background-repeat: no-repeat;
@@ -5,7 +22,7 @@ body.windows-desktop {
   overflow: hidden;
   height: 100vh;
   margin: 0;
-  font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", sans-serif;
+  font-family: var(--win98-font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -18,7 +35,7 @@ body.windows-desktop {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
-  max-height: calc(100vh - 40px);
+  max-height: calc(100vh - 70px);
   align-content: flex-start;
   gap: 15px 10px;
   z-index: 5;
@@ -52,7 +69,7 @@ body.windows-desktop {
 .desktop-icon span {
   padding: 1px 3px;
   font-size: 11px;
-  font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", sans-serif;
+  font-family: var(--win98-font);
 }
 
 .desktop-icon.selected span {
@@ -61,12 +78,98 @@ body.windows-desktop {
    outline: 1px dotted white;
 }
 
+.win98-taskbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: var(--win98-taskbar-height);
+  box-sizing: border-box;
+  padding: 2px;
+  background: var(--win98-silver);
+  box-shadow: inset 0 1px #fff;
+  font-family: var(--win98-system-font);
+  font-size: 11px;
+}
+
+.win98-task-list {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.win98-task-button {
+  display: flex;
+  flex: 0 1 180px;
+  align-items: center;
+  gap: 4px;
+  min-width: 90px;
+  max-width: 220px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 8px;
+  overflow: hidden;
+  color: #222;
+  font-family: var(--win98-system-font);
+  font-size: 11px;
+  font-weight: normal;
+  line-height: 20px;
+  text-align: left;
+  text-shadow: none;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.win98-task-button:focus,
+.win98-task-button:focus-visible {
+  outline: none;
+}
+
+.win98-task-button::-moz-focus-inner {
+  border: 0;
+}
+
+.win98-task-button.is-active {
+  background: #dfdfdf;
+  box-shadow: inset 2px 2px #0a0a0a, inset -1px -1px #fff, inset 3px 3px grey, inset -2px -2px #dfdfdf;
+  padding-top: 2px;
+  padding-left: 9px;
+}
+
+.win98-task-button.is-minimized:not(.is-active) {
+  color: #555;
+}
+
+.win98-task-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+}
+
+.win98-task-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
 #window-container {
     position: absolute;
     top: 0;
+    right: 0;
+    bottom: var(--win98-taskbar-height);
     left: 0;
-    width: 100%;
-    height: 100%;
     pointer-events: none;
 }
 
@@ -81,27 +184,73 @@ body.windows-desktop {
     transform-origin: center center;
 }
 
-.window-opening {
-    transition: opacity 0.25s ease-out,
-                transform 0.25s ease-out,
-                left 0.25s ease-out,
-                top 0.25s ease-out,
-                width 0.25s ease-out,
-                height 0.25s ease-out;
+#window-container > .window.is-minimized {
+    display: none;
+}
+
+#window-container > .window.is-animating-shell {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+#window-container > .window.is-minimized .gt-container.gt-input-focused::after,
+#window-container > .window.is-minimized .gt-header-comment,
+#window-container > .window.is-gitalk-suspended .gt-container.gt-input-focused::after,
+#window-container > .window.is-gitalk-suspended .gt-header-comment {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+#window-container > .window.is-maximized {
+    min-width: 0;
+    min-height: 0;
+}
+
+#window-container > .window.is-maximized > .title-bar {
+    cursor: default;
+}
+
+#window-container > .window.is-maximized .window-resizer {
+    display: none;
+}
+
+.win98-window-animator {
+    position: fixed;
+    z-index: 20000;
+    box-sizing: border-box;
+    pointer-events: none;
+    background: transparent;
+    border: 1px solid #000;
+    outline: 1px solid #fff;
+    transition-property: left, top, width, height;
+    transition-duration: 160ms;
+    transition-timing-function: steps(5, end);
+}
+
+.win98-window-animator::before,
+.win98-window-animator::after {
+    content: "";
+    position: absolute;
+    border: 1px solid #000;
+}
+
+.win98-window-animator::before {
+    inset: 2px;
+}
+
+.win98-window-animator::after {
+    inset: 4px;
 }
 
 #window-container > .window > .title-bar {
-  font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
+  font-family: var(--win98-font);
   cursor: grab;
   user-select: none;
   flex-shrink: 0;
 }
 #window-container > .window > .title-bar:active {
     cursor: grabbing;
-}
-
-#window-container > .window > div[style*="cursor: nwse-resize"] {
-     touch-action: none;
 }
 
 #window-container > .window > .window-body {
@@ -113,11 +262,12 @@ body.windows-desktop {
     min-height: 0;
     font-size: 12px;
     line-height: 1.6;
-    font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
+    font-family: var(--win98-font);
 }
 
-table > tbody > tr > * {
-  font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
+table > :is(thead, tbody, tfoot) > tr > * {
+  font-family: var(--win98-system-font);
+  font-weight: normal;
 }
 
 #window-container > .window > .window-body.image-popup-body {
@@ -147,8 +297,8 @@ table > tbody > tr > * {
     margin-right: auto;
     max-width: 90%;
     height: auto;
-    margin-top: 1em;
-    margin-bottom: 1em;
+    margin-top: 0.3em;
+    margin-bottom: 0em;
 }
 
 #window-container > .window > .window-body.image-popup-body img {
@@ -170,27 +320,84 @@ table > tbody > tr > * {
     background: transparent;
 }
 
+#window-container .window .window-body .gt-header-field-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: 6px;
+    margin-left: 0 !important;
+}
+
+#window-container .window .window-body .gt-header-textarea-label {
+    align-self: center;
+    color: #222;
+    font-family: var(--win98-system-font);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
 #window-container .window .window-body .gt-header-textarea {
     background: #FFF;
-    border-top: 1px solid #808080;
-    border-left: 1px solid #808080;
-    border-right: 1px solid #FFF;
-    border-bottom: 1px solid #FFF;
-    box-shadow: none;
+    border: none;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
     border-radius: 0;
-    font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", sans-serif !important;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    font-family: var(--win98-font) !important;
     font-size: 13px !important;
     min-height: 80px;
     padding: 5px;
-    margin-top: 8px;
+    margin-top: 0;
+    resize: vertical;
 }
 #window-container .window .window-body .gt-header-textarea:focus {
     outline: none;
 }
 
+#window-container .window .window-body .gt-header-preview {
+    background: #FFF;
+    border: none;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    border-radius: 0;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 80px;
+    padding: 5px;
+    margin-top: 0;
+}
+
+#window-container .window .window-body .gt-header > :not(.gt-header-comment) {
+    display: none !important;
+}
+
+#window-container .window .window-body .gt-header-comment {
+    margin-left: 0 !important;
+}
+
+#window-container .window .window-body img.gt-comment-avatar {
+    display: block;
+    box-sizing: border-box;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    align-self: flex-start;
+    margin-top: 0.3em;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding: 0;
+    object-fit: cover;
+    object-position: center;
+    border: none;
+    border-radius: 0 !important;
+    background: transparent;
+}
+
 #window-container .window .window-body:not(.image-popup-body) .gt-comment-body,
 #window-container .window .window-body:not(.image-popup-body) .markdown-body {
-    font-family: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", sans-serif;
+    font-family: var(--win98-font);
     font-size: 13px;
     line-height: 1.6;
 }
@@ -199,9 +406,181 @@ table > tbody > tr > * {
   display: none !important;
 }
 
+#window-container .window .window-body .gt-meta {
+    margin: 1em 0;
+    padding: 0 0 0.85em;
+    border-bottom: 1px solid #fff;
+    box-shadow: 0 1px #808080;
+    font-family: var(--win98-system-font);
+}
+
+#window-container .window .window-body .gt-user {
+    position: relative;
+    display: inline-block;
+    font-size: 12px;
+}
+
+#window-container .window .window-body .gt-user-inner {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 8px;
+    color: #000;
+    text-decoration: none;
+    background: var(--win98-silver);
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+}
+
+#window-container .window .window-body .gt-user .is--poping {
+    box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff, inset 2px 2px grey, inset -2px -2px #dfdfdf;
+    padding-top: 1px;
+    padding-left: 9px;
+}
+
+#window-container .window .window-body .gt-user .gt-ico {
+    margin-left: 6px;
+}
+
+#window-container .window .window-body .gt-user .gt-ico svg {
+    fill: #000;
+}
+
+#window-container .window .window-body .gt-popup {
+    top: calc(100% - 2px);
+    right: 0;
+    left: auto;
+    padding: 0;
+    width: auto;
+    min-width: max-content;
+    color: #000;
+    letter-spacing: 0;
+    background: var(--win98-silver);
+    border: none;
+    border-radius: 0;
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+}
+
+#window-container .window .window-body .gt-popup .gt-action {
+    display: block;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 5px 10px;
+    color: #000;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+#window-container .window .window-body .gt-popup .gt-action:hover,
+#window-container .window .window-body .gt-popup .gt-action:focus {
+    color: #fff;
+    background: var(--win98-blue);
+    outline: none;
+}
+
+#window-container .window .window-body .gt-popup .gt-action.is--active::before {
+    display: none;
+}
+
+#window-container .window .window-body .gt-link-project,
+#window-container .window .window-body .gt-link-counts {
+    color: #000;
+    text-decoration: none;
+    border-bottom: none;
+}
+
+#window-container .window .window-body .gt-link-project:hover,
+#window-container .window .window-body .gt-link-counts:hover {
+    color: var(--win98-blue);
+    text-decoration: underline;
+}
+
+#window-container .window .window-body .gt-copyright {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 5px 10px;
+    border-top: 1px solid #fff;
+    box-shadow: 0 -1px #808080;
+    font-family: var(--win98-system-font);
+    font-size: 12px;
+    color: #555;
+    white-space: nowrap;
+}
+
+#window-container .window .window-body .gt-version {
+    display: inline;
+    margin-left: 6px;
+    padding: 0;
+    color: #555;
+    border: 0;
+    box-shadow: none;
+}
+
 #window-container .window .window-body:not(.image-popup-body) .markdown-body p,
 #window-container .window .window-body:not(.image-popup-body) .markdown-body li {
     font-family: inherit !important;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body, .gt-comment-body, .markdown-body) ul,
+#window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body, .gt-comment-body, .markdown-body) ol {
+    margin: 0.75em 0;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body, .gt-comment-body, .markdown-body) ol {
+    margin-left: 0;
+    padding-left: 1.8em;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.gt-comment-body, .markdown-body) ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.gt-comment-body, .markdown-body) ul li {
+    position: relative;
+    padding-left: 22px;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.gt-comment-body, .markdown-body) ul li::before {
+    content: "";
+    position: absolute;
+    top: 0.72em;
+    left: 6px;
+    width: 7px;
+    height: 7px;
+    background: var(--win98-silver);
+    box-shadow: inset 1px 1px #fff, inset -1px -1px #000;
+    transform: translateY(-50%);
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body, .gt-comment-body, .markdown-body) li > p {
+    margin: 0.35em 0;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.gt-comment-body, .markdown-body) ul ul,
+#window-container .window .window-body:not(.image-popup-body) :is(.gt-comment-body, .markdown-body) ol ol,
+#window-container .window .window-body:not(.image-popup-body) :is(.gt-comment-body, .markdown-body) ul ol,
+#window-container .window .window-body:not(.image-popup-body) :is(.gt-comment-body, .markdown-body) ol ul {
+    margin: 0.35em 0 0.15em 0;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body) ul.tree-view {
+    font-family: var(--win98-font);
+    margin: 0.75em 0;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body) blockquote {
+    margin: 0.75em 0;
+    padding-left: 10px;
+    border-left: 2px solid #808080;
+    color: #222;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body) blockquote :is(p, ul, ol) {
+    margin: 0.35em 0;
+}
+
+#window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body) blockquote ol {
+    padding-left: 1.4em;
 }
 
 #window-container .window .window-body .gt-comments {
@@ -239,7 +618,6 @@ table > tbody > tr > * {
 #window-container .window .window-body .gt-comment-avatar {
     position: static;
     flex-shrink: 0;
-    border: none;
 }
 
 #window-container .window .window-body .gt-comment-main {
@@ -258,12 +636,16 @@ table > tbody > tr > * {
     border-radius: 0 !important;
     box-shadow: none !important;
     margin-left: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+    overflow: hidden !important;
 }
 
 #window-container .window .window-body .gt-comment-header {
     background: transparent;
     border-bottom: none;
     padding-bottom: 5px;
+    text-align: left;
 }
 #window-container .window .window-body .gt-comment-username {
     font-weight: bold;
@@ -275,6 +657,12 @@ table > tbody > tr > * {
 
 #window-container .window .window-body .gt-comment-body {
     color: #000;
+    text-align: left;
+}
+
+#window-container .window .window-body .gt-comment-body p {
+    margin: 0.35em 0;
+    text-align: left;
 }
 
 #window-container .window .window-body .gt-comment-body .user-mention {
@@ -298,22 +686,19 @@ table > tbody > tr > * {
 
 #window-container .window .window-body .gt-comment-body code {
     background: #C0C0C0;
-    font-family: "Courier New", monospace !important;
-    font-weight: bold !important;
+    font-family: var(--win98-code-font) !important;
+    font-weight: normal !important;
     border: 1px solid #808080;
     padding: 1px 4px;
     font-size: 12px !important;
 }
 #window-container .window .window-body .gt-comment-body pre {
-
-    background: #C0C0C0;
-    font-family: "Courier New", monospace;
-    font-weight: bold;
+    background: #fff;
+    font-family: var(--win98-code-font);
+    font-weight: normal;
     padding: 8px;
-    border-top:    2px solid #FFF;
-    border-left:   2px solid #FFF;
-    border-right:  2px solid #808080;
-    border-bottom: 2px solid #808080;
+    border: none;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
     margin: 1em 0;
     overflow-x: auto;
 }
@@ -346,17 +731,31 @@ table > tbody > tr > * {
     color: #FF0000;
 }
 
-#window-container .window .window-body .gt-comment-reply .gt-ico {
-    display: inline-block;
-    position: relative;
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
-    vertical-align: middle;
+#window-container .window .window-body .gt-comment-reply {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 40px;
+    height: 20px;
+    padding: 0 8px;
+    justify-content: center;
+    color: #000;
+    background: var(--win98-silver);
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+    font-family: var(--win98-system-font);
+    font-size: 11px;
 }
 
-#window-container .window .window-body .gt-comment-reply .gt-ico .gt-ico-text {
-    display: none
+#window-container .window .window-body .gt-comment-reply:hover {
+    color: #000;
+}
+
+#window-container .window .window-body .gt-comment-reply:active {
+    box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff, inset 2px 2px grey, inset -2px -2px #dfdfdf;
+}
+
+#window-container .window .window-body .gt-comment-reply .gt-ico {
+    display: none;
 }
 
 #window-container .window .window-body .gt-comment-edit {
@@ -382,21 +781,8 @@ table > tbody > tr > * {
     pointer-events: none;
 }
 
-#window-container .window .window-body .gt-comment-reply .gt-ico {
-    pointer-events: none;
-}
-
-#window-container .window .window-body .gt-comment-reply .gt-ico .gt-svg {
-  display: none
-}
-
-#window-container .window .window-body .gt-comment-reply .gt-ico::before {
-    -webkit-mask-image: url(/svgs/reply.svg);
-    mask-image: url(/svgs/reply.svg);
-}
-
 #window-container .window .window-body a.gt-comment-reply::after {
-    display: none;
+    content: "回复";
 }
 
 #window-container .window .window-body a.gt-comment-edit::after,
@@ -430,22 +816,13 @@ table > tbody > tr > * {
     align-items: center;
     justify-content: center;
 
-    font-family: "Zpix", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
+    font-family: var(--win98-system-font);
     font-size: 11px;
     font-weight: normal;
 }
 
 #window-container .window .window-body .gt-btn {
     background-image: none;
-}
-
-#window-container .window .window-body .gt-btn:not([aria-disabled="true"]):active {
-    box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px grey;
-
-    padding-top: 2px;
-    padding-left: 13px;
-    padding-bottom: 0px;
-    padding-right: 11px;
 }
 
 #window-container .window .window-body .gt-header-controls .gt-btn-public:nth-of-type(2):not([aria-disabled="true"]):active,
@@ -475,16 +852,80 @@ table > tbody > tr > * {
 
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
+@keyframes win98-progress-slide {
+  from { transform: translateX(calc(-100% - 4px)); }
+  to { transform: translateX(calc(150% + 4px)); }
 }
-.window-shake { animation: shake 0.3s ease-in-out; }
 
-body.is-dragging-window {
+#window-container .window .window-body .gitalk-placeholder,
+#window-container .window .window-body .gt-initing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 12px;
+    text-align: center;
+}
+
+#window-container .window .window-body .gitalk-placeholder-text,
+#window-container .window .window-body .gt-initing-text {
+    margin: 0;
+    color: #222;
+    font-family: var(--win98-system-font);
+    font-size: 12px;
+    text-shadow: 1px 1px 0 #fff;
+}
+
+#window-container .window .window-body .gitalk-placeholder .progress-indicator,
+#window-container .window .window-body .gt-loader.progress-indicator {
+    display: block;
+    width: clamp(180px, 46%, 300px);
+    height: 22px;
+    margin: 0;
+    overflow: hidden;
+}
+
+#window-container .window .window-body .gt-loader.progress-indicator {
+    position: relative;
+    border: none;
+    border-radius: 0;
+    line-height: normal;
+    animation: none !important;
+}
+
+#window-container .window .window-body .gt-loader.progress-indicator::before {
+    content: none;
+}
+
+#window-container .window .window-body .gitalk-placeholder .progress-indicator-bar,
+#window-container .window .window-body .gt-loader.progress-indicator .progress-indicator-bar {
+    display: block;
+    min-width: 72px;
+    animation: win98-progress-slide 1.15s steps(6, end) infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-5px, 0); }
+  50% { transform: translate(5px, 0); }
+  75% { transform: translate(-3px, 0); }
+}
+.window-shake { animation: shake 260ms steps(1, end); }
+
+body.is-dragging-window,
+body.is-resizing-window {
     user-select: none;
     -webkit-user-select: none;
+}
+
+body.is-dragging-window,
+body.is-dragging-window * {
+    cursor: grabbing !important;
+}
+
+body.is-resizing-window,
+body.is-resizing-window * {
+    cursor: nwse-resize !important;
 }
 
 #window-container > .window > .window-body:not(.image-popup-body) pre code.hljs {
@@ -494,8 +935,14 @@ body.is-dragging-window {
 }
 
 .window-resizer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
     width: 15px;
     height: 15px;
+    cursor: nwse-resize;
+    touch-action: none;
     transition: width 0.1s ease, height 0.1s ease;
 }
 
@@ -518,17 +965,28 @@ body.is-dragging-window {
 
 .code-block-wrapper {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   margin: 1em 0;
 }
 
 .code-block-wrapper pre {
   margin: 0 !important;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+}
+
+.code-block-wrapper.has-language-label pre {
+  padding-top: 24px;
 }
 
 .copy-code-button {
   padding: 2px 8px;
   font-size: 11px;
-  font-family: "Zpix", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
+  font-family: var(--win98-system-font);
   font-weight: normal;
   user-select: none;
   cursor: default;
@@ -540,14 +998,14 @@ body.is-dragging-window {
 
 .code-language-label {
   position: absolute;
-  top: 0px;
+  top: 6px;
   left: 8px;
   color: grey;
   text-shadow: 1px 1px 0 #fff;
-  font-family: "Zpix", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
+  font-family: var(--win98-system-font);
   font-size: 11px;
   font-weight: normal;
-  padding: 1px 5px;
+  padding: 0;
   user-select: none;
   pointer-events: none;
   text-transform: uppercase;
@@ -562,18 +1020,34 @@ body.is-dragging-window {
 
 figure.highlight,
 figure.highlight table {
-  background: #C0C0C0 !important;
+  background: transparent !important;
   border: none !important;
   border-collapse: collapse;
   margin: 0 !important;
   padding: 0 !important;
 }
 
+figure.highlight {
+  width: 100%;
+}
+
+figure.highlight table,
+figure.highlight tbody,
+figure.highlight tr,
+figure.highlight td.code {
+  width: 100%;
+}
+
 figure.highlight td,
 figure.highlight .gutter,
 figure.highlight .code {
-  background: #C0C0C0 !important;
+  background: transparent !important;
   border: none !important;
+}
+
+figure.highlight > table > tbody > tr > * {
+  height: auto !important;
+  padding: 0 !important;
 }
 
 figure.highlight pre {
@@ -584,14 +1058,14 @@ figure.highlight pre {
 pre code.hljs {
   display: block;
   overflow-x: auto;
-  padding: 1em
+  padding: 0
 }
 code.hljs {
-  padding: 3px 5px
+  padding: 0
 }
 
 .hljs {
-  background: #C0C0C0;
+  background: #fff;
   color: black
 }
 .hljs-comment,
@@ -642,20 +1116,18 @@ code.hljs {
 }
 
 pre {
-  background: #C0C0C0;
-  font-family: "Courier New", monospace;
-  font-weight: bold;
+  background: #fff;
+  font-family: var(--win98-code-font);
+  font-weight: normal;
   padding: 8px;
-  border-top:    2px solid #FFF;
-  border-left:   2px solid #FFF;
-  border-right:  2px solid #808080;
-  border-bottom: 2px solid #808080;
+  border: none;
+  box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
   margin: 1em 0;
   overflow-x: auto;
 }
 
 code,
 code * {
-  font-family: 'Courier New', monospace !important;
-  font-weight: bold !important;
+  font-family: var(--win98-code-font) !important;
+  font-weight: normal !important;
 }
