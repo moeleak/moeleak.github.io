@@ -252,9 +252,21 @@ body.windows-desktop {
   -ms-touch-action: none;
   -webkit-touch-callout: none;
   flex-shrink: 0;
+  min-width: 0;
 }
 #window-container > .window > .title-bar:active {
     cursor: grabbing;
+}
+
+#window-container > .window > .title-bar .title-bar-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#window-container > .window > .title-bar .title-bar-controls {
+    flex-shrink: 0;
 }
 
 #window-container > .window > .window-body {
@@ -949,7 +961,7 @@ body.is-dragging-window * {
 
 body.is-resizing-window,
 body.is-resizing-window * {
-    cursor: nwse-resize !important;
+    cursor: var(--win98-resize-cursor, nwse-resize) !important;
 }
 
 #window-container > .window > .window-body:not(.image-popup-body) pre code.hljs {
@@ -960,14 +972,41 @@ body.is-resizing-window * {
 
 .window-resizer {
     position: absolute;
+    z-index: 2;
+    touch-action: none;
+    background: transparent;
+}
+
+.window-resizer.is-west,
+.window-resizer.is-east {
+    top: 22px;
+    bottom: 16px;
+    width: 6px;
+    cursor: ew-resize;
+}
+
+.window-resizer.is-west {
+    left: 0;
+}
+
+.window-resizer.is-east {
+    right: 0;
+}
+
+.window-resizer.is-south {
+    right: 16px;
+    bottom: 0;
+    left: 0;
+    height: 6px;
+    cursor: ns-resize;
+}
+
+.window-resizer.is-southeast {
     right: 0;
     bottom: 0;
-    z-index: 1;
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
     cursor: nwse-resize;
-    touch-action: none;
-    transition: width 0.1s ease, height 0.1s ease;
 }
 
 .table-wrapper {
@@ -1036,9 +1075,20 @@ body.is-resizing-window * {
 }
 
 @media (pointer: coarse) {
-    .window-resizer {
-        width: 35px;
-        height: 35px;
+    .window-resizer.is-west,
+    .window-resizer.is-east {
+        width: 16px;
+        bottom: 32px;
+    }
+
+    .window-resizer.is-south {
+        height: 16px;
+        right: 32px;
+    }
+
+    .window-resizer.is-southeast {
+        width: 32px;
+        height: 32px;
     }
 }
 

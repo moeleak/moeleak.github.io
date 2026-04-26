@@ -451,11 +451,20 @@ document.addEventListener('DOMContentLoaded', () => {
     button.setAttribute('aria-label', win.classList.contains('is-maximized') ? 'Restore' : 'Maximize');
   }
 
+  function createResizeHandle(win, direction) {
+    const handle = document.createElement('div');
+    handle.className = `window-resizer is-${direction}`;
+    handle.dataset.resizeDirection = direction;
+    makeResizable(win, handle, direction);
+    return handle;
+  }
+
   function createResizer(win) {
-    const resizer = document.createElement('div');
-    resizer.className = 'window-resizer';
-    makeResizable(win, resizer);
-    return resizer;
+    const fragment = document.createDocumentFragment();
+    ['west', 'east', 'south', 'southeast'].forEach((direction) => {
+      fragment.appendChild(createResizeHandle(win, direction));
+    });
+    return fragment;
   }
 
   function placeWindow(win, placement) {
@@ -1079,10 +1088,11 @@ document.addEventListener('DOMContentLoaded', () => {
     handle.ondragstart = () => false;
   }
 
-  function makeResizable(win, handle) {
+  function makeResizable(win, handle, direction = 'southeast') {
     let pointerId = null;
     let startX = 0;
     let startY = 0;
+    let startLeft = 0;
     let startWidth = 0;
     let startHeight = 0;
 
@@ -1093,16 +1103,41 @@ document.addEventListener('DOMContentLoaded', () => {
       const area = getDesktopArea();
       const minWidth = parseInt(getComputedStyle(win).minWidth || '200', 10);
       const minHeight = parseInt(getComputedStyle(win).minHeight || '150', 10);
-      const maxWidth = area.width - win.offsetLeft - windowMargin;
-      const maxHeight = area.height - win.offsetTop - windowMargin;
+      const deltaX = event.clientX - startX;
+      const deltaY = event.clientY - startY;
+      const resizeWest = direction === 'west';
+      const resizeEast = direction === 'east' || direction === 'southeast';
+      const resizeSouth = direction === 'south' || direction === 'southeast';
 
-      win.style.width = `${clamp(startWidth + event.clientX - startX, minWidth, maxWidth)}px`;
-      win.style.height = `${clamp(startHeight + event.clientY - startY, minHeight, maxHeight)}px`;
+      let nextLeft = startLeft;
+      let nextWidth = startWidth;
+      let nextHeight = startHeight;
+
+      if (resizeWest) {
+        const widthDelta = clamp(deltaX, -startLeft, startWidth - minWidth);
+        nextLeft = startLeft + widthDelta;
+        nextWidth = startWidth - widthDelta;
+      }
+
+      if (resizeEast) {
+        const maxWidth = area.width - startLeft - windowMargin;
+        nextWidth = clamp(startWidth + deltaX, minWidth, maxWidth);
+      }
+
+      if (resizeSouth) {
+        const maxHeight = area.height - win.offsetTop - windowMargin;
+        nextHeight = clamp(startHeight + deltaY, minHeight, maxHeight);
+      }
+
+      win.style.left = `${Math.round(nextLeft)}px`;
+      win.style.width = `${Math.round(nextWidth)}px`;
+      win.style.height = `${Math.round(nextHeight)}px`;
     };
 
     const stopResize = (event) => {
       if (event.pointerId !== pointerId) return;
       document.body.classList.remove('is-resizing-window');
+      document.body.style.removeProperty('--win98-resize-cursor');
       pointerId = null;
 
       try { handle.releasePointerCapture(event.pointerId); } catch (error) { /* ignore */ }
@@ -1119,9 +1154,11 @@ document.addEventListener('DOMContentLoaded', () => {
       pointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
+      startLeft = win.offsetLeft;
       startWidth = win.offsetWidth;
       startHeight = win.offsetHeight;
       document.body.classList.add('is-resizing-window');
+      document.body.style.setProperty('--win98-resize-cursor', getComputedStyle(handle).cursor || 'nwse-resize');
 
       event.preventDefault();
       event.stopPropagation();

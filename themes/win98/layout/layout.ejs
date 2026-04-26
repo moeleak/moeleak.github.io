@@ -157,6 +157,7 @@
             admin: <%- JSON.stringify(theme.gitalk.admin || [theme.gitalk.owner]) %>,
             id: finalGitalkId,
             language: '<%- theme.gitalk.language || 'zh-CN' %>',
+            pagerDirection: 'last',
             distractionFreeMode: <%= theme.gitalk.distractionFreeMode === true %>,
             proxy: '<%- theme.gitalk.proxy || '' %>'
           });
