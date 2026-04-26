@@ -178,6 +178,7 @@ body.windows-desktop {
     pointer-events: auto;
     min-width: 200px;
     min-height: 150px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -282,6 +283,16 @@ table > :is(thead, tbody, tfoot) > tr > * {
     overflow: hidden;
 }
 
+#window-container > .window > .window-status-bar {
+    flex-shrink: 0;
+    margin-top: auto;
+    font-family: var(--win98-font);
+}
+
+#window-container > .window > .window-status-bar .status-bar-field {
+    font-family: var(--win98-font);
+}
+
 #window-container > .window > .window-body:not(.image-popup-body) h1,
 #window-container > .window > .window-body:not(.image-popup-body) h2,
 #window-container > .window > .window-body:not(.image-popup-body) h3,
@@ -293,6 +304,14 @@ table > :is(thead, tbody, tfoot) > tr > * {
 #window-container > .window > .window-body:not(.image-popup-body) h2 { font-size: 1.4em; margin: 1em 0 0.4em 0; }
 #window-container > .window > .window-body:not(.image-popup-body) h3 { font-size: 1.2em; margin: 0.8em 0 0.3em 0; }
 #window-container > .window > .window-body:not(.image-popup-body) h4 { font-size: 1.1em; margin: 0.7em 0 0.2em 0; }
+
+#window-container > .window > .window-body:not(.image-popup-body) hr {
+    height: 0;
+    margin: 0.9em 0 1em;
+    border: 0;
+    border-top: 1px solid #808080;
+    border-bottom: 1px solid #fff;
+}
 
 #window-container > .window > .window-body:not(.image-popup-body) img {
     display: block;

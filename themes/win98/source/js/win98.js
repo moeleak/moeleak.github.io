@@ -275,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
       animateFromSource = false,
       isAutoOpen = false,
       isImagePopup = false,
+      startMaximized = false,
       windowIdToUse,
       historyMode = 'pushState',
       iconSrc
@@ -288,7 +289,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const win = document.createElement('div');
     const body = document.createElement('div');
-    const placement = getWindowPlacement();
+    const statusBar = isImagePopup ? null : createStatusBar();
+    const restorePlacement = getWindowPlacement();
+    const placement = startMaximized ? getMaximizedPlacement() : restorePlacement;
     const titleBar = createTitleBar(title, {
       onMinimize: () => minimizeWindow(win),
       onMaximize: () => toggleMaximizeWindow(win),
@@ -312,11 +315,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     placeWindow(win, placement);
-    win.append(titleBar, body, createResizer(win));
+    if (startMaximized) {
+      win._restorePlacement = restorePlacement;
+      win.classList.add('is-maximized');
+    }
+    if (statusBar) win._statusBar = statusBar;
+    win.append(titleBar, body, ...(statusBar ? [statusBar] : []), createResizer(win));
     win.addEventListener('pointerdown', () => activateWindow(win), true);
     makeDraggable(win, titleBar);
     windowContainer.appendChild(win);
     addTaskButton(win);
+    if (startMaximized) updateMaximizeButton(win);
 
     if (animateFromSource && sourceX !== undefined && sourceY !== undefined) {
       animateWindowOpen(win, rectFromCenter(sourceX, sourceY, 32));
@@ -338,6 +347,67 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isInitialLoad && isAutoOpen) isInitialLoad = false;
     updateTaskbar(win);
     return win;
+  }
+
+  function createStatusBar() {
+    const statusBar = document.createElement('div');
+    const wordCountField = document.createElement('p');
+    const publishedAtField = document.createElement('p');
+
+    statusBar.className = 'status-bar window-status-bar';
+    statusBar.hidden = true;
+
+    wordCountField.className = 'status-bar-field';
+    wordCountField.dataset.statusField = 'word-count';
+
+    publishedAtField.className = 'status-bar-field';
+    publishedAtField.dataset.statusField = 'published-at';
+
+    statusBar.append(wordCountField, publishedAtField);
+    return statusBar;
+  }
+
+  function countDocumentUnits(text) {
+    return (text || '').replace(/\s+/g, '').length;
+  }
+
+  function extractContentStatus(mainContent) {
+    if (!mainContent) return null;
+
+    const content = mainContent.querySelector('.post-content, .page-body');
+    if (!content) return null;
+
+    const wordCount = countDocumentUnits(content.textContent || '');
+    const publishedAt = mainContent.dataset.publishedAt
+      || mainContent.querySelector('.post-meta')?.textContent.replace(/^发布于:\s*/, '').trim()
+      || '';
+
+    return {
+      wordCount,
+      publishedAt
+    };
+  }
+
+  function updateWindowStatusBar(win, status) {
+    const statusBar = win?._statusBar;
+    if (!statusBar) return;
+
+    const wordCountField = statusBar.querySelector('[data-status-field="word-count"]');
+    const publishedAtField = statusBar.querySelector('[data-status-field="published-at"]');
+    if (!wordCountField || !publishedAtField) return;
+
+    if (!status) {
+      statusBar.hidden = true;
+      wordCountField.textContent = '';
+      publishedAtField.textContent = '';
+      return;
+    }
+
+    wordCountField.textContent = `字数: ${status.wordCount}`;
+    publishedAtField.textContent = status.publishedAt
+      ? `发表时间: ${status.publishedAt}`
+      : '静态页';
+    statusBar.hidden = false;
   }
 
   function createTitleBar(title, callbacks) {
@@ -734,6 +804,18 @@ document.addEventListener('DOMContentLoaded', () => {
     getTaskList()?.querySelector(`[data-window-id="${windowId}"]`)?.remove();
   }
 
+  function updateWindowTitleBars(activeWindow) {
+    const activeId = !activeExternalTaskId ? activeWindow?.id || null : null;
+
+    getOpenWindows().forEach((win) => {
+      const titleBar = win.querySelector('.title-bar');
+      if (!titleBar) return;
+
+      const isActive = win.id === activeId && !win.classList.contains('is-minimized');
+      titleBar.classList.toggle('inactive', !isActive);
+    });
+  }
+
   function updateTaskButton(win) {
     const button = getTaskButton(win);
     if (!button) return;
@@ -756,6 +838,8 @@ document.addEventListener('DOMContentLoaded', () => {
     getTaskList()?.querySelectorAll('.win98-task-button[data-task-id]').forEach((button) => {
       button.classList.toggle('is-active', button.dataset.taskId === activeExternalTaskId);
     });
+
+    updateWindowTitleBars(activeWindow);
   }
 
   function registerExternalTask(options) {
@@ -849,8 +933,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!mainContent) {
           setWindowTitle(win, `${getWindowTitle(win)} (内容加载失败)`);
           body.innerHTML = '<p>错误：在获取的页面中未找到 #content-main 结构。</p>';
+          updateWindowStatusBar(win, null);
           return;
         }
+
+        const contentStatus = extractContentStatus(mainContent);
 
         const heading = mainContent.querySelector('h1');
         if (heading?.textContent.trim()) {
@@ -858,6 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         body.replaceChildren(...Array.from(mainContent.childNodes));
+        updateWindowStatusBar(win, contentStatus);
         initializeGitalk(body, win.id, url);
         enhanceContent(body);
         setupWindowInteractions(body);
@@ -867,6 +955,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch((error) => {
         setWindowTitle(win, `${getWindowTitle(win)} (加载错误)`);
         body.innerHTML = `<p style="color: red;">加载内容出错: ${error.message}</p>`;
+        updateWindowStatusBar(win, null);
       });
   }
 
@@ -1203,6 +1292,7 @@ document.addEventListener('DOMContentLoaded', () => {
       createWindow('加载中...', path, {
         animateFromSource: false,
         isAutoOpen: true,
+        startMaximized: true,
         historyMode: 'replaceState'
       });
       return;
@@ -1220,6 +1310,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const title = state.title || document.querySelector(`.desktop-icon[href^="${path}"]`)?.dataset.windowTitle || path.split('/').filter(Boolean).pop() || '窗口';
       const win = findWindowForRoute(path, state.windowId) || createWindow(title, path, {
         animateFromSource: false,
+        startMaximized: true,
         windowIdToUse: state.windowId,
         historyMode: 'none'
       });
