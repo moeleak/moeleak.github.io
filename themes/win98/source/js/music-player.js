@@ -2,14 +2,35 @@ document.addEventListener('DOMContentLoaded', function () {
   const musicPlayerIcon = document.getElementById('icon-musicplayer');
   let webampInstance = null;
   let musicTask = null;
+  let isClosed = false;
   const webampWindowSelectors = ['#main-window', '#playlist-window', '#equalizer-window'];
   const shakeDuration = 280;
 
+  const getWebampContainer = () => document.getElementById('webamp-container');
   const getWebampRoot = () => document.getElementById('webamp');
   const getMainWindow = () => document.querySelector('#main-window') || getWebampRoot();
   const getWebampWindows = () => webampWindowSelectors
     .map((selector) => document.querySelector(selector))
     .filter(Boolean);
+  const hasMusicUi = () => !!getWebampRoot() || getWebampWindows().length > 0;
+
+  const cleanupClosedMusicPlayer = () => {
+    musicTask?.remove();
+    musicTask = null;
+    webampInstance = null;
+    isClosed = false;
+
+    getWebampRoot()?.remove();
+    getWebampWindows().forEach((element) => element.remove());
+    getWebampContainer()?.replaceChildren();
+  };
+
+  const syncMusicPlayerState = () => {
+    if (webampInstance && isClosed) return false;
+    if (hasMusicUi()) return false;
+    cleanupClosedMusicPlayer();
+    return true;
+  };
 
   const triggerShake = (elements) => {
     const targets = elements.filter(Boolean);
@@ -45,6 +66,8 @@ document.addEventListener('DOMContentLoaded', function () {
       title: '音乐播放器',
       iconSrc: musicPlayerIcon.querySelector('img')?.getAttribute('src') || '/images/icon_musicplayer.png',
       onClick: () => {
+        syncMusicPlayerState();
+
         if (!webampInstance && !document.querySelector('#main-window')) {
           initWebamp();
           return;
@@ -85,8 +108,34 @@ document.addEventListener('DOMContentLoaded', function () {
     setMusicTaskState({ active: true, minimized: false });
   };
 
+  const reopenMusicPlayer = (options = {}) => {
+    const { onShown } = options;
+
+    if (!webampInstance || typeof webampInstance.reopen !== 'function') {
+      cleanupClosedMusicPlayer();
+      initWebamp();
+      return;
+    }
+
+    isClosed = false;
+    webampInstance.reopen();
+    registerMusicTask();
+
+    window.setTimeout(() => {
+      setWebampVisible(true);
+      manageWebampWindowsZIndex();
+      onShown?.();
+    }, 0);
+  };
+
   const showMusicPlayer = (options = {}) => {
     const { onShown } = options;
+    syncMusicPlayerState();
+
+    if (webampInstance && isClosed) {
+      reopenMusicPlayer({ onShown });
+      return;
+    }
 
     if (!webampInstance && !document.querySelector('#main-window')) {
       initWebamp();
@@ -230,8 +279,15 @@ document.addEventListener('DOMContentLoaded', function () {
       },
       });
 
-    return webamp.renderWhenReady(document.getElementById('webamp-container')).then(() => {
+    webamp.onClose(() => {
+      isClosed = true;
+      musicTask?.remove();
+      musicTask = null;
+    });
+
+    return webamp.renderWhenReady(getWebampContainer()).then(() => {
       webampInstance = webamp;
+      isClosed = false;
       registerMusicTask();
       setWebampVisible(true);
       setTimeout(manageWebampWindowsZIndex, 0);
@@ -242,6 +298,13 @@ document.addEventListener('DOMContentLoaded', function () {
   musicPlayerIcon.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
+    syncMusicPlayerState();
+
+    if (webampInstance && isClosed) {
+      reopenMusicPlayer();
+      return;
+    }
+
     if (!webampInstance && !document.querySelector('#main-window')) {
       initWebamp();
       return;

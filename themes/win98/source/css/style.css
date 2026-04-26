@@ -331,7 +331,7 @@ table > :is(thead, tbody, tfoot) > tr > * {
     margin-right: auto;
     max-width: 90%;
     height: auto;
-    margin-top: 0.3em;
+    margin-top: 0em;
     margin-bottom: 0em;
 }
 
@@ -415,9 +415,10 @@ table > :is(thead, tbody, tfoot) > tr > * {
     box-sizing: border-box;
     width: 48px;
     height: 48px;
+    max-width: none;
     flex: 0 0 48px;
     align-self: flex-start;
-    margin-top: 0.3em;
+    margin-top: 0;
     margin-right: 0;
     margin-bottom: 0;
     margin-left: 0;
@@ -649,9 +650,39 @@ table > :is(thead, tbody, tfoot) > tr > * {
     margin-bottom: 0;
 }
 
-#window-container .window .window-body .gt-comment-avatar {
+#window-container .window .window-body a.gt-comment-avatar,
+#window-container .window .window-body .gt-avatar.gt-comment-avatar {
     position: static;
-    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 56px;
+    width: 56px;
+    height: 56px;
+    padding: 4px;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 0 !important;
+    background: #c0c0c0;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+}
+
+#window-container .window .window-body .gt-avatar,
+#window-container .window .window-body a.gt-comment-avatar img,
+#window-container .window .window-body .gt-avatar.gt-comment-avatar img,
+#window-container .window .window-body img.gt-comment-avatar {
+    border-radius: 0 !important;
+}
+
+#window-container .window .window-body a.gt-comment-avatar img,
+#window-container .window .window-body .gt-avatar.gt-comment-avatar img {
+    display: block;
+    width: 48px;
+    height: 48px;
+    max-width: none;
+    background: #fff;
+    object-fit: cover;
+    object-position: center;
 }
 
 #window-container .window .window-body .gt-comment-main {
