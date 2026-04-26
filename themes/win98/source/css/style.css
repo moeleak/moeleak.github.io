@@ -247,6 +247,9 @@ body.windows-desktop {
   font-family: var(--win98-font);
   cursor: grab;
   user-select: none;
+  touch-action: none;
+  -ms-touch-action: none;
+  -webkit-touch-callout: none;
   flex-shrink: 0;
 }
 #window-container > .window > .title-bar:active {

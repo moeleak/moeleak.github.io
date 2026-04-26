@@ -3,12 +3,33 @@ document.addEventListener('DOMContentLoaded', function () {
   let webampInstance = null;
   let musicTask = null;
   const webampWindowSelectors = ['#main-window', '#playlist-window', '#equalizer-window'];
+  const shakeDuration = 280;
 
   const getWebampRoot = () => document.getElementById('webamp');
   const getMainWindow = () => document.querySelector('#main-window') || getWebampRoot();
   const getWebampWindows = () => webampWindowSelectors
     .map((selector) => document.querySelector(selector))
     .filter(Boolean);
+
+  const triggerShake = (elements) => {
+    const targets = elements.filter(Boolean);
+    targets.forEach((element) => {
+      element.classList.remove('window-shake');
+      void element.offsetWidth;
+      element.classList.add('window-shake');
+    });
+
+    if (!targets.length) return;
+    window.setTimeout(() => {
+      targets.forEach((element) => element.classList.remove('window-shake'));
+    }, shakeDuration);
+  };
+
+  const shakeMusicPlayer = () => {
+    const root = getWebampRoot();
+    const windows = getWebampWindows().filter((element) => element.style.display !== 'none');
+    triggerShake(root ? [root] : windows);
+  };
 
   const isMusicVisible = () => {
     const root = getWebampRoot();
@@ -64,7 +85,9 @@ document.addEventListener('DOMContentLoaded', function () {
     setMusicTaskState({ active: true, minimized: false });
   };
 
-  const showMusicPlayer = () => {
+  const showMusicPlayer = (options = {}) => {
+    const { onShown } = options;
+
     if (!webampInstance && !document.querySelector('#main-window')) {
       initWebamp();
       return;
@@ -80,9 +103,11 @@ document.addEventListener('DOMContentLoaded', function () {
       task.animateFromButton(mainWindow, () => {
         root.style.visibility = '';
         bringMusicToFront();
+        onShown?.();
       });
     } else {
       bringMusicToFront();
+      onShown?.();
     }
   };
 
@@ -217,7 +242,17 @@ document.addEventListener('DOMContentLoaded', function () {
   musicPlayerIcon.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
+    if (!webampInstance && !document.querySelector('#main-window')) {
+      initWebamp();
+      return;
+    }
+
+    if (isMusicVisible()) {
+      bringMusicToFront();
+      shakeMusicPlayer();
+      return;
+    }
+
     showMusicPlayer();
   });
 });
-

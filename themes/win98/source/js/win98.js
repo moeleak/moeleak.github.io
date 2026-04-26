@@ -109,16 +109,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setTaskButtonContent(button, label, iconSrc) {
-    const icon = document.createElement('img');
+    const icon = document.createElement('canvas');
     const text = document.createElement('span');
     const resolvedIconSrc = iconSrc || defaultDocumentIcon;
 
     icon.className = 'win98-task-icon';
-    icon.src = resolvedIconSrc;
-    icon.alt = '';
     icon.setAttribute('aria-hidden', 'true');
     icon.dataset.iconSource = resolvedIconSrc;
-    applyPixelPerfectTaskIcon(icon, resolvedIconSrc);
+    renderPixelPerfectTaskIcon(icon, resolvedIconSrc);
 
     text.className = 'win98-task-title';
     text.textContent = label;
@@ -127,41 +125,62 @@ document.addEventListener('DOMContentLoaded', () => {
     button.title = label;
   }
 
-  function applyPixelPerfectTaskIcon(image, src) {
-    if (!(image instanceof HTMLImageElement) || !src) return;
+  function getTaskbarIconMetrics() {
+    const cssSize = 16;
+    const deviceScale = Math.max(1, Math.ceil(window.devicePixelRatio || 1));
+    return {
+      cssSize,
+      backingSize: cssSize * deviceScale
+    };
+  }
 
-    const cachedIcon = taskbarIconCache.get(src);
-    if (cachedIcon) {
-      image.src = cachedIcon;
+  function drawTaskbarIcon(context, source, size) {
+    const scale = Math.min(size / source.naturalWidth, size / source.naturalHeight);
+    const drawWidth = Math.max(1, Math.round(source.naturalWidth * scale));
+    const drawHeight = Math.max(1, Math.round(source.naturalHeight * scale));
+    const offsetX = Math.floor((size - drawWidth) / 2);
+    const offsetY = Math.floor((size - drawHeight) / 2);
+
+    context.clearRect(0, 0, size, size);
+    context.drawImage(source, offsetX, offsetY, drawWidth, drawHeight);
+  }
+
+  function renderPixelPerfectTaskIcon(canvas, src) {
+    if (!(canvas instanceof HTMLCanvasElement) || !src) return;
+
+    const { cssSize, backingSize } = getTaskbarIconMetrics();
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    canvas.width = backingSize;
+    canvas.height = backingSize;
+    canvas.style.width = `${cssSize}px`;
+    canvas.style.height = `${cssSize}px`;
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, backingSize, backingSize);
+
+    let source = taskbarIconCache.get(src);
+    if (!source) {
+      source = new Image();
+      source.decoding = 'sync';
+      taskbarIconCache.set(src, source);
+      source.src = src;
+    }
+
+    const paint = () => {
+      if (canvas.dataset.iconSource !== src) return;
+      const targetContext = canvas.getContext('2d');
+      if (!targetContext) return;
+      targetContext.imageSmoothingEnabled = false;
+      drawTaskbarIcon(targetContext, source, backingSize);
+    };
+
+    if (source.complete && source.naturalWidth) {
+      paint();
       return;
     }
 
-    const source = new Image();
-    source.decoding = 'sync';
-    source.addEventListener('load', () => {
-      const canvas = document.createElement('canvas');
-      const size = 16;
-      const context = canvas.getContext('2d');
-      if (!context) return;
-
-      canvas.width = size;
-      canvas.height = size;
-      context.imageSmoothingEnabled = false;
-
-      const scale = Math.min(size / source.naturalWidth, size / source.naturalHeight);
-      const drawWidth = Math.max(1, Math.round(source.naturalWidth * scale));
-      const drawHeight = Math.max(1, Math.round(source.naturalHeight * scale));
-      const offsetX = Math.floor((size - drawWidth) / 2);
-      const offsetY = Math.floor((size - drawHeight) / 2);
-
-      context.clearRect(0, 0, size, size);
-      context.drawImage(source, offsetX, offsetY, drawWidth, drawHeight);
-
-      const rasterizedIcon = canvas.toDataURL('image/png');
-      taskbarIconCache.set(src, rasterizedIcon);
-      if (image.dataset.iconSource === src) image.src = rasterizedIcon;
-    }, { once: true });
-    source.src = src;
+    source.addEventListener('load', paint, { once: true });
   }
 
   function setWindowTitle(win, title) {
@@ -626,6 +645,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function restoreMaximizedWindowForDrag(win, handle, pointerEvent, pointerRatioX, titleGrabOffset) {
+    const targetPlacement = win._restorePlacement || getWindowPlacement();
+    const area = getDesktopArea();
+    const minTop = -handle.offsetHeight + 10;
+    const maxTop = area.height - handle.offsetHeight - 5;
+    const minLeft = 50 - targetPlacement.width;
+    const maxLeft = area.width - 50;
+    const nextLeft = clamp(pointerEvent.clientX - targetPlacement.width * pointerRatioX, minLeft, maxLeft);
+    const nextTop = clamp(pointerEvent.clientY - titleGrabOffset, minTop, maxTop);
+
+    win.classList.remove('is-maximized');
+    placeWindow(win, {
+      ...targetPlacement,
+      left: nextLeft,
+      top: nextTop
+    });
+    updateMaximizeButton(win);
+  }
+
   function closeWindow(win) {
     const wasActive = getActiveWindow() === win;
     removeTaskButton(win.id);
@@ -857,6 +895,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let pendingLeft = 0;
     let pendingTop = 0;
     let previousTransition = '';
+    let startedMaximized = false;
+    let restoredFromMaximized = false;
+    let maximizedPointerRatioX = 0.5;
+    let maximizedTitleGrabOffset = 8;
 
     const commitPosition = () => {
       win.style.left = `${pendingLeft}px`;
@@ -867,6 +909,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const onMove = (event) => {
       if (event.pointerId !== pointerId) return;
       event.preventDefault();
+
+      if (startedMaximized && !restoredFromMaximized) {
+        const movedDistance = Math.abs(event.clientX - startX) + Math.abs(event.clientY - startY);
+        const restoreThreshold = event.pointerType === 'touch' ? 10 : 4;
+        if (movedDistance < restoreThreshold) return;
+
+        restoreMaximizedWindowForDrag(win, handle, event, maximizedPointerRatioX, maximizedTitleGrabOffset);
+        restoredFromMaximized = true;
+        startX = event.clientX;
+        startY = event.clientY;
+        startLeft = win.offsetLeft;
+        startTop = win.offsetTop;
+        pendingLeft = startLeft;
+        pendingTop = startTop;
+      }
 
       const area = getDesktopArea();
       const minTop = -handle.offsetHeight + 10;
@@ -890,6 +947,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.remove('is-dragging-window');
       win.style.transition = previousTransition;
       pointerId = null;
+      startedMaximized = false;
+      restoredFromMaximized = false;
 
       try { handle.releasePointerCapture(event.pointerId); } catch (error) { /* ignore */ }
       document.removeEventListener('pointermove', onMove);
@@ -898,14 +957,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     handle.addEventListener('pointerdown', (event) => {
-      if (win.classList.contains('is-maximized')) return;
       if (event.target.closest('.title-bar-controls') || event.target.classList.contains('window-resizer')) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
 
       activateWindow(win);
       pointerId = event.pointerId;
+      startedMaximized = win.classList.contains('is-maximized');
+      restoredFromMaximized = false;
       startX = event.clientX;
       startY = event.clientY;
+      if (startedMaximized) {
+        const rect = win.getBoundingClientRect();
+        maximizedPointerRatioX = clamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1);
+        maximizedTitleGrabOffset = clamp(event.clientY - rect.top, 6, Math.max(6, handle.offsetHeight - 6));
+      }
       startLeft = win.offsetLeft;
       startTop = win.offsetTop;
       pendingLeft = startLeft;
