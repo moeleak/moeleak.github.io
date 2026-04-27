@@ -211,16 +211,43 @@ document.addEventListener('DOMContentLoaded', () => {
     return contentUrl;
   }
 
+  function getActiveArchiveTabForWindow(win) {
+    return win.querySelector('.archive-tab-list [role="tab"][aria-selected="true"]') || null;
+  }
+
+  function getWindowHistoryDetails(win) {
+    const archiveTab = getActiveArchiveTabForWindow(win);
+    if (archiveTab?.dataset.tabUrl) {
+      const title = archiveTab.dataset.tabTitle || archiveTab.textContent.trim() || getWindowTitle(win);
+      return {
+        title,
+        url: archiveTab.dataset.tabUrl,
+        archiveTabUrl: archiveTab.dataset.tabUrl,
+        archiveWindowUrl: win.dataset.contentUrl || '/archives/'
+      };
+    }
+
+    return {
+      title: getWindowTitle(win),
+      url: getHistoryUrl(win)
+    };
+  }
+
   function writeHistory(win, method = 'replaceState') {
     if (!win.dataset.contentUrl) {
       setDocumentTitle(getWindowTitle(win));
       return;
     }
 
-    const url = getHistoryUrl(win);
-    const title = getWindowTitle(win);
+    const historyDetails = getWindowHistoryDetails(win);
+    const url = historyDetails.url;
+    const title = historyDetails.title;
     const fullTitle = setDocumentTitle(title);
     const state = { windowUrl: url, windowId: win.id, title };
+    if (historyDetails.archiveTabUrl) {
+      state.archiveTabUrl = historyDetails.archiveTabUrl;
+      state.archiveWindowUrl = historyDetails.archiveWindowUrl;
+    }
     const realMethod = method === 'pushState' && currentFullUrl() !== url ? 'pushState' : 'replaceState';
 
     try {
@@ -985,6 +1012,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderContentWindow(win, body, url) {
     body.innerHTML = '<p>加载中...</p>';
+    body.classList.remove('is-archive-body');
+    win.classList.remove('is-archive-window');
 
     fetch(url)
       .then((response) => {
@@ -1003,6 +1032,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const contentStatus = extractContentStatus(mainContent);
+        body.classList.toggle('is-archive-body', contentStatus?.type === 'archive');
+        win.classList.toggle('is-archive-window', contentStatus?.type === 'archive');
 
         const heading = mainContent.querySelector('h1');
         if (heading?.textContent.trim()) {
@@ -1013,11 +1044,14 @@ document.addEventListener('DOMContentLoaded', () => {
         updateWindowStatusBar(win, contentStatus);
         initializeGitalk(body, win.id, url);
         enhanceContent(body);
+        setupArchiveWorkspace(body);
         setupWindowInteractions(body);
 
         if (getActiveWindow() === win) writeHistory(win);
       })
       .catch((error) => {
+        body.classList.remove('is-archive-body');
+        win.classList.remove('is-archive-window');
         setWindowTitle(win, `${getWindowTitle(win)} (加载错误)`);
         body.innerHTML = `<p style="color: red;">加载内容出错: ${error.message}</p>`;
         updateWindowStatusBar(win, null);
@@ -1321,11 +1355,281 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = event.target;
       if (!(target instanceof Element)) return;
 
+      if (openArchivePostInTabFromClick(target, event)) return;
       if (openImageFromClick(target, event)) return;
       openInternalLinkFromClick(target, event);
     });
 
     if (parent.dataset) parent.dataset.interactionListenerAttached = 'true';
+  }
+
+  function setupArchiveWorkspace(parent) {
+    parent.querySelectorAll('.archive-workspace').forEach((workspace) => {
+      if (workspace.dataset.archiveWorkspaceReady === 'true') return;
+
+      workspace.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const tab = target.closest('.archive-tab-list [role="tab"]');
+        if (!tab || !workspace.contains(tab)) return;
+
+        event.preventDefault();
+        if (tab.dataset.suppressClick === 'true') {
+          delete tab.dataset.suppressClick;
+          return;
+        }
+
+        activateArchiveTab(workspace, tab);
+      });
+
+      workspace.addEventListener('pointerdown', (event) => startArchiveTabDrag(workspace, event));
+
+      const win = workspace.closest('.window');
+      const pendingTabUrl = win?.dataset.pendingArchiveTabUrl;
+      if (pendingTabUrl) {
+        const pendingLink = findArchiveLinkByUrl(workspace, pendingTabUrl);
+        const pendingTitle = pendingLink ? getArchiveLinkTitle(pendingLink) : win.dataset.pendingArchiveTabTitle || pendingTabUrl;
+        openArchivePostTab(workspace, pendingLink?.href || pendingTabUrl, pendingTitle, pendingLink, { updateHistory: false });
+        delete win.dataset.pendingArchiveTabUrl;
+        delete win.dataset.pendingArchiveTabTitle;
+      } else {
+        const firstPost = workspace.querySelector('.archive-post-link');
+        if (firstPost) openArchivePostTab(workspace, firstPost.href, getArchiveLinkTitle(firstPost), firstPost, { historyMode: 'replaceState' });
+      }
+
+      workspace.dataset.archiveWorkspaceReady = 'true';
+    });
+  }
+
+  function findArchiveLinkByUrl(workspace, url) {
+    const targetUrl = normalizeArchiveTabUrl(url);
+    return Array.from(workspace.querySelectorAll('.archive-post-link')).find((link) => normalizeArchiveTabUrl(link.href) === targetUrl) || null;
+  }
+
+  function openArchivePostInTabFromClick(target, event) {
+    const link = target.closest('a.archive-post-link[href]');
+    if (!link) return false;
+
+    const workspace = link.closest('.archive-workspace');
+    if (!workspace) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+    openArchivePostTab(workspace, link.href, getArchiveLinkTitle(link), link);
+    return true;
+  }
+
+  function getArchiveLinkTitle(link) {
+    return link.dataset.archiveTitle || link.textContent.trim() || '文章';
+  }
+
+  function normalizeArchiveTabUrl(url) {
+    const parsedUrl = new URL(url, location.origin);
+    return `${normalizePath(parsedUrl.pathname)}${parsedUrl.search}${parsedUrl.hash}`;
+  }
+
+  function openArchivePostTab(workspace, url, title, sourceLink, options = {}) {
+    const tabList = workspace.querySelector('.archive-tab-list');
+    const tabBody = workspace.querySelector('.archive-tab-body');
+    if (!tabList || !tabBody) return null;
+
+    const targetUrl = normalizeArchiveTabUrl(url);
+    const existingTab = getArchiveTabByUrl(tabList, targetUrl);
+    if (existingTab) {
+      activateArchiveTab(workspace, existingTab, options);
+      setActiveArchiveLink(workspace, targetUrl);
+      return existingTab;
+    }
+
+    const tab = document.createElement('li');
+    const tabLink = document.createElement('a');
+    const tabContent = document.createElement('div');
+
+    tab.role = 'tab';
+    tab.dataset.tabUrl = targetUrl;
+    tab.dataset.tabTitle = title;
+    tab.setAttribute('aria-selected', 'false');
+    tabLink.href = '#tabs';
+    tabLink.draggable = false;
+    tabLink.textContent = title;
+    tabContent.className = 'archive-tab-content';
+    tabContent.innerHTML = '<p>加载中...</p>';
+    tab._contentElement = tabContent;
+
+    tab.appendChild(tabLink);
+    tabList.appendChild(tab);
+    activateArchiveTab(workspace, tab, options);
+    setActiveArchiveLink(workspace, targetUrl);
+    loadArchiveTabContent(tab, targetUrl);
+
+    return tab;
+  }
+
+  function getArchiveTabByUrl(tabList, url) {
+    return Array.from(tabList.querySelectorAll('[role="tab"]')).find((tab) => tab.dataset.tabUrl === url) || null;
+  }
+
+  function activateArchiveTab(workspace, tab, options = {}) {
+    const { updateHistory = true, historyMode = 'pushState' } = options;
+    const tabList = workspace.querySelector('.archive-tab-list');
+    const tabBody = workspace.querySelector('.archive-tab-body');
+    if (!tabList || !tabBody || !tab) return;
+
+    tabList.querySelectorAll('[role="tab"]').forEach((candidate) => {
+      candidate.setAttribute('aria-selected', candidate === tab ? 'true' : 'false');
+    });
+
+    tabBody.replaceChildren(tab._contentElement || document.createTextNode(''));
+    setActiveArchiveLink(workspace, tab.dataset.tabUrl);
+
+    const win = workspace.closest('.window');
+    if (updateHistory && win) writeHistory(win, historyMode);
+  }
+
+  function setActiveArchiveLink(workspace, targetUrl) {
+    workspace.querySelectorAll('.archive-post-link').forEach((link) => {
+      const isActive = targetUrl && normalizeArchiveTabUrl(link.href) === targetUrl;
+      link.classList.toggle('is-active', isActive);
+      if (!isActive && document.activeElement === link) link.blur();
+    });
+  }
+
+  function loadArchiveTabContent(tab, url) {
+    const content = tab._contentElement;
+    if (!content || tab.dataset.loaded === 'true') return;
+
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP 错误！状态: ${response.status}`);
+        return response.text();
+      })
+      .then((html) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const mainContent = doc.querySelector('#content-main');
+
+        if (!mainContent) {
+          content.innerHTML = '<p>错误：在获取的页面中未找到 #content-main 结构。</p>';
+          return;
+        }
+
+        mainContent.querySelector('#gitalk-container-placeholder')?.remove();
+        mainContent.querySelector(':scope > h1')?.remove();
+        mainContent.querySelector(':scope > hr')?.remove();
+        content.replaceChildren(...Array.from(mainContent.childNodes));
+        enhanceContent(content);
+        setupWindowInteractions(content);
+        tab.dataset.loaded = 'true';
+      })
+      .catch((error) => {
+        content.innerHTML = `<p style="color: red;">加载内容出错: ${error.message}</p>`;
+      });
+  }
+
+  function startArchiveTabDrag(workspace, event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    const tab = target.closest('.archive-tab-list [role="tab"]');
+    if (!tab || !workspace.contains(tab)) return;
+
+    const tabList = workspace.querySelector('.archive-tab-list');
+    const editorPane = workspace.querySelector('.archive-editor-pane');
+    if (!tabList || !editorPane) return;
+
+    const pointerId = event.pointerId;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let didDrag = false;
+
+    event.preventDefault();
+    try { tab.setPointerCapture(pointerId); } catch (error) { /* ignore */ }
+
+    const stopDrag = (pointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) return;
+
+      document.body.classList.remove('is-dragging-archive-tab');
+      window.getSelection()?.removeAllRanges();
+      try { tab.releasePointerCapture(pointerId); } catch (error) { /* ignore */ }
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', stopDrag);
+      document.removeEventListener('pointercancel', stopDrag);
+
+      if (didDrag) {
+        tab.dataset.suppressClick = 'true';
+        if (shouldTearOffArchiveTab(tabList, editorPane, pointerEvent)) {
+          tearOffArchiveTab(workspace, tab, pointerEvent);
+        }
+      }
+    };
+
+    const onMove = (pointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) return;
+
+      const dragDistance = Math.abs(pointerEvent.clientX - startX) + Math.abs(pointerEvent.clientY - startY);
+      if (dragDistance > 8) {
+        didDrag = true;
+        document.body.classList.add('is-dragging-archive-tab');
+        window.getSelection()?.removeAllRanges();
+        pointerEvent.preventDefault();
+      }
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', stopDrag);
+    document.addEventListener('pointercancel', stopDrag);
+  }
+
+  function shouldTearOffArchiveTab(tabList, editorPane, event) {
+    const tabListRect = tabList.getBoundingClientRect();
+    const editorRect = editorPane.getBoundingClientRect();
+
+    return event.clientX < editorRect.left
+      || event.clientX > editorRect.right
+      || event.clientY < tabListRect.top - 4
+      || event.clientY > tabListRect.bottom + 12;
+  }
+
+  function tearOffArchiveTab(workspace, tab, event) {
+    const targetUrl = tab.dataset.tabUrl;
+    const title = tab.dataset.tabTitle || tab.textContent.trim() || '文章';
+    if (!targetUrl) return;
+
+    const existingWindow = findWindowByContentUrl(targetUrl);
+    if (existingWindow) {
+      activateWindow(existingWindow);
+    } else {
+      createWindow(title, targetUrl, {
+        sourceX: event.clientX,
+        sourceY: event.clientY,
+        animateFromSource: true,
+        iconSrc: getIconForUrl(targetUrl)
+      });
+    }
+
+    removeArchiveTab(workspace, tab, { updateHistory: false });
+  }
+
+  function removeArchiveTab(workspace, tab, options = {}) {
+    const { updateHistory = true } = options;
+    const tabList = workspace.querySelector('.archive-tab-list');
+    const tabBody = workspace.querySelector('.archive-tab-body');
+    const wasActive = tab.getAttribute('aria-selected') === 'true';
+    const nextTab = tab.nextElementSibling || tab.previousElementSibling;
+
+    tab._contentElement?.remove();
+    tab.remove();
+
+    if (wasActive && nextTab) {
+      activateArchiveTab(workspace, nextTab, { updateHistory });
+      return;
+    }
+
+    if (!tabList?.querySelector('[role="tab"]')) {
+      tabBody.innerHTML = '<p class="archive-empty-message">从左侧树状列表选择文章。</p>';
+      setActiveArchiveLink(workspace, null);
+    }
   }
 
   function openImageFromClick(target, event) {
@@ -1420,6 +1724,34 @@ document.addEventListener('DOMContentLoaded', () => {
   function handlePopState(event) {
     const state = event.state || {};
     const path = currentRoutePath();
+
+    if (state.archiveTabUrl) {
+      const archiveWindowUrl = state.archiveWindowUrl || '/archives/';
+      let win = document.getElementById(state.windowId) || findWindowByContentUrl(archiveWindowUrl);
+
+      if (!win) {
+        win = createWindow('存档', archiveWindowUrl, {
+          animateFromSource: false,
+          startMaximized: true,
+          windowIdToUse: state.windowId,
+          historyMode: 'none'
+        });
+      }
+
+      win.dataset.pendingArchiveTabUrl = state.archiveTabUrl;
+      win.dataset.pendingArchiveTabTitle = state.title || '';
+
+      const workspace = win.querySelector('.archive-workspace');
+      if (workspace) {
+        const link = findArchiveLinkByUrl(workspace, state.archiveTabUrl);
+        openArchivePostTab(workspace, link?.href || state.archiveTabUrl, link ? getArchiveLinkTitle(link) : state.title || state.archiveTabUrl, link, { updateHistory: false });
+        delete win.dataset.pendingArchiveTabUrl;
+        delete win.dataset.pendingArchiveTabTitle;
+      }
+
+      activateWindow(win, { updateHistory: false });
+      return;
+    }
 
     if (isRoutablePath(path)) {
       const title = state.title || document.querySelector(`.desktop-icon[href^="${path}"]`)?.dataset.windowTitle || path.split('/').filter(Boolean).pop() || '窗口';

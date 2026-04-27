@@ -208,6 +208,10 @@ body.windows-desktop {
     min-height: 0;
 }
 
+#window-container > .window.is-archive-window:not(.is-maximized) {
+    min-width: min(600px, calc(100vw - 20px));
+}
+
 #window-container > .window.is-maximized > .title-bar {
     cursor: default;
 }
@@ -281,6 +285,12 @@ body.windows-desktop {
     font-size: 12px;
     line-height: 1.6;
     font-family: var(--win98-font);
+}
+
+#window-container > .window > .window-body.is-archive-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 table > :is(thead, tbody, tfoot) > tr > * {
@@ -607,7 +617,175 @@ table > :is(thead, tbody, tfoot) > tr > * {
 
 #window-container .window .window-body:not(.image-popup-body) .archive-tree {
     font-family: var(--win98-font);
-    margin: 0.75em 0;
+    box-sizing: border-box;
+    height: 100%;
+    margin: 0;
+    overflow: auto;
+}
+
+#window-container .window .window-body:not(.image-popup-body) .archive-tree details > summary {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.4;
+}
+
+#window-container .window .window-body:not(.image-popup-body) .archive-tree details > summary::before {
+    box-sizing: border-box;
+    flex: 0 0 11px;
+    float: none;
+    height: 11px;
+    line-height: 9px;
+    margin: 0 5px 0 0;
+    padding-left: 0;
+    width: 11px;
+}
+
+.archive-list-container {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.archive-list-container > h1,
+.archive-list-container > hr {
+    flex-shrink: 0;
+}
+
+.archive-workspace {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(170px, 28%) minmax(0, 1fr);
+    gap: 6px;
+    min-height: 0;
+}
+
+.archive-tree-pane,
+.archive-editor-pane {
+    min-width: 0;
+    min-height: 0;
+}
+
+.archive-tree-pane {
+    overflow: hidden;
+}
+
+.archive-editor-pane {
+    display: flex;
+    flex-direction: column;
+}
+
+.archive-post-link.is-active {
+    background: var(--win98-blue);
+    color: #fff;
+}
+
+#window-container .window .window-body:not(.image-popup-body) .archive-tree .archive-post-link:focus:not(.is-active) {
+    background: transparent;
+    color: #000;
+}
+
+#window-container .window .window-body:not(.image-popup-body) .archive-tree .archive-post-link.is-active:focus {
+    background: var(--win98-blue);
+    color: #fff;
+}
+
+.archive-post-link {
+    display: inline-grid;
+    grid-template-columns: max-content auto minmax(0, 1fr);
+    column-gap: 0.2em;
+    align-items: baseline;
+    max-width: 100%;
+    text-decoration: none;
+}
+
+.archive-post-date {
+    font-family: var(--win98-code-font);
+    font-feature-settings: "tnum" 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.archive-post-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.archive-tab-list {
+    display: flex;
+    flex-shrink: 0;
+    font-family: var(--win98-font) !important;
+    margin: 0 0 -2px 0;
+    max-width: 100%;
+    min-width: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.archive-tab-list:empty {
+    display: none;
+}
+
+.archive-tab-list [role="tab"] {
+    flex: 0 1 auto;
+    font-family: var(--win98-font) !important;
+    max-width: 220px;
+    min-width: 0;
+}
+
+.archive-tab-list [role="tab"] > a {
+    display: block;
+    font-family: var(--win98-font) !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+}
+
+.archive-tab-list [role="tab"][aria-selected="true"] {
+    z-index: 9;
+}
+
+.archive-tab-panel {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.archive-tab-panel > .archive-tab-body {
+    box-sizing: border-box;
+    flex: 1;
+    font-family: var(--win98-font);
+    font-size: 12px;
+    line-height: 1.6;
+    min-height: 0;
+    overflow: auto;
+    padding: 8px;
+    width: 100%;
+}
+
+.archive-tab-content {
+    font-family: var(--win98-font);
+    min-height: 100%;
+}
+
+.archive-tab-content :is(.post-content, .page-body, .markdown-body, p, li) {
+    font-family: inherit !important;
+}
+
+.archive-empty-message {
+    margin: 0;
+}
+
+body.is-dragging-archive-tab,
+body.is-dragging-archive-tab * {
+    cursor: grabbing !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
 }
 
 #window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body) blockquote {

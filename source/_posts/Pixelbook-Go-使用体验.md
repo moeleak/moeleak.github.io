@@ -12,7 +12,7 @@ tags: [tech]
 
 解除写保护需要拆机暂时拆除电池，只接入电源。进开发者模式刷 UEFI 固件：
 
-```shell
+```shellsession
 $ cd
 $ curl -LOk mrchromebox.tech/firmware-util.sh
 $ sudo bash firmware-util.sh
@@ -28,7 +28,7 @@ $ sudo bash firmware-util.sh
 
 这个本子用来玩galgame还是不错的，但是默认的 Steam proton 无法启动。需要用 proton-ge 魔改版。而且 Pixelbook Go 的 vulkan 驱动似乎有问题，目前我用不了 dxvk 来启动游戏，你可以用 wined3d 来尝试一下。
 
-```shell
+```shellsession
 $ yay -S proton-ge-custom-bin
 $ cd /usr/share/steam/compatibilitytools.d/proton-ge-custom/
 $ sed -i 's/^[[:space:]]*#[[:space:]]*\("PROTON_USE_WINED3D": "1",\)/\1/' user_settings.py
@@ -38,7 +38,7 @@ $ sed -i 's/^[[:space:]]*#[[:space:]]*\("PROTON_USE_WINED3D": "1",\)/\1/' user_s
 但是不知道为什么，steamwebhelper 第一次启动会无响应，第二次就好了。而且 steamwebhelper 极其不优雅，早就想换掉了。
 
 可以尝试一下 [steam-tui](https://github.com/dmadisetti/steam-tui)
-```shell
+```shellsession
 $ yay -S steam-tui
 ```
 
@@ -48,7 +48,7 @@ $ yay -S steam-tui
 
 可以试一下 [TLP](https://wiki.archlinux.org/title/TLP) 工具
 
-```shell
+```shellsession
 $ sudo systemctl enable --now tlp
 ```
 

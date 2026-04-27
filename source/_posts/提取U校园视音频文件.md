@@ -12,7 +12,7 @@ tags: [tech, android]
 
 首先找到文件位置，由于全部下载，文件会比较大，只需找到文件所在位置，然后看哪个文件夹比较大就可以定位视音频文件了。
 
-```shell
+```shellsession
 komodo:/data/data/cn.unipus.ucampus.student # du -sh *
 18K	app_UApm
 3.5K	app_textures
@@ -78,7 +78,7 @@ komodo:/data/data/cn.unipus.ucampus.student/files/s/e/yys3 #
 
 确定文件格式
 
-```shell
+```shellsession
 $ xxd .03525879A1678CE0661A3047B9179904.wys | less
 ```
 
