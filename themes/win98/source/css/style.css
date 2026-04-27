@@ -621,6 +621,7 @@ table > :is(thead, tbody, tfoot) > tr > * {
     height: 100%;
     margin: 0;
     overflow: auto;
+    padding-right: 10px;
 }
 
 #window-container .window .window-body:not(.image-popup-body) .archive-tree details > summary {
@@ -647,15 +648,9 @@ table > :is(thead, tbody, tfoot) > tr > * {
     min-height: 0;
 }
 
-.archive-list-container > h1,
-.archive-list-container > hr {
-    flex-shrink: 0;
-}
-
 .archive-workspace {
-    display: grid;
     flex: 1;
-    grid-template-columns: minmax(170px, 28%) minmax(0, 1fr);
+    display: flex;
     gap: 6px;
     min-height: 0;
 }
@@ -667,10 +662,35 @@ table > :is(thead, tbody, tfoot) > tr > * {
 }
 
 .archive-tree-pane {
+    container: archive-tree-pane / inline-size;
+    flex: 0 0 var(--archive-tree-width, var(--archive-tree-min, 145px));
+    max-width: calc(100% - 180px);
+    min-width: var(--archive-tree-min, 145px);
     overflow: hidden;
+    position: relative;
+}
+
+.archive-pane-resizer {
+    bottom: 0;
+    cursor: col-resize;
+    position: absolute;
+    right: 0;
+    top: 0;
+    touch-action: none;
+    user-select: none;
+    width: 8px;
+    -webkit-user-select: none;
+}
+
+body.is-resizing-archive-pane,
+body.is-resizing-archive-pane * {
+    cursor: col-resize !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
 }
 
 .archive-editor-pane {
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
 }
@@ -691,12 +711,35 @@ table > :is(thead, tbody, tfoot) > tr > * {
 }
 
 .archive-post-link {
-    display: inline-grid;
-    grid-template-columns: max-content auto minmax(0, 1fr);
-    column-gap: 0.2em;
     align-items: baseline;
+    column-gap: 0.2em;
     max-width: 100%;
     text-decoration: none;
+}
+
+.archive-post-link-inline {
+    display: inline-grid;
+    grid-template-columns: max-content auto minmax(0, 1fr);
+}
+
+.archive-post-link-nested {
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: top;
+}
+
+.archive-date-solo > .archive-date-detail {
+    display: none;
+}
+
+@container archive-tree-pane (max-width: 170px) {
+    .archive-date-solo > .archive-post-link-inline {
+        display: none;
+    }
+
+    .archive-date-solo > .archive-date-detail {
+        display: block;
+    }
 }
 
 .archive-post-date {
@@ -708,9 +751,9 @@ table > :is(thead, tbody, tfoot) > tr > * {
 
 .archive-post-title {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .archive-tab-list {
@@ -729,10 +772,25 @@ table > :is(thead, tbody, tfoot) > tr > * {
 }
 
 .archive-tab-list [role="tab"] {
-    flex: 0 1 auto;
+    flex: 1 1 0;
     font-family: var(--win98-font) !important;
-    max-width: 220px;
+    max-width: none;
     min-width: 0;
+}
+
+.archive-tab-list > [role="tab"] {
+    margin-right: 0;
+}
+
+.archive-tab-list > [role="tab"] > a {
+    padding-left: 10px;
+    padding-right: 10px;
+    text-align: center;
+}
+
+.archive-tab-list > [role="tab"][aria-selected="true"] {
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
 }
 
 .archive-tab-list [role="tab"] > a {
@@ -786,6 +844,30 @@ body.is-dragging-archive-tab * {
     cursor: grabbing !important;
     user-select: none !important;
     -webkit-user-select: none !important;
+}
+
+.archive-tab-drag-preview {
+    align-items: center;
+    background: var(--win98-silver);
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
+    box-sizing: border-box;
+    color: #000;
+    display: flex;
+    font-family: var(--win98-font);
+    font-size: 12px;
+    left: 0;
+    line-height: 1;
+    max-width: 240px;
+    overflow: hidden;
+    padding: 3px 8px;
+    pointer-events: none;
+    position: fixed;
+    text-overflow: ellipsis;
+    top: 0;
+    user-select: none;
+    white-space: nowrap;
+    z-index: 30000;
+    -webkit-user-select: none;
 }
 
 #window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body) blockquote {
@@ -1299,6 +1381,11 @@ body.is-resizing-window * {
 }
 
 @media (pointer: coarse) {
+    .archive-pane-resizer {
+        right: -8px;
+        width: 16px;
+    }
+
     .window-resizer.is-west,
     .window-resizer.is-east {
         width: 16px;

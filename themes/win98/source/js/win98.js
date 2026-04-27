@@ -1040,6 +1040,9 @@ document.addEventListener('DOMContentLoaded', () => {
           setWindowTitle(win, heading.textContent.trim());
         }
 
+        mainContent.querySelector(':scope > h1')?.remove();
+        mainContent.querySelector(':scope > hr')?.remove();
+
         body.replaceChildren(...Array.from(mainContent.childNodes));
         updateWindowStatusBar(win, contentStatus);
         initializeGitalk(body, win.id, url);
@@ -1056,6 +1059,14 @@ document.addEventListener('DOMContentLoaded', () => {
         body.innerHTML = `<p style="color: red;">加载内容出错: ${error.message}</p>`;
         updateWindowStatusBar(win, null);
       });
+  }
+
+  function createSafeDomId(prefix, value) {
+    const suffix = encodeURIComponent(value || 'content')
+      .replace(/%/g, '-')
+      .replace(/[^a-zA-Z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'content';
+    return `${prefix}-${suffix}`;
   }
 
   function initializeGitalk(body, windowId, contentUrl) {
@@ -1367,6 +1378,12 @@ document.addEventListener('DOMContentLoaded', () => {
     parent.querySelectorAll('.archive-workspace').forEach((workspace) => {
       if (workspace.dataset.archiveWorkspaceReady === 'true') return;
 
+      if (!workspace.style.getPropertyValue('--archive-tree-width')) {
+        const initialTreeWidth = 145;
+        workspace.style.setProperty('--archive-tree-width', `${initialTreeWidth}px`);
+        workspace.style.setProperty('--archive-tree-min', `${initialTreeWidth}px`);
+      }
+
       workspace.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
@@ -1384,6 +1401,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       workspace.addEventListener('pointerdown', (event) => startArchiveTabDrag(workspace, event));
+      workspace.addEventListener('pointerdown', (event) => startArchivePaneResize(workspace, event));
 
       const win = workspace.closest('.window');
       const pendingTabUrl = win?.dataset.pendingArchiveTabUrl;
@@ -1400,6 +1418,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
       workspace.dataset.archiveWorkspaceReady = 'true';
     });
+  }
+
+  function startArchivePaneResize(workspace, event) {
+    const handle = event.target.closest('.archive-pane-resizer');
+    if (!handle || !workspace.contains(handle)) return;
+
+    event.preventDefault();
+
+    const treePane = workspace.querySelector('.archive-tree-pane');
+    const editorPane = workspace.querySelector('.archive-editor-pane');
+    if (!treePane || !editorPane) return;
+
+    const workspaceRect = workspace.getBoundingClientRect();
+    const styles = getComputedStyle(workspace);
+    const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+    const minTreeWidth = parseFloat(styles.getPropertyValue('--archive-tree-min')) || 145;
+    const editorMinWidth = 180;
+    const maxTreeWidth = Math.max(minTreeWidth, workspaceRect.width - editorMinWidth - gap);
+    let pointerId = event.pointerId;
+    let active = true;
+
+    document.body.classList.add('is-resizing-archive-pane');
+
+    const onMove = (pointerEvent) => {
+      if (!active || pointerEvent.pointerId !== pointerId) return;
+
+      const nextWidth = clamp(pointerEvent.clientX - workspaceRect.left, minTreeWidth, maxTreeWidth);
+      workspace.style.setProperty('--archive-tree-width', `${Math.round(nextWidth)}px`);
+      pointerEvent.preventDefault();
+    };
+
+    const stop = (pointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) return;
+      active = false;
+      document.body.classList.remove('is-resizing-archive-pane');
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', stop);
+      document.removeEventListener('pointercancel', stop);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', stop);
+    document.addEventListener('pointercancel', stop);
   }
 
   function findArchiveLinkByUrl(workspace, url) {
@@ -1513,10 +1574,23 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        mainContent.querySelector('#gitalk-container-placeholder')?.remove();
         mainContent.querySelector(':scope > h1')?.remove();
         mainContent.querySelector(':scope > hr')?.remove();
         content.replaceChildren(...Array.from(mainContent.childNodes));
+
+        const placeholder = content.querySelector('#gitalk-container-placeholder, .gitalk-placeholder');
+        if (placeholder) {
+          const gitalkId = createSafeDomId('gitalk-container-archive-tab', tab.dataset.tabUrl || url);
+          placeholder.id = gitalkId;
+          placeholder.classList.remove('gitalk-placeholder');
+
+          if (typeof initializeGitalkForWindow === 'function') {
+            initializeGitalkForWindow(gitalkId, tab.dataset.tabUrl || url);
+          } else {
+            placeholder.innerHTML = '<p style="color:red;">错误：无法找到 Gitalk 初始化函数！</p>';
+          }
+        }
+
         enhanceContent(content);
         setupWindowInteractions(content);
         tab.dataset.loaded = 'true';
@@ -1542,6 +1616,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const startX = event.clientX;
     const startY = event.clientY;
     let didDrag = false;
+    let preview = null;
+
+    const movePreview = (pointerEvent) => {
+      if (!preview) return;
+      preview.style.left = `${pointerEvent.clientX + 12}px`;
+      preview.style.top = `${pointerEvent.clientY + 12}px`;
+    };
+
+    const ensurePreview = (pointerEvent) => {
+      if (!preview) {
+        const tabRect = tab.getBoundingClientRect();
+        preview = document.createElement('div');
+        preview.className = 'archive-tab-drag-preview';
+        preview.textContent = tab.dataset.tabTitle || tab.textContent.trim() || '文章';
+        preview.style.width = `${Math.max(80, Math.round(tabRect.width))}px`;
+        preview.style.height = `${Math.max(22, Math.round(tabRect.height))}px`;
+        document.body.appendChild(preview);
+      }
+      movePreview(pointerEvent);
+    };
 
     event.preventDefault();
     try { tab.setPointerCapture(pointerId); } catch (error) { /* ignore */ }
@@ -1555,6 +1649,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', stopDrag);
       document.removeEventListener('pointercancel', stopDrag);
+
+      if (preview) {
+        preview.remove();
+        preview = null;
+      }
 
       if (didDrag) {
         tab.dataset.suppressClick = 'true';
@@ -1573,6 +1672,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('is-dragging-archive-tab');
         window.getSelection()?.removeAllRanges();
         pointerEvent.preventDefault();
+        ensurePreview(pointerEvent);
       }
     };
 
