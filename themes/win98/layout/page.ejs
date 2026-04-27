@@ -1,7 +1,7 @@
 <%
   var pageStatusType = page.status_type || page.statusType || (page.path && page.path.indexOf('guestbook/') === 0 ? 'guestbook' : '');
 %>
-<article class="page-container" id="content-main"<% if (pageStatusType) { %> data-status-type="<%- pageStatusType %>"<% } %>>
+<article class="page-container" id="content-main"<% if (page.title) { %> data-window-title="<%- page.title %>"<% } %><% if (pageStatusType) { %> data-status-type="<%- pageStatusType %>"<% } %>>
     <% if (page.title && page.title.length > 0) { %>
         <h1><%- page.title %></h1>
         <hr>

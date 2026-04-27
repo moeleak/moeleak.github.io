@@ -23,9 +23,9 @@ body.windows-desktop {
   height: 100vh;
   margin: 0;
   font-family: var(--win98-font);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  text-rendering: optimizeSpeed;
 }
 
 .desktop-icons {
@@ -615,13 +615,26 @@ table > :is(thead, tbody, tfoot) > tr > * {
     margin: 0.75em 0;
 }
 
+.archive-tree-frame {
+    background: var(--button-highlight, #fff);
+    box-shadow: var(--border-field, inset -1px -1px #fff, inset 1px 1px #808080, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a);
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 6px 4px 6px 6px;
+}
+
 #window-container .window .window-body:not(.image-popup-body) .archive-tree {
+    background: transparent;
+    box-shadow: none;
+    contain: paint;
     font-family: var(--win98-font);
     box-sizing: border-box;
     height: 100%;
     margin: 0;
     overflow: auto;
-    padding-right: 10px;
+    padding: 0 6px 0 0;
 }
 
 #window-container .window .window-body:not(.image-popup-body) .archive-tree details > summary {
@@ -760,6 +773,8 @@ body.is-resizing-archive-pane * {
     display: flex;
     flex-shrink: 0;
     font-family: var(--win98-font) !important;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
     margin: 0 0 -2px 0;
     max-width: 100%;
     min-width: 0;
@@ -779,6 +794,7 @@ body.is-resizing-archive-pane * {
 }
 
 .archive-tab-list > [role="tab"] {
+    border-radius: 0 !important;
     margin-right: 0;
 }
 
@@ -789,13 +805,14 @@ body.is-resizing-archive-pane * {
 }
 
 .archive-tab-list > [role="tab"][aria-selected="true"] {
-    border-top-left-radius: 3px;
-    border-top-right-radius: 3px;
+    border-radius: 0 !important;
 }
 
 .archive-tab-list [role="tab"] > a {
     display: block;
     font-family: var(--win98-font) !important;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;

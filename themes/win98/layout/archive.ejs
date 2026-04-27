@@ -32,54 +32,56 @@
 <div class="archive-list-container" id="content-main" data-status-type="archive" data-post-count="<%= postCount %>">
     <div class="archive-workspace">
       <aside class="archive-tree-pane">
-        <ul class="tree-view archive-tree">
-          <% archiveYears.forEach(function(group) { %>
-            <li>
-              <details open>
-                <summary><%= group.label %></summary>
-                <ul>
-                  <% group.dateGroups.forEach(function(dateGroup) { %>
-                    <% if (dateGroup.posts.length === 1) { var post = dateGroup.posts[0]; %>
-                      <li class="archive-date-group archive-date-solo">
-                        <a class="archive-post-link archive-post-link-inline no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>">
-                          <span class="archive-post-date"><%- date(post.date, config.date_format || 'YYYY-MM-DD') %></span>
-                          <span class="archive-post-separator">»</span>
-                          <span class="archive-post-title"><%= post.title %></span>
-                        </a>
+        <div class="archive-tree-frame">
+          <ul class="tree-view archive-tree">
+            <% archiveYears.forEach(function(group) { %>
+              <li>
+                <details open>
+                  <summary><%= group.label %></summary>
+                  <ul>
+                    <% group.dateGroups.forEach(function(dateGroup) { %>
+                      <% if (dateGroup.posts.length === 1) { var post = dateGroup.posts[0]; %>
+                        <li class="archive-date-group archive-date-solo">
+                          <a class="archive-post-link archive-post-link-inline no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>">
+                            <span class="archive-post-date"><%- date(post.date, config.date_format || 'YYYY-MM-DD') %></span>
+                            <span class="archive-post-separator">»</span>
+                            <span class="archive-post-title"><%= post.title %></span>
+                          </a>
 
-                        <details open class="archive-date-detail">
-                          <summary><span class="archive-post-date"><%- date(post.date, config.date_format || 'YYYY-MM-DD') %></span></summary>
-                          <ul>
-                            <li>
-                              <a class="archive-post-link archive-post-link-nested no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>">
-                                <span class="archive-post-title"><%= post.title %></span>
-                              </a>
-                            </li>
-                          </ul>
-                        </details>
-                      </li>
-                    <% } else { %>
-                      <li class="archive-date-group">
-                        <details open class="archive-date-detail">
-                          <summary><span class="archive-post-date"><%- dateGroup.key %></span></summary>
-                          <ul>
-                            <% dateGroup.posts.forEach(function(post) { %>
+                          <details open class="archive-date-detail">
+                            <summary><span class="archive-post-date"><%- date(post.date, config.date_format || 'YYYY-MM-DD') %></span></summary>
+                            <ul>
                               <li>
                                 <a class="archive-post-link archive-post-link-nested no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>">
                                   <span class="archive-post-title"><%= post.title %></span>
                                 </a>
                               </li>
-                            <% }); %>
-                          </ul>
-                        </details>
-                      </li>
-                    <% } %>
-                  <% }); %>
-                </ul>
-              </details>
-            </li>
-          <% }); %>
-        </ul>
+                            </ul>
+                          </details>
+                        </li>
+                      <% } else { %>
+                        <li class="archive-date-group">
+                          <details open class="archive-date-detail">
+                            <summary><span class="archive-post-date"><%- dateGroup.key %></span></summary>
+                            <ul>
+                              <% dateGroup.posts.forEach(function(post) { %>
+                                <li>
+                                  <a class="archive-post-link archive-post-link-nested no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>">
+                                    <span class="archive-post-title"><%= post.title %></span>
+                                  </a>
+                                </li>
+                              <% }); %>
+                            </ul>
+                          </details>
+                        </li>
+                      <% } %>
+                    <% }); %>
+                  </ul>
+                </details>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
         <div class="archive-pane-resizer" role="separator" aria-orientation="vertical" aria-label="调整左侧树状列表宽度"></div>
       </aside>
 

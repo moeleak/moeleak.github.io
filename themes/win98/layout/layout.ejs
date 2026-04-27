@@ -147,7 +147,6 @@
         if (finalGitalkId.length > 50) {
           finalGitalkId = md5(finalGitalkId);
         }
-
         try {
           const gitalkInstance = new Gitalk({
             clientID: '<%- theme.gitalk.clientID %>',

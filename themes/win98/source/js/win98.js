@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let isInitialLoad = true;
   let activeExternalTaskId = null;
   const taskbarIconCache = new Map();
+  const desktopIconMetaByPath = new Map();
+  const openWindowById = new Map();
+  const contentWindowByUrl = new Map();
 
   window.getWin98HighestZIndex = () => ++highestZIndex;
   window.updateWin98GitalkCommentCount = (containerId, count) => {
@@ -29,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const taskbar = ensureTaskbar();
+  const taskList = taskbar.querySelector('.win98-task-list');
+  cacheDesktopIconMeta();
   function ensureTaskbar() {
     let bar = document.getElementById('win98-taskbar');
     if (!bar) {
@@ -54,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getTaskList() {
-    return taskbar.querySelector('.win98-task-list');
+    return taskList;
   }
 
   function getTaskbarHeight() {
@@ -87,12 +92,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${location.pathname}${location.search}${location.hash}`;
   }
 
+  function normalizeContentUrl(url) {
+    const parsedUrl = new URL(url, location.origin);
+    return `${normalizePath(parsedUrl.pathname)}${parsedUrl.search}${parsedUrl.hash}`;
+  }
+
   function hasGitalkQuery() {
     return location.search.includes('code=') || location.search.includes('state=');
   }
 
   function getWindowTitle(win) {
-    return win.dataset.windowTitle || win.querySelector('.title-bar-text')?.textContent || '窗口';
+    return win.dataset.windowTitle || win._parts?.titleText?.textContent || '窗口';
   }
 
   function getWindowIcon(win) {
@@ -105,23 +115,41 @@ document.addEventListener('DOMContentLoaded', () => {
     return getIconForUrl(link.getAttribute('href'));
   }
 
+  function cacheDesktopIconMeta() {
+    document.querySelectorAll('.desktop-icon[href]').forEach((icon) => {
+      const href = icon.getAttribute('href');
+      if (!href) return;
+
+      try {
+        const path = normalizePath(new URL(href, location.origin).pathname);
+        const image = icon.querySelector('img');
+        desktopIconMetaByPath.set(path, {
+          title: icon.dataset.windowTitle || icon.textContent.trim() || '窗口',
+          iconSrc: image?.getAttribute('src') || image?.currentSrc || image?.src || defaultDocumentIcon
+        });
+      } catch (error) {}
+    });
+  }
+
   function getIconForUrl(url) {
     try {
       const path = normalizePath(new URL(url, location.origin).pathname);
-      const matchingIcon = Array.from(document.querySelectorAll('.desktop-icon[href]')).find((icon) => {
-        return normalizePath(new URL(icon.getAttribute('href'), location.origin).pathname) === path;
-      });
-      const image = matchingIcon?.querySelector('img');
-      return image?.getAttribute('src') || image?.currentSrc || image?.src || defaultDocumentIcon;
+      return desktopIconMetaByPath.get(path)?.iconSrc || defaultDocumentIcon;
     } catch (error) {
       return defaultDocumentIcon;
     }
   }
 
+  function getTitleForPath(path) {
+    return desktopIconMetaByPath.get(normalizePath(path))?.title || null;
+  }
+
   function setTaskButtonContent(button, label, iconSrc) {
+    const resolvedIconSrc = iconSrc || defaultDocumentIcon;
+    if (button.dataset.label === label && button.dataset.iconSrc === resolvedIconSrc) return;
+
     const icon = document.createElement('canvas');
     const text = document.createElement('span');
-    const resolvedIconSrc = iconSrc || defaultDocumentIcon;
 
     icon.className = 'win98-task-icon';
     icon.setAttribute('aria-hidden', 'true');
@@ -132,6 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
     text.textContent = label;
 
     button.replaceChildren(icon, text);
+    button.dataset.label = label;
+    button.dataset.iconSrc = resolvedIconSrc;
     button.title = label;
   }
 
@@ -196,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function setWindowTitle(win, title) {
     const nextTitle = title || '窗口';
     win.dataset.windowTitle = nextTitle;
-    win.querySelector('.title-bar-text').textContent = nextTitle;
+    if (win._parts?.titleText) win._parts.titleText.textContent = nextTitle;
     updateTaskButton(win);
   }
 
@@ -318,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
       iconSrc
     } = options;
 
-    const existingWindow = windowIdToUse ? document.getElementById(windowIdToUse) : null;
+    const existingWindow = windowIdToUse ? openWindowById.get(windowIdToUse) : null;
     if (existingWindow) {
       activateWindow(existingWindow, { updateHistory: historyMode !== 'none' });
       return existingWindow;
@@ -327,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const win = document.createElement('div');
     const body = document.createElement('div');
     const statusBar = isImagePopup ? null : createStatusBar();
+    const contentUrl = isImagePopup ? '' : normalizeContentUrl(contentIdentifier);
     const restorePlacement = getWindowPlacement();
     const placement = startMaximized ? getMaximizedPlacement() : restorePlacement;
     const titleBar = createTitleBar(title, {
@@ -339,7 +370,15 @@ document.addEventListener('DOMContentLoaded', () => {
     win.className = 'window';
     win.id = windowId;
     win.dataset.windowTitle = title;
-    win.dataset.iconSrc = iconSrc || (isImagePopup ? defaultImageIcon : getIconForUrl(contentIdentifier));
+    win.dataset.iconSrc = iconSrc || (isImagePopup ? defaultImageIcon : getIconForUrl(contentUrl));
+    win._parts = {
+      body,
+      titleBar,
+      titleText: titleBar._titleText,
+      maximizeButton: titleBar._maximizeButton,
+      statusBar,
+      taskButton: null
+    };
     win.style.position = 'absolute';
     win.style.zIndex = String(++highestZIndex);
 
@@ -347,9 +386,12 @@ document.addEventListener('DOMContentLoaded', () => {
       win.dataset.imageSrc = contentIdentifier;
       body.className = 'window-body image-popup-body';
     } else {
-      win.dataset.contentUrl = contentIdentifier;
+      win.dataset.contentUrl = contentUrl;
       body.className = 'window-body';
     }
+
+    openWindowById.set(windowId, win);
+    if (contentUrl) contentWindowByUrl.set(contentUrl, win);
 
     placeWindow(win, placement);
     if (startMaximized) {
@@ -371,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isImagePopup) {
       renderImageWindow(body, contentIdentifier, title);
     } else {
-      renderContentWindow(win, body, contentIdentifier);
+      renderContentWindow(win, body, contentUrl);
     }
 
     const shouldUpdateHistory = !isImagePopup && historyMode !== 'none';
@@ -401,6 +443,10 @@ document.addEventListener('DOMContentLoaded', () => {
     secondaryField.dataset.statusField = 'secondary';
 
     statusBar.append(primaryField, secondaryField);
+    statusBar._fields = {
+      primary: primaryField,
+      secondary: secondaryField
+    };
     return statusBar;
   }
 
@@ -482,8 +528,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setWindowStatusFields(statusBar, primaryText, secondaryText) {
-    const primaryField = statusBar.querySelector('[data-status-field="primary"]');
-    const secondaryField = statusBar.querySelector('[data-status-field="secondary"]');
+    const primaryField = statusBar._fields?.primary || statusBar.querySelector('[data-status-field="primary"]');
+    const secondaryField = statusBar._fields?.secondary || statusBar.querySelector('[data-status-field="secondary"]');
     if (!primaryField || !secondaryField) return;
 
     primaryField.textContent = primaryText;
@@ -514,6 +560,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     controls.append(minimizeButton, maximizeButton, closeButton);
     titleBar.append(titleText, controls);
+    titleBar._titleText = titleText;
+    titleBar._maximizeButton = maximizeButton;
     return titleBar;
   }
 
@@ -529,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateMaximizeButton(win) {
-    const button = win.querySelector('[data-window-action="maximize"]');
+    const button = win._parts?.maximizeButton || win.querySelector('[data-window-action="maximize"]');
     if (!button) return;
     button.setAttribute('aria-label', win.classList.contains('is-maximized') ? 'Restore' : 'Maximize');
   }
@@ -829,6 +877,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeWindow(win) {
     const wasActive = getActiveWindow() === win;
     removeTaskButton(win.id);
+    openWindowById.delete(win.id);
+    if (win.dataset.contentUrl) contentWindowByUrl.delete(win.dataset.contentUrl);
     win.remove();
 
     const nextWindow = getTopWindow();
@@ -841,7 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getOpenWindows() {
-    return Array.from(windowContainer.querySelectorAll('.window'));
+    return Array.from(openWindowById.values());
   }
 
   function getVisibleWindows() {
@@ -861,14 +911,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function addTaskButton(win) {
     const taskList = getTaskList();
-    if (!taskList || taskList.querySelector(`[data-window-id="${win.id}"]`)) return;
+    if (!taskList || win._parts?.taskButton) return;
 
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'win98-task-button';
     button.dataset.windowId = win.id;
     button.addEventListener('click', () => {
-      const targetWindow = document.getElementById(button.dataset.windowId);
+      const targetWindow = openWindowById.get(button.dataset.windowId);
       if (!targetWindow) return;
 
       if (targetWindow.classList.contains('is-minimized')) {
@@ -884,23 +934,27 @@ document.addEventListener('DOMContentLoaded', () => {
       activateWindow(targetWindow);
     });
 
+    if (win._parts) win._parts.taskButton = button;
     taskList.appendChild(button);
     updateTaskButton(win);
   }
 
   function getTaskButton(win) {
-    return getTaskList()?.querySelector(`[data-window-id="${win.id}"]`) || null;
+    return win?._parts?.taskButton || null;
   }
 
   function removeTaskButton(windowId) {
-    getTaskList()?.querySelector(`[data-window-id="${windowId}"]`)?.remove();
+    const win = openWindowById.get(windowId);
+    const button = win?._parts?.taskButton || null;
+    if (win?._parts) win._parts.taskButton = null;
+    button?.remove();
   }
 
   function updateWindowTitleBars(activeWindow) {
     const activeId = !activeExternalTaskId ? activeWindow?.id || null : null;
 
     getOpenWindows().forEach((win) => {
-      const titleBar = win.querySelector('.title-bar');
+      const titleBar = win._parts?.titleBar || win.querySelector('.title-bar');
       if (!titleBar) return;
 
       const isActive = win.id === activeId && !win.classList.contains('is-minimized');
@@ -920,11 +974,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateTaskbar(activeWindow) {
     const activeId = activeWindow?.id || null;
 
-    getTaskList()?.querySelectorAll('.win98-task-button[data-window-id]').forEach((button) => {
-      const win = document.getElementById(button.dataset.windowId);
+    getOpenWindows().forEach((win) => {
+      const button = getTaskButton(win);
+      if (!button) return;
       const isActive = !activeExternalTaskId && button.dataset.windowId === activeId && !win?.classList.contains('is-minimized');
       button.classList.toggle('is-active', isActive);
-      if (win) button.classList.toggle('is-minimized', win.classList.contains('is-minimized'));
+      button.classList.toggle('is-minimized', win.classList.contains('is-minimized'));
     });
 
     getTaskList()?.querySelectorAll('.win98-task-button[data-task-id]').forEach((button) => {
@@ -1010,12 +1065,8 @@ document.addEventListener('DOMContentLoaded', () => {
     body.replaceChildren(image);
   }
 
-  function renderContentWindow(win, body, url) {
-    body.innerHTML = '<p>加载中...</p>';
-    body.classList.remove('is-archive-body');
-    win.classList.remove('is-archive-window');
-
-    fetch(url)
+  function fetchMainContent(url) {
+    return fetch(url)
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP 错误！状态: ${response.status}`);
         return response.text();
@@ -1023,27 +1074,49 @@ document.addEventListener('DOMContentLoaded', () => {
       .then((html) => {
         const doc = new DOMParser().parseFromString(html, 'text/html');
         const mainContent = doc.querySelector('#content-main');
+        if (!mainContent) throw new Error('在获取的页面中未找到 #content-main 结构。');
+        return mainContent;
+      });
+  }
 
-        if (!mainContent) {
-          setWindowTitle(win, `${getWindowTitle(win)} (内容加载失败)`);
-          body.innerHTML = '<p>错误：在获取的页面中未找到 #content-main 结构。</p>';
-          updateWindowStatusBar(win, null);
-          return;
-        }
+  function moveMainContentChildren(target, mainContent) {
+    target.replaceChildren(...Array.from(mainContent.childNodes));
+  }
 
+  function initializeGitalkPlaceholder(container, targetContainerId, uniquePageId) {
+    const placeholder = container.querySelector('#gitalk-container-placeholder, .gitalk-placeholder');
+    if (!placeholder) return;
+
+    if (typeof initializeGitalkForWindow !== 'function') {
+      placeholder.innerHTML = '<p style="color:red;">错误：无法找到 Gitalk 初始化函数！</p>';
+      return;
+    }
+
+    placeholder.id = targetContainerId;
+    placeholder.classList.remove('gitalk-placeholder');
+    initializeGitalkForWindow(targetContainerId, uniquePageId);
+  }
+
+  function renderContentWindow(win, body, url) {
+    body.innerHTML = '<p>加载中...</p>';
+    body.classList.remove('is-archive-body');
+    win.classList.remove('is-archive-window');
+
+    fetchMainContent(url)
+      .then((mainContent) => {
         const contentStatus = extractContentStatus(mainContent);
         body.classList.toggle('is-archive-body', contentStatus?.type === 'archive');
         win.classList.toggle('is-archive-window', contentStatus?.type === 'archive');
 
-        const heading = mainContent.querySelector('h1');
-        if (heading?.textContent.trim()) {
-          setWindowTitle(win, heading.textContent.trim());
+        const contentTitle = mainContent.dataset.windowTitle || mainContent.querySelector(':scope > h1')?.textContent.trim();
+        if (contentTitle) {
+          setWindowTitle(win, contentTitle);
         }
 
         mainContent.querySelector(':scope > h1')?.remove();
         mainContent.querySelector(':scope > hr')?.remove();
 
-        body.replaceChildren(...Array.from(mainContent.childNodes));
+        moveMainContentChildren(body, mainContent);
         updateWindowStatusBar(win, contentStatus);
         initializeGitalk(body, win.id, url);
         enhanceContent(body);
@@ -1070,18 +1143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initializeGitalk(body, windowId, contentUrl) {
-    const placeholder = body.querySelector('#gitalk-container-placeholder');
-    if (!placeholder) return;
-
-    if (typeof initializeGitalkForWindow !== 'function') {
-      placeholder.innerHTML = '<p style="color:red;">错误：无法找到 Gitalk 初始化函数！</p>';
-      return;
-    }
-
-    const gitalkId = `gitalk-container-${windowId}`;
-    placeholder.id = gitalkId;
-    placeholder.classList.remove('gitalk-placeholder');
-    initializeGitalkForWindow(gitalkId, contentUrl);
+    initializeGitalkPlaceholder(body, `gitalk-container-${windowId}`, contentUrl);
   }
 
   function makeDraggable(win, handle) {
@@ -1378,6 +1440,8 @@ document.addEventListener('DOMContentLoaded', () => {
     parent.querySelectorAll('.archive-workspace').forEach((workspace) => {
       if (workspace.dataset.archiveWorkspaceReady === 'true') return;
 
+      cacheArchiveLinks(workspace);
+
       if (!workspace.style.getPropertyValue('--archive-tree-width')) {
         const initialTreeWidth = 145;
         workspace.style.setProperty('--archive-tree-width', `${initialTreeWidth}px`);
@@ -1412,7 +1476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         delete win.dataset.pendingArchiveTabUrl;
         delete win.dataset.pendingArchiveTabTitle;
       } else {
-        const firstPost = workspace.querySelector('.archive-post-link');
+        const firstPost = getArchiveState(workspace).links[0];
         if (firstPost) openArchivePostTab(workspace, firstPost.href, getArchiveLinkTitle(firstPost), firstPost, { historyMode: 'replaceState' });
       }
 
@@ -1463,9 +1527,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('pointercancel', stop);
   }
 
+  function getArchiveState(workspace) {
+    if (!workspace._archiveState) {
+      workspace._archiveState = {
+        tabByUrl: new Map(),
+        linkByUrl: new Map(),
+        links: []
+      };
+    }
+    return workspace._archiveState;
+  }
+
+  function cacheArchiveLinks(workspace) {
+    const state = getArchiveState(workspace);
+    state.linkByUrl.clear();
+    state.links = Array.from(workspace.querySelectorAll('.archive-post-link'));
+    state.links.forEach((link) => state.linkByUrl.set(normalizeContentUrl(link.href), link));
+  }
+
   function findArchiveLinkByUrl(workspace, url) {
-    const targetUrl = normalizeArchiveTabUrl(url);
-    return Array.from(workspace.querySelectorAll('.archive-post-link')).find((link) => normalizeArchiveTabUrl(link.href) === targetUrl) || null;
+    return getArchiveState(workspace).linkByUrl.get(normalizeContentUrl(url)) || null;
   }
 
   function openArchivePostInTabFromClick(target, event) {
@@ -1485,18 +1566,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return link.dataset.archiveTitle || link.textContent.trim() || '文章';
   }
 
-  function normalizeArchiveTabUrl(url) {
-    const parsedUrl = new URL(url, location.origin);
-    return `${normalizePath(parsedUrl.pathname)}${parsedUrl.search}${parsedUrl.hash}`;
-  }
-
   function openArchivePostTab(workspace, url, title, sourceLink, options = {}) {
     const tabList = workspace.querySelector('.archive-tab-list');
     const tabBody = workspace.querySelector('.archive-tab-body');
     if (!tabList || !tabBody) return null;
 
-    const targetUrl = normalizeArchiveTabUrl(url);
-    const existingTab = getArchiveTabByUrl(tabList, targetUrl);
+    const state = getArchiveState(workspace);
+    const targetUrl = normalizeContentUrl(url);
+    const existingTab = state.tabByUrl.get(targetUrl);
     if (existingTab) {
       activateArchiveTab(workspace, existingTab, options);
       setActiveArchiveLink(workspace, targetUrl);
@@ -1517,18 +1594,16 @@ document.addEventListener('DOMContentLoaded', () => {
     tabContent.className = 'archive-tab-content';
     tabContent.innerHTML = '<p>加载中...</p>';
     tab._contentElement = tabContent;
+    tab._workspace = workspace;
 
     tab.appendChild(tabLink);
     tabList.appendChild(tab);
+    state.tabByUrl.set(targetUrl, tab);
     activateArchiveTab(workspace, tab, options);
     setActiveArchiveLink(workspace, targetUrl);
     loadArchiveTabContent(tab, targetUrl);
 
     return tab;
-  }
-
-  function getArchiveTabByUrl(tabList, url) {
-    return Array.from(tabList.querySelectorAll('[role="tab"]')).find((tab) => tab.dataset.tabUrl === url) || null;
   }
 
   function activateArchiveTab(workspace, tab, options = {}) {
@@ -1549,8 +1624,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setActiveArchiveLink(workspace, targetUrl) {
-    workspace.querySelectorAll('.archive-post-link').forEach((link) => {
-      const isActive = targetUrl && normalizeArchiveTabUrl(link.href) === targetUrl;
+    getArchiveState(workspace).links.forEach((link) => {
+      const isActive = targetUrl && normalizeContentUrl(link.href) === targetUrl;
       link.classList.toggle('is-active', isActive);
       if (!isActive && document.activeElement === link) link.blur();
     });
@@ -1560,36 +1635,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const content = tab._contentElement;
     if (!content || tab.dataset.loaded === 'true') return;
 
-    fetch(url)
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP 错误！状态: ${response.status}`);
-        return response.text();
-      })
-      .then((html) => {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const mainContent = doc.querySelector('#content-main');
-
-        if (!mainContent) {
-          content.innerHTML = '<p>错误：在获取的页面中未找到 #content-main 结构。</p>';
-          return;
-        }
-
-        mainContent.querySelector(':scope > h1')?.remove();
-        mainContent.querySelector(':scope > hr')?.remove();
-        content.replaceChildren(...Array.from(mainContent.childNodes));
-
-        const placeholder = content.querySelector('#gitalk-container-placeholder, .gitalk-placeholder');
-        if (placeholder) {
-          const gitalkId = createSafeDomId('gitalk-container-archive-tab', tab.dataset.tabUrl || url);
-          placeholder.id = gitalkId;
-          placeholder.classList.remove('gitalk-placeholder');
-
-          if (typeof initializeGitalkForWindow === 'function') {
-            initializeGitalkForWindow(gitalkId, tab.dataset.tabUrl || url);
-          } else {
-            placeholder.innerHTML = '<p style="color:red;">错误：无法找到 Gitalk 初始化函数！</p>';
-          }
-        }
+    fetchMainContent(url)
+      .then((mainContent) => {
+        moveMainContentChildren(content, mainContent);
+        initializeGitalkPlaceholder(content, createSafeDomId('gitalk-container-archive-tab', tab.dataset.tabUrl || url), tab.dataset.tabUrl || url);
 
         enhanceContent(content);
         setupWindowInteractions(content);
@@ -1719,6 +1768,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextTab = tab.nextElementSibling || tab.previousElementSibling;
 
     tab._contentElement?.remove();
+    workspace._archiveState?.tabByUrl?.delete(tab.dataset.tabUrl);
     tab.remove();
 
     if (wasActive && nextTab) {
@@ -1761,8 +1811,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.stopPropagation();
 
     const url = new URL(link.getAttribute('href'), location.origin);
-    const path = normalizePath(url.pathname);
-    const targetUrl = `${path}${url.search}${url.hash}`;
+    const targetUrl = normalizeContentUrl(url.href);
     const title = link.dataset.windowTitle || link.textContent.trim() || '窗口';
     const iconSrc = getIconFromLink(link);
     const existingWindow = findWindowByContentUrl(targetUrl);
@@ -1784,21 +1833,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function findWindowByContentUrl(url) {
-    return getOpenWindows().find((win) => win.dataset.contentUrl === url) || null;
+    return contentWindowByUrl.get(normalizeContentUrl(url)) || null;
   }
 
   function findWindowForRoute(path, windowId) {
     if (windowId) {
-      const win = document.getElementById(windowId);
-      if (win?.dataset.contentUrl && normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === path) {
+      const win = openWindowById.get(windowId);
+      if (win?.dataset.contentUrl && normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === normalizePath(path)) {
         return win;
       }
     }
 
-    return getOpenWindows().find((win) => {
-      if (!win.dataset.contentUrl) return false;
-      return normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === path;
-    }) || null;
+    const normalizedPath = normalizePath(path);
+    return getOpenWindows().find((win) => win.dataset.contentUrl && normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === normalizedPath) || null;
   }
 
   function clamp(value, min, max) {
@@ -1827,7 +1874,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (state.archiveTabUrl) {
       const archiveWindowUrl = state.archiveWindowUrl || '/archives/';
-      let win = document.getElementById(state.windowId) || findWindowByContentUrl(archiveWindowUrl);
+      let win = openWindowById.get(state.windowId) || findWindowByContentUrl(archiveWindowUrl);
 
       if (!win) {
         win = createWindow('存档', archiveWindowUrl, {
@@ -1854,7 +1901,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (isRoutablePath(path)) {
-      const title = state.title || document.querySelector(`.desktop-icon[href^="${path}"]`)?.dataset.windowTitle || path.split('/').filter(Boolean).pop() || '窗口';
+      const title = state.title || getTitleForPath(path) || path.split('/').filter(Boolean).pop() || '窗口';
       const win = findWindowForRoute(path, state.windowId) || createWindow(title, path, {
         animateFromSource: false,
         startMaximized: true,
