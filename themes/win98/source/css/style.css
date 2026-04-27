@@ -266,6 +266,8 @@ body.windows-desktop {
 }
 
 #window-container > .window > .title-bar .title-bar-controls {
+    position: relative;
+    z-index: 3;
     flex-shrink: 0;
 }
 
@@ -599,6 +601,11 @@ table > :is(thead, tbody, tfoot) > tr > * {
 }
 
 #window-container .window .window-body:not(.image-popup-body) :is(.post-content, .page-body) ul.tree-view {
+    font-family: var(--win98-font);
+    margin: 0.75em 0;
+}
+
+#window-container .window .window-body:not(.image-popup-body) .archive-tree {
     font-family: var(--win98-font);
     margin: 0.75em 0;
 }
@@ -1040,6 +1047,14 @@ body.is-resizing-window * {
     cursor: nwse-resize;
 }
 
+.window-resizer.is-northeast {
+    top: 0;
+    right: 0;
+    width: 16px;
+    height: 22px;
+    cursor: nesw-resize;
+}
+
 .table-wrapper {
   overflow-x: auto;
   margin: 1em 0;
@@ -1118,6 +1133,11 @@ body.is-resizing-window * {
     }
 
     .window-resizer.is-southeast {
+        width: 32px;
+        height: 32px;
+    }
+
+    .window-resizer.is-northeast {
         width: 32px;
         height: 32px;
     }

@@ -17,6 +17,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const taskbarIconCache = new Map();
 
   window.getWin98HighestZIndex = () => ++highestZIndex;
+  window.updateWin98GitalkCommentCount = (containerId, count) => {
+    const container = document.getElementById(containerId);
+    const win = container?.closest('.window');
+    if (!win || win.dataset.statusType !== 'guestbook') return;
+
+    updateWindowStatusBar(win, {
+      type: 'guestbook',
+      commentCount: parseCount(count)
+    });
+  };
 
   const taskbar = ensureTaskbar();
   function ensureTaskbar() {
@@ -351,20 +361,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createStatusBar() {
     const statusBar = document.createElement('div');
-    const wordCountField = document.createElement('p');
-    const publishedAtField = document.createElement('p');
+    const primaryField = document.createElement('p');
+    const secondaryField = document.createElement('p');
 
     statusBar.className = 'status-bar window-status-bar';
     statusBar.hidden = true;
 
-    wordCountField.className = 'status-bar-field';
-    wordCountField.dataset.statusField = 'word-count';
+    primaryField.className = 'status-bar-field';
+    primaryField.dataset.statusField = 'primary';
 
-    publishedAtField.className = 'status-bar-field';
-    publishedAtField.dataset.statusField = 'published-at';
+    secondaryField.className = 'status-bar-field';
+    secondaryField.dataset.statusField = 'secondary';
 
-    statusBar.append(wordCountField, publishedAtField);
+    statusBar.append(primaryField, secondaryField);
     return statusBar;
+  }
+
+  function parseCount(value) {
+    const count = parseInt(value, 10);
+    return Number.isFinite(count) && count >= 0 ? count : 0;
   }
 
   function countDocumentUnits(text) {
@@ -373,6 +388,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function extractContentStatus(mainContent) {
     if (!mainContent) return null;
+
+    if (mainContent.dataset.statusType === 'none') {
+      return null;
+    }
+
+    if (mainContent.dataset.statusType === 'archive') {
+      return {
+        type: 'archive',
+        postCount: parseCount(mainContent.dataset.postCount)
+      };
+    }
+
+    if (mainContent.dataset.statusType === 'guestbook') {
+      return {
+        type: 'guestbook',
+        commentCount: null
+      };
+    }
 
     const content = mainContent.querySelector('.post-content, .page-body');
     if (!content) return null;
@@ -383,6 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
       || '';
 
     return {
+      type: 'content',
       wordCount,
       publishedAt
     };
@@ -392,22 +426,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusBar = win?._statusBar;
     if (!statusBar) return;
 
-    const wordCountField = statusBar.querySelector('[data-status-field="word-count"]');
-    const publishedAtField = statusBar.querySelector('[data-status-field="published-at"]');
-    if (!wordCountField || !publishedAtField) return;
-
     if (!status) {
-      statusBar.hidden = true;
-      wordCountField.textContent = '';
-      publishedAtField.textContent = '';
+      delete win.dataset.statusType;
+      setWindowStatusFields(statusBar, '', '');
       return;
     }
 
-    wordCountField.textContent = `字数: ${status.wordCount}`;
-    publishedAtField.textContent = status.publishedAt
-      ? `发表时间: ${status.publishedAt}`
-      : '静态页';
-    statusBar.hidden = false;
+    win.dataset.statusType = status.type || 'content';
+
+    if (status.type === 'archive') {
+      setWindowStatusFields(statusBar, `共 ${status.postCount} 篇文章`, '');
+      return;
+    }
+
+    if (status.type === 'guestbook') {
+      const commentText = Number.isFinite(status.commentCount)
+        ? `共有 ${status.commentCount} 条评论`
+        : '评论加载中...';
+      setWindowStatusFields(statusBar, commentText, '');
+      return;
+    }
+
+    setWindowStatusFields(
+      statusBar,
+      `字数: ${status.wordCount}`,
+      status.publishedAt ? `发表时间: ${status.publishedAt}` : '静态页'
+    );
+  }
+
+  function setWindowStatusFields(statusBar, primaryText, secondaryText) {
+    const primaryField = statusBar.querySelector('[data-status-field="primary"]');
+    const secondaryField = statusBar.querySelector('[data-status-field="secondary"]');
+    if (!primaryField || !secondaryField) return;
+
+    primaryField.textContent = primaryText;
+    primaryField.hidden = !primaryText;
+    secondaryField.textContent = secondaryText;
+    secondaryField.hidden = !secondaryText;
+    statusBar.hidden = !primaryText && !secondaryText;
   }
 
   function createTitleBar(title, callbacks) {
@@ -461,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createResizer(win) {
     const fragment = document.createDocumentFragment();
-    ['west', 'east', 'south', 'southeast'].forEach((direction) => {
+    ['west', 'east', 'south', 'southeast', 'northeast'].forEach((direction) => {
       fragment.appendChild(createResizeHandle(win, direction));
     });
     return fragment;
@@ -1093,6 +1149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let startX = 0;
     let startY = 0;
     let startLeft = 0;
+    let startTop = 0;
     let startWidth = 0;
     let startHeight = 0;
 
@@ -1106,10 +1163,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const deltaX = event.clientX - startX;
       const deltaY = event.clientY - startY;
       const resizeWest = direction === 'west';
-      const resizeEast = direction === 'east' || direction === 'southeast';
+      const resizeEast = direction === 'east' || direction === 'southeast' || direction === 'northeast';
+      const resizeNorth = direction === 'northeast';
       const resizeSouth = direction === 'south' || direction === 'southeast';
 
       let nextLeft = startLeft;
+      let nextTop = startTop;
       let nextWidth = startWidth;
       let nextHeight = startHeight;
 
@@ -1124,12 +1183,19 @@ document.addEventListener('DOMContentLoaded', () => {
         nextWidth = clamp(startWidth + deltaX, minWidth, maxWidth);
       }
 
+      if (resizeNorth) {
+        const heightDelta = clamp(deltaY, Math.min(0, -startTop), startHeight - minHeight);
+        nextTop = startTop + heightDelta;
+        nextHeight = startHeight - heightDelta;
+      }
+
       if (resizeSouth) {
         const maxHeight = area.height - win.offsetTop - windowMargin;
         nextHeight = clamp(startHeight + deltaY, minHeight, maxHeight);
       }
 
       win.style.left = `${Math.round(nextLeft)}px`;
+      win.style.top = `${Math.round(nextTop)}px`;
       win.style.width = `${Math.round(nextWidth)}px`;
       win.style.height = `${Math.round(nextHeight)}px`;
     };
@@ -1155,10 +1221,11 @@ document.addEventListener('DOMContentLoaded', () => {
       startX = event.clientX;
       startY = event.clientY;
       startLeft = win.offsetLeft;
+      startTop = win.offsetTop;
       startWidth = win.offsetWidth;
       startHeight = win.offsetHeight;
       document.body.classList.add('is-resizing-window');
-      document.body.style.setProperty('--win98-resize-cursor', getComputedStyle(handle).cursor || 'nwse-resize');
+      document.body.style.setProperty('--win98-resize-cursor', getResizeCursor(direction));
 
       event.preventDefault();
       event.stopPropagation();
@@ -1169,6 +1236,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     handle.ondragstart = () => false;
+  }
+
+  function getResizeCursor(direction) {
+    const cursors = {
+      west: 'ew-resize',
+      east: 'ew-resize',
+      south: 'ns-resize',
+      southeast: 'nwse-resize',
+      northeast: 'nesw-resize'
+    };
+    return cursors[direction] || 'nwse-resize';
   }
 
   function enhanceContent(parent) {

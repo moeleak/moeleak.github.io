@@ -159,7 +159,12 @@
             language: '<%- theme.gitalk.language || 'zh-CN' %>',
             pagerDirection: 'last',
             distractionFreeMode: <%= theme.gitalk.distractionFreeMode === true %>,
-            proxy: '<%- theme.gitalk.proxy || '' %>'
+            proxy: '<%- theme.gitalk.proxy || '' %>',
+            updateCountCallback: function (count) {
+              if (typeof window.updateWin98GitalkCommentCount === 'function') {
+                window.updateWin98GitalkCommentCount(targetContainerId, count);
+              }
+            }
           });
           gitalkInstance.render(targetContainerId);
           applyWin98ProgressIndicator(containerElement);

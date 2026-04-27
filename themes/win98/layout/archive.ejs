@@ -1,15 +1,112 @@
-<div class="archive-list-container" id="content-main">
+<%
+  var archivePosts = site.posts.sort('date', 'desc');
+  var postCount = archivePosts.length;
+  var archiveYears = [];
+  var currentYearGroup = null;
+  var currentMonthGroup = null;
+  var currentDayGroup = null;
+
+  archivePosts.each(function(post) {
+    var yearKey = date(post.date, 'YYYY');
+    var monthKey = date(post.date, 'MM');
+    var dayKey = date(post.date, 'DD');
+
+    if (!currentYearGroup || currentYearGroup.key !== yearKey) {
+      currentYearGroup = {
+        key: yearKey,
+        label: yearKey,
+        months: []
+      };
+      archiveYears.push(currentYearGroup);
+      currentMonthGroup = null;
+      currentDayGroup = null;
+    }
+
+    if (!currentMonthGroup || currentMonthGroup.key !== monthKey) {
+      currentMonthGroup = {
+        key: monthKey,
+        label: monthKey + '月',
+        days: []
+      };
+      currentYearGroup.months.push(currentMonthGroup);
+      currentDayGroup = null;
+    }
+
+    if (!currentDayGroup || currentDayGroup.key !== dayKey) {
+      currentDayGroup = {
+        key: dayKey,
+        label: dayKey + '日',
+        posts: []
+      };
+      currentMonthGroup.days.push(currentDayGroup);
+    }
+
+    currentDayGroup.posts.push(post);
+  });
+
+  function countMonthPosts(month) {
+    return month.days.reduce(function(total, day) {
+      return total + day.posts.length;
+    }, 0);
+  }
+
+  function countYearPosts(year) {
+    return year.months.reduce(function(total, month) {
+      return total + countMonthPosts(month);
+    }, 0);
+  }
+
+  function onlyPostInMonth(month) {
+    return month.days[0].posts[0];
+  }
+
+  function archiveDate(post, format) {
+    return date(post.date, format);
+  }
+%>
+<div class="archive-list-container" id="content-main" data-status-type="archive" data-post-count="<%= postCount %>">
     <h1>存档</h1>
     <hr>
-    <%
-      var lastYear = 0;
-      site.posts.sort('date', 'desc').each(function(post){
-        var currentYear = date(post.date, 'YYYY');
-        if (lastYear !== currentYear) {
-          lastYear = currentYear; %>
-          <h2><%= currentYear %></h2>
-        <% } %>
-        <p><%- date(post.date, config.date_format || 'YYYY-MM-DD') %> » <a href="<%- url_for(post.path) %>"><%= post.title %></a></p>
+    <ul class="tree-view archive-tree">
+      <% archiveYears.forEach(function(group) { %>
+        <li>
+          <details open>
+            <summary><%= group.label %></summary>
+            <ul>
+              <% group.months.forEach(function(month) { %>
+                <% if (countYearPosts(group) === 1 || countMonthPosts(month) === 1) {
+                  var onlyPost = onlyPostInMonth(month); %>
+                  <li><a href="<%- url_for(onlyPost.path) %>"><%- archiveDate(onlyPost, 'MM月DD日') %> <%= onlyPost.title %></a></li>
+                <% } else { %>
+                  <li>
+                    <details open>
+                      <summary><%= month.label %></summary>
+                      <ul>
+                        <% month.days.forEach(function(day) { %>
+                          <% if (day.posts.length === 1) {
+                            var post = day.posts[0]; %>
+                            <li><a href="<%- url_for(post.path) %>"><%- archiveDate(post, 'DD日') %> <%= post.title %></a></li>
+                          <% } else { %>
+                            <li>
+                              <details open>
+                                <summary><%= day.label %></summary>
+                                <ul>
+                                  <% day.posts.forEach(function(post) { %>
+                                    <li><a href="<%- url_for(post.path) %>"><%= post.title %></a></li>
+                                  <% }); %>
+                                </ul>
+                              </details>
+                            </li>
+                          <% } %>
+                        <% }); %>
+                      </ul>
+                    </details>
+                  </li>
+                <% } %>
+              <% }); %>
+            </ul>
+          </details>
+        </li>
       <% }); %>
+    </ul>
 </div>
-
