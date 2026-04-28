@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const desktopIconMetaByPath = new Map();
   const openWindowById = new Map();
   const contentWindowByUrl = new Map();
+  const imageWindowBySrc = new Map();
 
   window.getWin98HighestZIndex = () => ++highestZIndex;
   window.updateWin98GitalkCommentCount = (containerId, count) => {
@@ -95,6 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function normalizeContentUrl(url) {
     const parsedUrl = new URL(url, location.origin);
     return `${normalizePath(parsedUrl.pathname)}${parsedUrl.search}${parsedUrl.hash}`;
+  }
+
+  function normalizeImageSrc(src) {
+    try {
+      return new URL(src, location.href).href;
+    } catch (error) {
+      return src || '';
+    }
   }
 
   function hasGitalkQuery() {
@@ -348,9 +357,13 @@ document.addEventListener('DOMContentLoaded', () => {
       iconSrc
     } = options;
 
-    const existingWindow = windowIdToUse ? openWindowById.get(windowIdToUse) : null;
+    const imageSrc = isImagePopup ? normalizeImageSrc(contentIdentifier) : '';
+    const existingWindowById = windowIdToUse ? openWindowById.get(windowIdToUse) : null;
+    const existingImageWindow = !existingWindowById && isImagePopup && imageSrc ? imageWindowBySrc.get(imageSrc) : null;
+    const existingWindow = existingWindowById || existingImageWindow;
     if (existingWindow) {
-      activateWindow(existingWindow, { updateHistory: historyMode !== 'none' });
+      const activate = existingImageWindow ? activateExistingWindow : activateWindow;
+      activate(existingWindow, { updateHistory: historyMode !== 'none' });
       return existingWindow;
     }
 
@@ -383,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
     win.style.zIndex = String(++highestZIndex);
 
     if (isImagePopup) {
-      win.dataset.imageSrc = contentIdentifier;
+      win.dataset.imageSrc = imageSrc;
       body.className = 'window-body image-popup-body';
     } else {
       win.dataset.contentUrl = contentUrl;
@@ -392,6 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     openWindowById.set(windowId, win);
     if (contentUrl) contentWindowByUrl.set(contentUrl, win);
+    if (imageSrc) imageWindowBySrc.set(imageSrc, win);
 
     placeWindow(win, placement);
     if (startMaximized) {
@@ -879,6 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
     removeTaskButton(win.id);
     openWindowById.delete(win.id);
     if (win.dataset.contentUrl) contentWindowByUrl.delete(win.dataset.contentUrl);
+    if (win.dataset.imageSrc) imageWindowBySrc.delete(win.dataset.imageSrc);
     win.remove();
 
     const nextWindow = getTopWindow();
@@ -1790,7 +1805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.stopPropagation();
 
     const rect = target.getBoundingClientRect();
-    createWindow(target.alt || target.src.split('/').pop() || 'Image Viewer', target.src, {
+    createWindow(target.alt || target.src.split('/').pop() || 'Image Viewer', target.currentSrc || target.src, {
       isImagePopup: true,
       sourceX: rect.left + rect.width / 2,
       sourceY: rect.top + rect.height / 2,
@@ -1817,9 +1832,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const existingWindow = findWindowByContentUrl(targetUrl);
 
     if (existingWindow) {
-      activateWindow(existingWindow);
-      existingWindow.classList.add('window-shake');
-      setTimeout(() => existingWindow.classList.remove('window-shake'), 280);
+      activateExistingWindow(existingWindow);
       return;
     }
 
@@ -1834,6 +1847,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function findWindowByContentUrl(url) {
     return contentWindowByUrl.get(normalizeContentUrl(url)) || null;
+  }
+
+  function activateExistingWindow(win, options = {}) {
+    activateWindow(win, options);
+    win.classList.remove('window-shake');
+    void win.offsetWidth;
+    win.classList.add('window-shake');
+    setTimeout(() => win.classList.remove('window-shake'), 280);
   }
 
   function findWindowForRoute(path, windowId) {
