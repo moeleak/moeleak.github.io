@@ -18,14 +18,14 @@ tags: [game, memory]
 
 附几张图。
 
-![](https://s2.loli.net/2024/11/29/ETbOkmhceR49Xif.jpg)
+![](/images/posts/minecraft-replay/minecraft-server-screenshot-01.jpg)
 
-![](https://s2.loli.net/2024/11/29/nESBzrLVIMHxZtv.png)
+![](/images/posts/minecraft-replay/minecraft-server-screenshot-02.png)
 
-![](https://s2.loli.net/2024/11/29/CZ7vsYprOqfJ1oV.png)
+![](/images/posts/minecraft-replay/minecraft-server-screenshot-03.png)
 
-![](https://s2.loli.net/2024/11/29/aUeDfi9AM7QTEGq.png)
+![](/images/posts/minecraft-replay/minecraft-server-screenshot-04.png)
 
-![](https://s2.loli.net/2024/11/29/yIjiQo2hK7CabOX.png)
+![](/images/posts/minecraft-replay/minecraft-server-screenshot-05.png)
 
-![](https://s2.loli.net/2024/11/29/4HcfWQo7Yipbxlg.jpg)
+![](/images/posts/minecraft-replay/minecraft-server-screenshot-06.jpg)

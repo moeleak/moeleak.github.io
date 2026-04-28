@@ -82,7 +82,7 @@ komodo:/data/data/cn.unipus.ucampus.student/files/s/e/yys3 #
 $ xxd .03525879A1678CE0661A3047B9179904.wys | less
 ```
 
-![](https://s2.loli.net/2025/01/13/kWEg8GO7tK2aQbU.png)
+![](/images/posts/ucampus-media-extraction/xxd-mp42-hex-dump.png)
 
 因为它的存储形式是 “mp42”，而不是 “24pm”，这一点就可以看出这是一个大端的 32 位格式。所以数据会按照 4 个字节进行存储。
 
@@ -103,4 +103,4 @@ echo "All done!"
 
 ## 0x03
 
-![](https://s2.loli.net/2025/01/13/XPkJE3dba1LAcxQ.png)
+![](/images/posts/ucampus-media-extraction/ucampus-video-file-preview.png)

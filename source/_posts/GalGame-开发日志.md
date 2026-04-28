@@ -26,5 +26,5 @@ tags: [memory, tech, game]
 
 一直在跟 NodeEditor 肝，现在把基本功能都实现了，支持角色编号编辑，变量系统。（用std::map映射字符串实现的，其实很简单）主要是用 SDL2 从头手搓真的很麻烦，还要适配高分辨率屏，适配高分屏真的好复杂，我还去学习了一下 DPI PPI这些概念。演示视频在[这里](https://www.bilibili.com/video/BV1seHFz1E3u)。
 
-![](https://s2.loli.net/2025/10/15/MbR3sT6AvVhUkHP.png)
+![](/images/posts/galgame-devlog/galgame-node-editor-screenshot.png)
 
