@@ -248,6 +248,21 @@ body.windows-desktop {
     inset: 4px;
 }
 
+.win98-snap-preview {
+    position: fixed;
+    z-index: 19990;
+    box-sizing: border-box;
+    pointer-events: none;
+    display: none;
+    background: rgba(0, 0, 128, 0.08);
+    border: 1px dotted #000;
+    outline: 1px solid #fff;
+}
+
+.win98-snap-preview.is-visible {
+    display: block;
+}
+
 #window-container > .window > .title-bar {
   font-family: var(--win98-font);
   cursor: grab;
@@ -1308,12 +1323,28 @@ body.is-resizing-window * {
     right: 0;
 }
 
+.window-resizer.is-north {
+    top: 0;
+    left: 16px;
+    right: 52px;
+    height: 6px;
+    cursor: ns-resize;
+}
+
 .window-resizer.is-south {
     right: 16px;
     bottom: 0;
     left: 0;
     height: 6px;
     cursor: ns-resize;
+}
+
+.window-resizer.is-northwest {
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 22px;
+    cursor: nwse-resize;
 }
 
 .window-resizer.is-southeast {
@@ -1412,6 +1443,17 @@ body.is-resizing-window * {
     .window-resizer.is-south {
         height: 16px;
         right: 32px;
+    }
+
+    .window-resizer.is-north {
+        left: 32px;
+        right: 64px;
+        height: 10px;
+    }
+
+    .window-resizer.is-northwest {
+        width: 24px;
+        height: 24px;
     }
 
     .window-resizer.is-southeast {

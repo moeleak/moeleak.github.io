@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const defaultImageIcon = '/images/icon_image.png';
   const layoutStorageKey = 'win98-desktop-layout-v1';
   const layoutSnapshotVersion = 1;
+  const snapEdgeThreshold = 8;
 
   let highestZIndex = 10;
   let isInitialLoad = true;
@@ -284,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
       zIndex,
       minimized: win.classList.contains('is-minimized'),
       maximized: win.classList.contains('is-maximized'),
+      snapState: win.dataset.snapState || '',
       archiveTabs: getArchiveTabsSnapshot(win)
     };
   }
@@ -344,6 +346,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (restorePlacement) win._restorePlacement = restorePlacement;
     win.classList.toggle('is-maximized', Boolean(item.maximized));
+    if (item.snapState && !item.maximized) {
+      win.dataset.snapState = item.snapState;
+    } else {
+      delete win.dataset.snapState;
+    }
     win.classList.toggle('is-minimized', Boolean(item.minimized));
     updateMaximizeButton(win);
     updateTaskButton(win);
@@ -639,6 +646,116 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  function getSplitPlacement(side) {
+    const area = getDesktopArea();
+    const leftWidth = Math.floor(area.width / 2);
+    const rightWidth = area.width - leftWidth;
+
+    if (side === 'right') {
+      return {
+        left: leftWidth,
+        top: 0,
+        width: rightWidth,
+        height: area.height
+      };
+    }
+
+    return {
+      left: 0,
+      top: 0,
+      width: leftWidth,
+      height: area.height
+    };
+  }
+
+  function getSnapTarget(pointerEvent) {
+    if (pointerEvent.pointerType !== 'mouse') return null;
+
+    const area = getDesktopArea();
+    const containerRect = windowContainer.getBoundingClientRect();
+    const pointerX = pointerEvent.clientX - containerRect.left;
+    const pointerY = pointerEvent.clientY - containerRect.top;
+
+    if (pointerY < 0 || pointerY > area.height || pointerX < 0 || pointerX > area.width) return null;
+
+    if (pointerY <= snapEdgeThreshold) {
+      return {
+        state: 'maximized',
+        placement: getMaximizedPlacement()
+      };
+    }
+
+    if (pointerX <= snapEdgeThreshold) {
+      return {
+        state: 'left',
+        placement: getSplitPlacement('left')
+      };
+    }
+
+    if (pointerX >= area.width - snapEdgeThreshold) {
+      return {
+        state: 'right',
+        placement: getSplitPlacement('right')
+      };
+    }
+
+    return null;
+  }
+
+  function getSnapPreview() {
+    let preview = document.querySelector('.win98-snap-preview');
+    if (!preview) {
+      preview = document.createElement('div');
+      preview.className = 'win98-snap-preview';
+      preview.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(preview);
+    }
+
+    return preview;
+  }
+
+  function showSnapPreview(snapTarget) {
+    const preview = getSnapPreview();
+    applyScreenRect(preview, placementToScreenRect(snapTarget.placement));
+    preview.classList.add('is-visible');
+  }
+
+  function hideSnapPreview() {
+    document.querySelector('.win98-snap-preview')?.classList.remove('is-visible');
+  }
+
+  function getDragRestorePlacement(win) {
+    if (win.classList.contains('is-maximized') || win.dataset.snapState) {
+      return win._restorePlacement || getWindowPlacementFromElement(win);
+    }
+
+    return getWindowPlacementFromElement(win);
+  }
+
+  function clearWindowSnapState(win) {
+    delete win.dataset.snapState;
+    win.classList.remove('is-maximized');
+    updateMaximizeButton(win);
+  }
+
+  function applyWindowSnap(win, snapTarget, restorePlacement) {
+    if (!snapTarget) return;
+
+    win._restorePlacement = restorePlacement || getDragRestorePlacement(win);
+    placeWindow(win, snapTarget.placement);
+
+    if (snapTarget.state === 'maximized') {
+      win.classList.add('is-maximized');
+      delete win.dataset.snapState;
+    } else {
+      win.classList.remove('is-maximized');
+      win.dataset.snapState = snapTarget.state;
+    }
+
+    updateMaximizeButton(win);
+    activateWindow(win);
+  }
+
   function createWindowId(windowIdToUse) {
     return windowIdToUse || `window-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   }
@@ -921,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createResizer(win) {
     const fragment = document.createDocumentFragment();
-    ['west', 'east', 'south', 'southeast', 'northeast'].forEach((direction) => {
+    ['north', 'west', 'east', 'south', 'northwest', 'northeast', 'southeast'].forEach((direction) => {
       fragment.appendChild(createResizeHandle(win, direction));
     });
     return fragment;
@@ -1149,12 +1266,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function maximizeWindow(win) {
     activateWindow(win);
-    win._restorePlacement = {
-      left: parseFloat(win.style.left) || 0,
-      top: parseFloat(win.style.top) || 0,
-      width: parseFloat(win.style.width) || win.offsetWidth,
-      height: parseFloat(win.style.height) || win.offsetHeight
-    };
+    win._restorePlacement = win.dataset.snapState && win._restorePlacement
+      ? win._restorePlacement
+      : getWindowPlacementFromElement(win);
 
     const fromRect = getWindowScreenRect(win);
     const targetPlacement = getMaximizedPlacement();
@@ -1164,6 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     animateRectTransition(fromRect, toRect, () => {
       placeWindow(win, targetPlacement);
       win.classList.add('is-maximized');
+      delete win.dataset.snapState;
       setWindowAnimationHidden(win, false);
       updateMaximizeButton(win);
       activateWindow(win);
@@ -1177,10 +1292,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setWindowAnimationHidden(win, true);
 
     animateRectTransition(fromRect, toRect, () => {
-      win.classList.remove('is-maximized');
+      clearWindowSnapState(win);
       placeWindow(win, targetPlacement);
       setWindowAnimationHidden(win, false);
-      updateMaximizeButton(win);
       activateWindow(win);
     });
   }
@@ -1195,13 +1309,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextLeft = clamp(pointerEvent.clientX - targetPlacement.width * pointerRatioX, minLeft, maxLeft);
     const nextTop = clamp(pointerEvent.clientY - titleGrabOffset, minTop, maxTop);
 
-    win.classList.remove('is-maximized');
+    clearWindowSnapState(win);
     placeWindow(win, {
       ...targetPlacement,
       left: nextLeft,
       top: nextTop
     });
-    updateMaximizeButton(win);
   }
 
   function closeWindow(win) {
@@ -1505,6 +1618,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let previousTransition = '';
     let startedMaximized = false;
     let restoredFromMaximized = false;
+    let canSnapWindow = false;
+    let pendingSnapTarget = null;
+    let dragRestorePlacement = null;
     let maximizedPointerRatioX = 0.5;
     let maximizedTitleGrabOffset = 8;
 
@@ -1533,6 +1649,12 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingTop = startTop;
       }
 
+      if (canSnapWindow) {
+        pendingSnapTarget = getSnapTarget(event);
+        if (pendingSnapTarget) showSnapPreview(pendingSnapTarget);
+        else hideSnapPreview();
+      }
+
       const area = getDesktopArea();
       const minTop = -handle.offsetHeight + 10;
       const maxTop = area.height - handle.offsetHeight - 5;
@@ -1552,16 +1674,27 @@ document.addEventListener('DOMContentLoaded', () => {
         commitPosition();
       }
 
+      const shouldApplySnap = event.type !== 'pointercancel' && canSnapWindow && pendingSnapTarget;
+
       document.body.classList.remove('is-dragging-window');
       win.style.transition = previousTransition;
       pointerId = null;
       startedMaximized = false;
       restoredFromMaximized = false;
+      canSnapWindow = false;
 
       try { handle.releasePointerCapture(event.pointerId); } catch (error) { /* ignore */ }
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', stopDrag);
       document.removeEventListener('pointercancel', stopDrag);
+      hideSnapPreview();
+
+      if (shouldApplySnap) {
+        applyWindowSnap(win, pendingSnapTarget, dragRestorePlacement);
+      }
+
+      pendingSnapTarget = null;
+      dragRestorePlacement = null;
       scheduleSaveDesktopLayout();
     };
 
@@ -1571,8 +1704,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       activateWindow(win);
       pointerId = event.pointerId;
-      startedMaximized = win.classList.contains('is-maximized');
+      startedMaximized = win.classList.contains('is-maximized') || Boolean(win.dataset.snapState);
       restoredFromMaximized = false;
+      canSnapWindow = event.pointerType === 'mouse';
+      pendingSnapTarget = null;
+      dragRestorePlacement = getDragRestorePlacement(win);
       startX = event.clientX;
       startY = event.clientY;
       if (startedMaximized) {
@@ -1617,9 +1753,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const minHeight = parseInt(getComputedStyle(win).minHeight || '150', 10);
       const deltaX = event.clientX - startX;
       const deltaY = event.clientY - startY;
-      const resizeWest = direction === 'west';
+      const resizeWest = direction === 'west' || direction === 'northwest';
       const resizeEast = direction === 'east' || direction === 'southeast' || direction === 'northeast';
-      const resizeNorth = direction === 'northeast';
+      const resizeNorth = direction === 'north' || direction === 'northwest' || direction === 'northeast';
       const resizeSouth = direction === 'south' || direction === 'southeast';
 
       let nextLeft = startLeft;
@@ -1673,6 +1809,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
 
       activateWindow(win);
+      if (win.dataset.snapState) {
+        clearWindowSnapState(win);
+        delete win._restorePlacement;
+      }
       pointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
@@ -1696,9 +1836,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getResizeCursor(direction) {
     const cursors = {
+      north: 'ns-resize',
       west: 'ew-resize',
       east: 'ew-resize',
       south: 'ns-resize',
+      northwest: 'nwse-resize',
       southeast: 'nwse-resize',
       northeast: 'nesw-resize'
     };
