@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let musicTask = null;
   let isClosed = false;
   const webampWindowSelectors = ['#main-window', '#playlist-window', '#equalizer-window'];
+  const webampLayoutSelectors = ['#webamp', ...webampWindowSelectors];
   const shakeDuration = 280;
 
   const getWebampContainer = () => document.getElementById('webamp-container');
@@ -13,6 +14,69 @@ document.addEventListener('DOMContentLoaded', function () {
     .map((selector) => document.querySelector(selector))
     .filter(Boolean);
   const hasMusicUi = () => !!getWebampRoot() || getWebampWindows().length > 0;
+  const requestLayoutSave = () => window.Win98Shell?.requestLayoutSave?.();
+
+  const getInlineStyleSnapshot = (element) => ({
+    display: element.style.display || '',
+    left: element.style.left || '',
+    top: element.style.top || '',
+    right: element.style.right || '',
+    bottom: element.style.bottom || '',
+    width: element.style.width || '',
+    height: element.style.height || '',
+    zIndex: element.style.zIndex || '',
+    transform: element.style.transform || ''
+  });
+
+  const applyInlineStyleSnapshot = (element, styleSnapshot = {}) => {
+    ['display', 'left', 'top', 'right', 'bottom', 'width', 'height', 'zIndex', 'transform'].forEach((property) => {
+      if (typeof styleSnapshot[property] === 'string') {
+        element.style[property] = styleSnapshot[property];
+      }
+    });
+  };
+
+  const getMusicLayoutSnapshot = () => {
+    const open = hasMusicUi() && !isClosed;
+
+    return {
+      open,
+      minimized: open ? !isMusicVisible() : false,
+      active: open ? musicTask?.button.classList.contains('is-active') || false : false,
+      elements: webampLayoutSelectors.map((selector) => {
+        const element = document.querySelector(selector);
+        if (!element) return null;
+        return {
+          selector,
+          style: getInlineStyleSnapshot(element)
+        };
+      }).filter(Boolean)
+    };
+  };
+
+  const restoreMusicLayoutSnapshot = (snapshot) => {
+    if (!snapshot?.open) return;
+
+    (snapshot.elements || []).forEach((item) => {
+      const element = item?.selector ? document.querySelector(item.selector) : null;
+      if (element) applyInlineStyleSnapshot(element, item.style);
+    });
+
+    if (snapshot.minimized) {
+      setWebampVisible(false);
+      setMusicTaskState({ active: false, minimized: true });
+      requestLayoutSave();
+      return;
+    }
+
+    setWebampVisible(true);
+    if (snapshot.active) {
+      bringMusicToFront();
+    } else {
+      setMusicTaskState({ active: false, minimized: false });
+    }
+    requestLayoutSave();
+  };
 
   const cleanupClosedMusicPlayer = () => {
     musicTask?.remove();
@@ -23,6 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
     getWebampRoot()?.remove();
     getWebampWindows().forEach((element) => element.remove());
     getWebampContainer()?.replaceChildren();
+    requestLayoutSave();
   };
 
   const syncMusicPlayerState = () => {
@@ -99,6 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
         element.style.display = 'block';
       }
     });
+    requestLayoutSave();
   };
 
   const bringMusicToFront = () => {
@@ -106,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!root || typeof window.getWin98HighestZIndex !== 'function') return;
     root.style.zIndex = window.getWin98HighestZIndex();
     setMusicTaskState({ active: true, minimized: false });
+    requestLayoutSave();
   };
 
   const reopenMusicPlayer = (options = {}) => {
@@ -188,15 +255,23 @@ document.addEventListener('DOMContentLoaded', function () {
     return;
   }
 
-  const manageWebampWindowsZIndex = () => {
+  window.Win98MusicPlayer = {
+    getLayoutSnapshot: getMusicLayoutSnapshot
+  };
+
+  const manageWebampWindowsZIndex = (options = {}) => {
+    const { activate = true } = options;
+
     getWebampWindows().forEach((element) => {
       element.addEventListener('pointerdown', bringMusicToFront);
     });
 
-    bringMusicToFront();
+    if (activate) bringMusicToFront();
   };
 
-  const initWebamp = () => {
+  const initWebamp = (options = {}) => {
+    const { layoutSnapshot = null } = options;
+
     if (webampInstance) {
       webampInstance.dispose();
     }
@@ -283,6 +358,7 @@ document.addEventListener('DOMContentLoaded', function () {
       isClosed = true;
       musicTask?.remove();
       musicTask = null;
+      requestLayoutSave();
     });
 
     return webamp.renderWhenReady(getWebampContainer()).then(() => {
@@ -290,7 +366,11 @@ document.addEventListener('DOMContentLoaded', function () {
       isClosed = false;
       registerMusicTask();
       setWebampVisible(true);
-      setTimeout(manageWebampWindowsZIndex, 0);
+      setTimeout(() => {
+        manageWebampWindowsZIndex({ activate: !layoutSnapshot || layoutSnapshot.active });
+        if (layoutSnapshot) restoreMusicLayoutSnapshot(layoutSnapshot);
+        else requestLayoutSave();
+      }, 0);
       return webamp;
     });
   };
@@ -318,4 +398,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     showMusicPlayer();
   });
+
+  const savedMusicLayout = window.Win98Shell?.getSavedLayoutSnapshot?.()?.musicPlayer;
+  if (savedMusicLayout?.open) {
+    initWebamp({ layoutSnapshot: savedMusicLayout });
+  }
 });

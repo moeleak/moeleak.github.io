@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const windowContainer = document.getElementById('window-container');
   if (!windowContainer) return;
 
+  // Runtime constants and mutable shell state.
   const blogTitle = document.body.dataset.blogTitle || document.title || 'Blog';
   const desktopTitle = 'Desktop';
   const mobileBreakpoint = 768;
@@ -10,15 +11,65 @@ document.addEventListener('DOMContentLoaded', () => {
   const animationDuration = 160;
   const defaultDocumentIcon = '/images/icon_notepad.png';
   const defaultImageIcon = '/images/icon_image.png';
+  const layoutStorageKey = 'win98-desktop-layout-v1';
+  const layoutSnapshotVersion = 1;
 
   let highestZIndex = 10;
   let isInitialLoad = true;
+  let layoutSaveFrame = null;
   let activeExternalTaskId = null;
+  let sessionStorageAvailable = null;
   const taskbarIconCache = new Map();
   const desktopIconMetaByPath = new Map();
   const openWindowById = new Map();
   const contentWindowByUrl = new Map();
   const imageWindowBySrc = new Map();
+
+  const windowRegistry = {
+    add(win) {
+      openWindowById.set(win.id, win);
+      if (win.dataset.contentUrl) contentWindowByUrl.set(win.dataset.contentUrl, win);
+      if (win.dataset.imageSrc) imageWindowBySrc.set(win.dataset.imageSrc, win);
+    },
+    remove(win) {
+      openWindowById.delete(win.id);
+      if (win.dataset.contentUrl) contentWindowByUrl.delete(win.dataset.contentUrl);
+      if (win.dataset.imageSrc) imageWindowBySrc.delete(win.dataset.imageSrc);
+    },
+    byId(windowId) {
+      return windowId ? openWindowById.get(windowId) || null : null;
+    },
+    byContentUrl(url) {
+      return contentWindowByUrl.get(normalizeContentUrl(url)) || null;
+    },
+    byImageSrc(src) {
+      return imageWindowBySrc.get(normalizeImageSrc(src)) || null;
+    },
+    all() {
+      return Array.from(openWindowById.values());
+    },
+    visible() {
+      return this.all().filter((win) => !win.classList.contains('is-minimized'));
+    },
+    top() {
+      return this.visible().reduce((top, win) => {
+        if (!top) return win;
+        return Number(win.style.zIndex || 0) > Number(top.style.zIndex || 0) ? win : top;
+      }, null);
+    },
+    findForRoute(path, windowId) {
+      const normalizedPath = normalizePath(path);
+      const winById = this.byId(windowId);
+      if (winById?.dataset.contentUrl && normalizePath(new URL(winById.dataset.contentUrl, location.origin).pathname) === normalizedPath) {
+        return winById;
+      }
+
+      return this.all().find((win) => (
+        win.dataset.contentUrl
+          && normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === normalizedPath
+      )) || null;
+    }
+  };
 
   window.getWin98HighestZIndex = () => ++highestZIndex;
   window.updateWin98GitalkCommentCount = (containerId, count) => {
@@ -35,6 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const taskbar = ensureTaskbar();
   const taskList = taskbar.querySelector('.win98-task-list');
   cacheDesktopIconMeta();
+
+  // Taskbar bootstrap and shared URL/storage utilities.
   function ensureTaskbar() {
     let bar = document.getElementById('win98-taskbar');
     if (!bar) {
@@ -110,6 +163,245 @@ document.addEventListener('DOMContentLoaded', () => {
     return location.search.includes('code=') || location.search.includes('state=');
   }
 
+  // Layout persistence is session-scoped so shared links still open as standalone windows.
+  function currentLayoutUrl() {
+    return `${currentRoutePath()}${location.search}${location.hash}`;
+  }
+
+  function getNavigationType() {
+    const navigationEntry = performance.getEntriesByType?.('navigation')?.[0];
+    if (navigationEntry?.type) return navigationEntry.type;
+    if (performance.navigation?.type === 1) return 'reload';
+    return 'navigate';
+  }
+
+  function isReloadNavigation() {
+    return getNavigationType() === 'reload';
+  }
+
+  function canUseSessionStorage() {
+    if (sessionStorageAvailable !== null) return sessionStorageAvailable;
+
+    try {
+      const testKey = `${layoutStorageKey}:test`;
+      sessionStorage.setItem(testKey, '1');
+      sessionStorage.removeItem(testKey);
+      sessionStorageAvailable = true;
+    } catch (error) {
+      sessionStorageAvailable = false;
+    }
+
+    return sessionStorageAvailable;
+  }
+
+  function readSessionJson(key) {
+    if (!canUseSessionStorage()) return null;
+
+    try {
+      const value = sessionStorage.getItem(key);
+      return value ? JSON.parse(value) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeSessionJson(key, value) {
+    if (!canUseSessionStorage()) return;
+
+    try {
+      sessionStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      // Ignore storage failures, e.g. private browsing quotas.
+    }
+  }
+
+  function readSavedLayout() {
+    const snapshot = readSessionJson(layoutStorageKey);
+    if (!snapshot || snapshot.version !== layoutSnapshotVersion || !Array.isArray(snapshot.windows)) return null;
+    return snapshot;
+  }
+
+  function writeSavedLayout(snapshot) {
+    writeSessionJson(layoutStorageKey, snapshot);
+  }
+
+  function toFiniteNumber(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
+
+  function getWindowPlacementFromElement(win) {
+    return {
+      left: toFiniteNumber(parseFloat(win.style.left), win.offsetLeft || 0),
+      top: toFiniteNumber(parseFloat(win.style.top), win.offsetTop || 0),
+      width: toFiniteNumber(parseFloat(win.style.width), win.offsetWidth || 200),
+      height: toFiniteNumber(parseFloat(win.style.height), win.offsetHeight || 150)
+    };
+  }
+
+  function normalizeStoredPlacement(placement, fallback = getWindowPlacement()) {
+    const area = getDesktopArea();
+    const maxWidth = Math.max(200, area.width - windowMargin * 2);
+    const maxHeight = Math.max(150, area.height - windowMargin * 2);
+    const width = clamp(toFiniteNumber(placement?.width, fallback.width), 200, maxWidth);
+    const height = clamp(toFiniteNumber(placement?.height, fallback.height), 150, maxHeight);
+    const maxLeft = Math.max(windowMargin, area.width - width - windowMargin);
+    const maxTop = Math.max(windowMargin, area.height - height - windowMargin);
+
+    return {
+      left: clamp(toFiniteNumber(placement?.left, fallback.left), windowMargin, maxLeft),
+      top: clamp(toFiniteNumber(placement?.top, fallback.top), windowMargin, maxTop),
+      width,
+      height
+    };
+  }
+
+  function getArchiveTabsSnapshot(win) {
+    const workspace = win.querySelector('.archive-workspace');
+    if (!workspace) return [];
+
+    return Array.from(workspace.querySelectorAll('.archive-tab-list [role="tab"][data-tab-url]')).map((tab) => ({
+      url: tab.dataset.tabUrl,
+      title: tab.dataset.tabTitle || tab.textContent.trim() || '文章',
+      active: tab.getAttribute('aria-selected') === 'true'
+    }));
+  }
+
+  function getWindowSnapshot(win) {
+    const placement = getWindowPlacementFromElement(win);
+    const zIndex = toFiniteNumber(parseFloat(win.style.zIndex), 0);
+    const isImageWindow = Boolean(win.dataset.imageSrc);
+
+    return {
+      id: win.id,
+      type: isImageWindow ? 'image' : 'content',
+      title: getWindowTitle(win),
+      contentUrl: win.dataset.contentUrl || '',
+      imageSrc: win.dataset.imageSrc || '',
+      iconSrc: win.dataset.iconSrc || '',
+      placement,
+      restorePlacement: win._restorePlacement || null,
+      zIndex,
+      minimized: win.classList.contains('is-minimized'),
+      maximized: win.classList.contains('is-maximized'),
+      archiveTabs: getArchiveTabsSnapshot(win)
+    };
+  }
+
+  function createDesktopLayoutSnapshot() {
+    return {
+      version: layoutSnapshotVersion,
+      savedAt: Date.now(),
+      currentUrl: currentLayoutUrl(),
+      activeWindowId: getActiveWindow()?.id || null,
+      highestZIndex,
+      windows: getOpenWindows().map(getWindowSnapshot),
+      musicPlayer: window.Win98MusicPlayer?.getLayoutSnapshot?.() || null
+    };
+  }
+
+  function saveDesktopLayout() {
+    if (layoutSaveFrame !== null) {
+      cancelAnimationFrame(layoutSaveFrame);
+      layoutSaveFrame = null;
+    }
+
+    writeSavedLayout(createDesktopLayoutSnapshot());
+  }
+
+  function scheduleSaveDesktopLayout() {
+    if (layoutSaveFrame !== null) return;
+    layoutSaveFrame = requestAnimationFrame(() => {
+      layoutSaveFrame = null;
+      saveDesktopLayout();
+    });
+  }
+
+  function canRestoreSavedLayout(snapshot) {
+    if (!isReloadNavigation() || !snapshot) return false;
+    return snapshot.currentUrl === currentLayoutUrl();
+  }
+
+  function getRestorableWindowSnapshots(snapshot) {
+    return (snapshot.windows || [])
+      .filter((item) => item && (item.contentUrl || item.imageSrc))
+      .sort((a, b) => toFiniteNumber(a.zIndex, 0) - toFiniteNumber(b.zIndex, 0));
+  }
+
+  function applyWindowSnapshot(win, item) {
+    const restorePlacement = item.restorePlacement
+      ? normalizeStoredPlacement(item.restorePlacement)
+      : null;
+    const placement = item.maximized
+      ? getMaximizedPlacement()
+      : normalizeStoredPlacement(item.placement);
+    const fallbackZIndex = highestZIndex + 1;
+    const zIndex = toFiniteNumber(item.zIndex, fallbackZIndex);
+
+    placeWindow(win, placement);
+    win.style.zIndex = String(zIndex);
+    highestZIndex = Math.max(highestZIndex, zIndex);
+
+    if (restorePlacement) win._restorePlacement = restorePlacement;
+    win.classList.toggle('is-maximized', Boolean(item.maximized));
+    win.classList.toggle('is-minimized', Boolean(item.minimized));
+    updateMaximizeButton(win);
+    updateTaskButton(win);
+  }
+
+  function setPendingArchiveTabs(win, item) {
+    const tabs = Array.isArray(item.archiveTabs) ? item.archiveTabs.filter((tab) => tab?.url) : [];
+    if (!tabs.length) return;
+
+    try {
+      win.dataset.pendingArchiveTabsJson = JSON.stringify(tabs);
+    } catch (error) {
+      // Ignore malformed archive tab state.
+    }
+  }
+
+  function restoreWindowFromSnapshot(item) {
+    const isImageWindow = item.type === 'image';
+    const identifier = isImageWindow ? item.imageSrc : item.contentUrl;
+    const win = createWindow(item.title || '窗口', identifier, {
+      animateFromSource: false,
+      isImagePopup: isImageWindow,
+      windowIdToUse: item.id,
+      historyMode: 'none',
+      iconSrc: item.iconSrc || undefined
+    });
+
+    applyWindowSnapshot(win, item);
+    if (!isImageWindow) setPendingArchiveTabs(win, item);
+    return win;
+  }
+
+  function activateRestoredLayout(snapshot) {
+    const activeWindow = windowRegistry.byId(snapshot.activeWindowId) || getTopWindow();
+    if (activeWindow && !activeWindow.classList.contains('is-minimized')) {
+      activateWindow(activeWindow, { updateHistory: false });
+    } else {
+      updateTaskbar(null);
+      setDocumentTitle(null);
+    }
+  }
+
+  function restoreSavedDesktopLayout() {
+    const snapshot = readSavedLayout();
+    if (!canRestoreSavedLayout(snapshot)) return false;
+
+    const windows = getRestorableWindowSnapshots(snapshot);
+    if (!windows.length) return false;
+
+    windows.forEach(restoreWindowFromSnapshot);
+    highestZIndex = Math.max(highestZIndex, toFiniteNumber(snapshot.highestZIndex, highestZIndex));
+    isInitialLoad = false;
+    activateRestoredLayout(snapshot);
+    scheduleSaveDesktopLayout();
+    return true;
+  }
+
+  // Icons, title, and History API integration.
   function getWindowTitle(win) {
     return win.dataset.windowTitle || win._parts?.titleText?.textContent || '窗口';
   }
@@ -237,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
     win.dataset.windowTitle = nextTitle;
     if (win._parts?.titleText) win._parts.titleText.textContent = nextTitle;
     updateTaskButton(win);
+    scheduleSaveDesktopLayout();
   }
 
   function getHistoryUrl(win) {
@@ -294,6 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       // Keep navigation usable when History API rejects an edge-case URL.
     }
+    scheduleSaveDesktopLayout();
   }
 
   function writeDesktopHistory() {
@@ -305,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       // Ignore History API failures.
     }
+    scheduleSaveDesktopLayout();
   }
 
   function getDesktopArea() {
@@ -344,6 +639,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  function createWindowId(windowIdToUse) {
+    return windowIdToUse || `window-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  }
+
+  function getWindowIdentity(contentIdentifier, isImagePopup) {
+    return {
+      contentUrl: isImagePopup ? '' : normalizeContentUrl(contentIdentifier),
+      imageSrc: isImagePopup ? normalizeImageSrc(contentIdentifier) : ''
+    };
+  }
+
+  function findReusableWindow(windowIdToUse, isImagePopup, imageSrc) {
+    const existingWindowById = windowRegistry.byId(windowIdToUse);
+    if (existingWindowById) return existingWindowById;
+    if (!isImagePopup || !imageSrc) return null;
+    return windowRegistry.byImageSrc(imageSrc);
+  }
+
+  function resolveWindowIcon(iconSrc, isImagePopup, contentUrl) {
+    if (iconSrc) return iconSrc;
+    return isImagePopup ? defaultImageIcon : getIconForUrl(contentUrl);
+  }
+
+  // Window creation, lifecycle, and presentation.
   function createWindow(title, contentIdentifier, options = {}) {
     const {
       sourceX,
@@ -357,12 +676,10 @@ document.addEventListener('DOMContentLoaded', () => {
       iconSrc
     } = options;
 
-    const imageSrc = isImagePopup ? normalizeImageSrc(contentIdentifier) : '';
-    const existingWindowById = windowIdToUse ? openWindowById.get(windowIdToUse) : null;
-    const existingImageWindow = !existingWindowById && isImagePopup && imageSrc ? imageWindowBySrc.get(imageSrc) : null;
-    const existingWindow = existingWindowById || existingImageWindow;
+    const { contentUrl, imageSrc } = getWindowIdentity(contentIdentifier, isImagePopup);
+    const existingWindow = findReusableWindow(windowIdToUse, isImagePopup, imageSrc);
     if (existingWindow) {
-      const activate = existingImageWindow ? activateExistingWindow : activateWindow;
+      const activate = existingWindow.dataset.imageSrc ? activateExistingWindow : activateWindow;
       activate(existingWindow, { updateHistory: historyMode !== 'none' });
       return existingWindow;
     }
@@ -370,7 +687,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const win = document.createElement('div');
     const body = document.createElement('div');
     const statusBar = isImagePopup ? null : createStatusBar();
-    const contentUrl = isImagePopup ? '' : normalizeContentUrl(contentIdentifier);
     const restorePlacement = getWindowPlacement();
     const placement = startMaximized ? getMaximizedPlacement() : restorePlacement;
     const titleBar = createTitleBar(title, {
@@ -378,12 +694,12 @@ document.addEventListener('DOMContentLoaded', () => {
       onMaximize: () => toggleMaximizeWindow(win),
       onClose: () => closeWindow(win)
     });
-    const windowId = windowIdToUse || `window-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const windowId = createWindowId(windowIdToUse);
 
     win.className = 'window';
     win.id = windowId;
     win.dataset.windowTitle = title;
-    win.dataset.iconSrc = iconSrc || (isImagePopup ? defaultImageIcon : getIconForUrl(contentUrl));
+    win.dataset.iconSrc = resolveWindowIcon(iconSrc, isImagePopup, contentUrl);
     win._parts = {
       body,
       titleBar,
@@ -403,9 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.className = 'window-body';
     }
 
-    openWindowById.set(windowId, win);
-    if (contentUrl) contentWindowByUrl.set(contentUrl, win);
-    if (imageSrc) imageWindowBySrc.set(imageSrc, win);
+    windowRegistry.add(win);
 
     placeWindow(win, placement);
     if (startMaximized) {
@@ -439,6 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isInitialLoad && isAutoOpen) isInitialLoad = false;
     updateTaskbar(win);
+    scheduleSaveDesktopLayout();
     return win;
   }
 
@@ -770,6 +1085,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         updateTaskbar(getActiveWindow());
       }
+      scheduleSaveDesktopLayout();
     });
   }
 
@@ -891,9 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeWindow(win) {
     const wasActive = getActiveWindow() === win;
     removeTaskButton(win.id);
-    openWindowById.delete(win.id);
-    if (win.dataset.contentUrl) contentWindowByUrl.delete(win.dataset.contentUrl);
-    if (win.dataset.imageSrc) imageWindowBySrc.delete(win.dataset.imageSrc);
+    windowRegistry.remove(win);
     win.remove();
 
     const nextWindow = getTopWindow();
@@ -906,24 +1220,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getOpenWindows() {
-    return Array.from(openWindowById.values());
+    return windowRegistry.all();
   }
 
   function getVisibleWindows() {
-    return getOpenWindows().filter((win) => !win.classList.contains('is-minimized'));
+    return windowRegistry.visible();
   }
 
   function getTopWindow() {
-    return getVisibleWindows().reduce((top, win) => {
-      if (!top) return win;
-      return Number(win.style.zIndex || 0) > Number(top.style.zIndex || 0) ? win : top;
-    }, null);
+    return windowRegistry.top();
   }
 
   function getActiveWindow() {
     return getTopWindow();
   }
 
+  // Taskbar buttons and external task integration.
   function addTaskButton(win) {
     const taskList = getTaskList();
     if (!taskList || win._parts?.taskButton) return;
@@ -933,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', () => {
     button.className = 'win98-task-button';
     button.dataset.windowId = win.id;
     button.addEventListener('click', () => {
-      const targetWindow = openWindowById.get(button.dataset.windowId);
+      const targetWindow = windowRegistry.byId(button.dataset.windowId);
       if (!targetWindow) return;
 
       if (targetWindow.classList.contains('is-minimized')) {
@@ -959,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function removeTaskButton(windowId) {
-    const win = openWindowById.get(windowId);
+    const win = windowRegistry.byId(windowId);
     const button = win?._parts?.taskButton || null;
     if (win?._parts) win._parts.taskButton = null;
     button?.remove();
@@ -1004,6 +1316,24 @@ document.addEventListener('DOMContentLoaded', () => {
     updateWindowTitleBars(activeWindow);
   }
 
+  function setExternalTaskActive(taskId, isActive = true) {
+    activeExternalTaskId = isActive ? taskId : null;
+    updateTaskbar(isActive ? null : getActiveWindow());
+    scheduleSaveDesktopLayout();
+  }
+
+  function setExternalTaskMinimized(button, isMinimized = true) {
+    button.classList.toggle('is-minimized', isMinimized);
+    scheduleSaveDesktopLayout();
+  }
+
+  function removeExternalTaskButton(button, taskId) {
+    if (activeExternalTaskId === taskId) activeExternalTaskId = null;
+    button.remove();
+    updateTaskbar(getActiveWindow());
+    scheduleSaveDesktopLayout();
+  }
+
   function registerExternalTask(options) {
     const { id, title, onClick, iconSrc = defaultDocumentIcon } = options;
     const taskList = getTaskList();
@@ -1031,16 +1361,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setTaskButtonContent(button, label, button.dataset.iconSrc);
       },
       setActive(isActive = true) {
-        activeExternalTaskId = isActive ? id : null;
-        updateTaskbar(isActive ? null : getActiveWindow());
+        setExternalTaskActive(id, isActive);
       },
       setMinimized(isMinimized = true) {
-        button.classList.toggle('is-minimized', isMinimized);
+        setExternalTaskMinimized(button, isMinimized);
       },
       remove() {
-        if (activeExternalTaskId === id) activeExternalTaskId = null;
-        button.remove();
-        updateTaskbar(getActiveWindow());
+        removeExternalTaskButton(button, id);
       },
       getRect() {
         return elementRect(button);
@@ -1061,18 +1388,22 @@ document.addEventListener('DOMContentLoaded', () => {
   window.Win98Shell = {
     registerTask: registerExternalTask,
     setActiveTask(taskId) {
-      activeExternalTaskId = taskId || null;
-      updateTaskbar(null);
+      setExternalTaskActive(taskId || null, Boolean(taskId));
     },
     clearActiveTask() {
-      activeExternalTaskId = null;
-      updateTaskbar(getActiveWindow());
+      setExternalTaskActive(null, false);
     },
+    getSavedLayoutSnapshot() {
+      const snapshot = readSavedLayout();
+      return canRestoreSavedLayout(snapshot) ? snapshot : null;
+    },
+    requestLayoutSave: scheduleSaveDesktopLayout,
     nextZIndex: window.getWin98HighestZIndex,
     animateRectTransition,
     elementRect
   };
 
+  // Content loading, Gitalk bootstrapping, and post body enhancement.
   function renderImageWindow(body, src, title) {
     const image = document.createElement('img');
     image.src = src;
@@ -1161,6 +1492,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeGitalkPlaceholder(body, `gitalk-container-${windowId}`, contentUrl);
   }
 
+  // Pointer-driven movement and resizing.
   function makeDraggable(win, handle) {
     let pointerId = null;
     let startX = 0;
@@ -1230,6 +1562,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', stopDrag);
       document.removeEventListener('pointercancel', stopDrag);
+      scheduleSaveDesktopLayout();
     };
 
     handle.addEventListener('pointerdown', (event) => {
@@ -1332,6 +1665,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', stopResize);
       document.removeEventListener('pointercancel', stopResize);
+      scheduleSaveDesktopLayout();
     };
 
     handle.addEventListener('pointerdown', (event) => {
@@ -1451,6 +1785,33 @@ document.addEventListener('DOMContentLoaded', () => {
     if (parent.dataset) parent.dataset.interactionListenerAttached = 'true';
   }
 
+  // Archive tree, tabs, pane resizing, and tab tear-off behavior.
+  function restorePendingArchiveTabs(workspace, win) {
+    if (!win?.dataset.pendingArchiveTabsJson) return false;
+
+    let tabs = [];
+    try {
+      tabs = JSON.parse(win.dataset.pendingArchiveTabsJson);
+    } catch (error) {
+      tabs = [];
+    }
+    delete win.dataset.pendingArchiveTabsJson;
+
+    const validTabs = Array.isArray(tabs) ? tabs.filter((tab) => tab?.url) : [];
+    if (!validTabs.length) return false;
+
+    let activeTab = null;
+    validTabs.forEach((tabState) => {
+      const link = findArchiveLinkByUrl(workspace, tabState.url);
+      const title = link ? getArchiveLinkTitle(link) : tabState.title || tabState.url;
+      const tab = openArchivePostTab(workspace, link?.href || tabState.url, title, link, { updateHistory: false });
+      if (tabState.active) activeTab = tab;
+    });
+
+    if (activeTab) activateArchiveTab(workspace, activeTab, { updateHistory: false });
+    return true;
+  }
+
   function setupArchiveWorkspace(parent) {
     parent.querySelectorAll('.archive-workspace').forEach((workspace) => {
       if (workspace.dataset.archiveWorkspaceReady === 'true') return;
@@ -1484,7 +1845,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const win = workspace.closest('.window');
       const pendingTabUrl = win?.dataset.pendingArchiveTabUrl;
-      if (pendingTabUrl) {
+      if (restorePendingArchiveTabs(workspace, win)) {
+        // Archive tabs restored from the saved desktop layout.
+      } else if (pendingTabUrl) {
         const pendingLink = findArchiveLinkByUrl(workspace, pendingTabUrl);
         const pendingTitle = pendingLink ? getArchiveLinkTitle(pendingLink) : win.dataset.pendingArchiveTabTitle || pendingTabUrl;
         openArchivePostTab(workspace, pendingLink?.href || pendingTabUrl, pendingTitle, pendingLink, { updateHistory: false });
@@ -1535,6 +1898,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', stop);
       document.removeEventListener('pointercancel', stop);
+      scheduleSaveDesktopLayout();
     };
 
     document.addEventListener('pointermove', onMove);
@@ -1636,6 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const win = workspace.closest('.window');
     if (updateHistory && win) writeHistory(win, historyMode);
+    scheduleSaveDesktopLayout();
   }
 
   function setActiveArchiveLink(workspace, targetUrl) {
@@ -1795,6 +2160,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tabBody.innerHTML = '<p class="archive-empty-message">从左侧树状列表选择文章。</p>';
       setActiveArchiveLink(workspace, null);
     }
+    scheduleSaveDesktopLayout();
   }
 
   function openImageFromClick(target, event) {
@@ -1816,6 +2182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   }
 
+  // Desktop/link routing and browser navigation.
   function openInternalLinkFromClick(target, event) {
     const link = target.closest('a.desktop-icon, .window-body:not(.image-popup-body) a[href^="/"]:not([href="/"]):not(.no-window):not([target="_blank"])');
     if (!link) return;
@@ -1846,7 +2213,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function findWindowByContentUrl(url) {
-    return contentWindowByUrl.get(normalizeContentUrl(url)) || null;
+    return windowRegistry.byContentUrl(url);
   }
 
   function activateExistingWindow(win, options = {}) {
@@ -1858,15 +2225,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function findWindowForRoute(path, windowId) {
-    if (windowId) {
-      const win = openWindowById.get(windowId);
-      if (win?.dataset.contentUrl && normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === normalizePath(path)) {
-        return win;
-      }
-    }
-
-    const normalizedPath = normalizePath(path);
-    return getOpenWindows().find((win) => win.dataset.contentUrl && normalizePath(new URL(win.dataset.contentUrl, location.origin).pathname) === normalizedPath) || null;
+    return windowRegistry.findForRoute(path, windowId);
   }
 
   function clamp(value, min, max) {
@@ -1874,6 +2233,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function bootFromCurrentRoute() {
+    if (restoreSavedDesktopLayout()) return;
+
     const path = currentRoutePath();
     if (isRoutablePath(path)) {
       createWindow('加载中...', path, {
@@ -1889,47 +2250,55 @@ document.addEventListener('DOMContentLoaded', () => {
     writeDesktopHistory();
   }
 
-  function handlePopState(event) {
-    const state = event.state || {};
-    const path = currentRoutePath();
+  function restoreArchiveHistoryState(state) {
+    const archiveWindowUrl = state.archiveWindowUrl || '/archives/';
+    let win = windowRegistry.byId(state.windowId) || findWindowByContentUrl(archiveWindowUrl);
 
-    if (state.archiveTabUrl) {
-      const archiveWindowUrl = state.archiveWindowUrl || '/archives/';
-      let win = openWindowById.get(state.windowId) || findWindowByContentUrl(archiveWindowUrl);
-
-      if (!win) {
-        win = createWindow('存档', archiveWindowUrl, {
-          animateFromSource: false,
-          startMaximized: true,
-          windowIdToUse: state.windowId,
-          historyMode: 'none'
-        });
-      }
-
-      win.dataset.pendingArchiveTabUrl = state.archiveTabUrl;
-      win.dataset.pendingArchiveTabTitle = state.title || '';
-
-      const workspace = win.querySelector('.archive-workspace');
-      if (workspace) {
-        const link = findArchiveLinkByUrl(workspace, state.archiveTabUrl);
-        openArchivePostTab(workspace, link?.href || state.archiveTabUrl, link ? getArchiveLinkTitle(link) : state.title || state.archiveTabUrl, link, { updateHistory: false });
-        delete win.dataset.pendingArchiveTabUrl;
-        delete win.dataset.pendingArchiveTabTitle;
-      }
-
-      activateWindow(win, { updateHistory: false });
-      return;
-    }
-
-    if (isRoutablePath(path)) {
-      const title = state.title || getTitleForPath(path) || path.split('/').filter(Boolean).pop() || '窗口';
-      const win = findWindowForRoute(path, state.windowId) || createWindow(title, path, {
+    if (!win) {
+      win = createWindow('存档', archiveWindowUrl, {
         animateFromSource: false,
         startMaximized: true,
         windowIdToUse: state.windowId,
         historyMode: 'none'
       });
-      activateWindow(win, { updateHistory: false });
+    }
+
+    win.dataset.pendingArchiveTabUrl = state.archiveTabUrl;
+    win.dataset.pendingArchiveTabTitle = state.title || '';
+
+    const workspace = win.querySelector('.archive-workspace');
+    if (workspace) {
+      const link = findArchiveLinkByUrl(workspace, state.archiveTabUrl);
+      openArchivePostTab(workspace, link?.href || state.archiveTabUrl, link ? getArchiveLinkTitle(link) : state.title || state.archiveTabUrl, link, { updateHistory: false });
+      delete win.dataset.pendingArchiveTabUrl;
+      delete win.dataset.pendingArchiveTabTitle;
+    }
+
+    activateWindow(win, { updateHistory: false });
+  }
+
+  function restoreRoutableHistoryState(state, path) {
+    const title = state.title || getTitleForPath(path) || path.split('/').filter(Boolean).pop() || '窗口';
+    const win = findWindowForRoute(path, state.windowId) || createWindow(title, path, {
+      animateFromSource: false,
+      startMaximized: true,
+      windowIdToUse: state.windowId,
+      historyMode: 'none'
+    });
+    activateWindow(win, { updateHistory: false });
+  }
+
+  function handlePopState(event) {
+    const state = event.state || {};
+    const path = currentRoutePath();
+
+    if (state.archiveTabUrl) {
+      restoreArchiveHistoryState(state);
+      return;
+    }
+
+    if (isRoutablePath(path)) {
+      restoreRoutableHistoryState(state, path);
       return;
     }
 
@@ -1941,4 +2310,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupWindowInteractions(document);
   bootFromCurrentRoute();
   window.addEventListener('popstate', handlePopState);
+  window.addEventListener('pagehide', saveDesktopLayout);
 });
