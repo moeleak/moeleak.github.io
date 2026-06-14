@@ -14,6 +14,7 @@ comments: true
 [Sana](https://www.sana-honoka.top)
 [Guanran928](https://blog.ny4.dev)
 [Taplis](https://taplis.me)
+[LY 的博客](https://Young-Lord.github.io)
 
 如果你想跟我交换友联，可以 [email](mailto://i@leak.moe) 我或长毛象或在这下面留言。
 ```
