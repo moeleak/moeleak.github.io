@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const layoutStorageKey = 'win98-desktop-layout-v1';
   const layoutSnapshotVersion = 1;
   const snapEdgeThreshold = 8;
+  const touchSnapEdgeThreshold = 28;
+  const dragPositionGrid = 8;
+  const dragCommitInterval = 45;
 
   let highestZIndex = 10;
   let isInitialLoad = true;
@@ -669,30 +672,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getSnapTarget(pointerEvent) {
-    if (pointerEvent.pointerType !== 'mouse') return null;
-
     const area = getDesktopArea();
     const containerRect = windowContainer.getBoundingClientRect();
     const pointerX = pointerEvent.clientX - containerRect.left;
     const pointerY = pointerEvent.clientY - containerRect.top;
+    const edgeThreshold = pointerEvent.pointerType === 'touch' ? touchSnapEdgeThreshold : snapEdgeThreshold;
 
     if (pointerY < 0 || pointerY > area.height || pointerX < 0 || pointerX > area.width) return null;
 
-    if (pointerY <= snapEdgeThreshold) {
+    if (pointerY <= edgeThreshold) {
       return {
         state: 'maximized',
         placement: getMaximizedPlacement()
       };
     }
 
-    if (pointerX <= snapEdgeThreshold) {
+    if (pointerX <= edgeThreshold) {
       return {
         state: 'left',
         placement: getSplitPlacement('left')
       };
     }
 
-    if (pointerX >= area.width - snapEdgeThreshold) {
+    if (pointerX >= area.width - edgeThreshold) {
       return {
         state: 'right',
         placement: getSplitPlacement('right')
@@ -736,6 +738,10 @@ document.addEventListener('DOMContentLoaded', () => {
     delete win.dataset.snapState;
     win.classList.remove('is-maximized');
     updateMaximizeButton(win);
+  }
+
+  function quantizeDragPosition(value) {
+    return Math.round(value / dragPositionGrid) * dragPositionGrid;
   }
 
   function applyWindowSnap(win, snapTarget, restorePlacement) {
@@ -1612,7 +1618,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let startY = 0;
     let startLeft = 0;
     let startTop = 0;
-    let frame = null;
     let pendingLeft = 0;
     let pendingTop = 0;
     let previousTransition = '';
@@ -1623,11 +1628,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let dragRestorePlacement = null;
     let maximizedPointerRatioX = 0.5;
     let maximizedTitleGrabOffset = 8;
+    let lastDragCommitTime = 0;
 
     const commitPosition = () => {
       win.style.left = `${pendingLeft}px`;
       win.style.top = `${pendingTop}px`;
-      frame = null;
+      lastDragCommitTime = performance.now();
     };
 
     const onMove = (event) => {
@@ -1661,18 +1667,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const minLeft = 50 - win.offsetWidth;
       const maxLeft = area.width - 50;
 
-      pendingLeft = clamp(startLeft + event.clientX - startX, minLeft, maxLeft);
-      pendingTop = clamp(startTop + event.clientY - startY, minTop, maxTop);
+      pendingLeft = clamp(quantizeDragPosition(startLeft + event.clientX - startX), minLeft, maxLeft);
+      pendingTop = clamp(quantizeDragPosition(startTop + event.clientY - startY), minTop, maxTop);
 
-      if (frame === null) frame = requestAnimationFrame(commitPosition);
+      if (performance.now() - lastDragCommitTime >= dragCommitInterval) {
+        commitPosition();
+      }
     };
 
     const stopDrag = (event) => {
       if (event.pointerId !== pointerId) return;
-      if (frame !== null) {
-        cancelAnimationFrame(frame);
-        commitPosition();
-      }
+      commitPosition();
 
       const shouldApplySnap = event.type !== 'pointercancel' && canSnapWindow && pendingSnapTarget;
 
@@ -1706,7 +1711,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pointerId = event.pointerId;
       startedMaximized = win.classList.contains('is-maximized') || Boolean(win.dataset.snapState);
       restoredFromMaximized = false;
-      canSnapWindow = event.pointerType === 'mouse';
+      canSnapWindow = true;
       pendingSnapTarget = null;
       dragRestorePlacement = getDragRestorePlacement(win);
       startX = event.clientX;
@@ -1720,6 +1725,7 @@ document.addEventListener('DOMContentLoaded', () => {
       startTop = win.offsetTop;
       pendingLeft = startLeft;
       pendingTop = startTop;
+      lastDragCommitTime = 0;
       previousTransition = win.style.transition || '';
       win.style.transition = 'none';
       document.body.classList.add('is-dragging-window');
