@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const webampWindowSelectors = ['#main-window', '#playlist-window', '#equalizer-window'];
   const webampLayoutSelectors = ['#webamp', ...webampWindowSelectors];
   const shakeDuration = 280;
+  const musicDragPositionGrid = 16;
 
   const getWebampContainer = () => document.getElementById('webamp-container');
   const getWebampRoot = () => document.getElementById('webamp');
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     .filter(Boolean);
   const hasMusicUi = () => !!getWebampRoot() || getWebampWindows().length > 0;
   const requestLayoutSave = () => window.Win98Shell?.requestLayoutSave?.();
+  const quantizeMusicDragValue = (value) => Math.round(value / musicDragPositionGrid) * musicDragPositionGrid;
 
   const getInlineStyleSnapshot = (element) => ({
     display: element.style.display || '',
@@ -115,6 +117,103 @@ document.addEventListener('DOMContentLoaded', function () {
     const root = getWebampRoot();
     const windows = getWebampWindows().filter((element) => element.style.display !== 'none');
     triggerShake(root ? [root] : windows);
+  };
+
+  const quantizePixelStyle = (element, property) => {
+    const value = element.style[property];
+    const match = /^\s*(-?\d+(?:\.\d+)?)px\s*$/.exec(value || '');
+    if (!match) return;
+
+    element.style[property] = `${quantizeMusicDragValue(Number(match[1]))}px`;
+  };
+
+  const quantizeTransformTranslate = (element) => {
+    const transform = element.style.transform;
+    if (!transform || !transform.includes('translate')) return;
+
+    element.style.transform = transform
+      .replace(/translate3d\(\s*(-?\d+(?:\.\d+)?)px\s*,\s*(-?\d+(?:\.\d+)?)px\s*,\s*(-?\d+(?:\.\d+)?)px\s*\)/g, (_, x, y, z) => (
+        `translate3d(${quantizeMusicDragValue(Number(x))}px, ${quantizeMusicDragValue(Number(y))}px, ${z}px)`
+      ))
+      .replace(/translate\(\s*(-?\d+(?:\.\d+)?)px\s*,\s*(-?\d+(?:\.\d+)?)px\s*\)/g, (_, x, y) => (
+        `translate(${quantizeMusicDragValue(Number(x))}px, ${quantizeMusicDragValue(Number(y))}px)`
+      ))
+      .replace(/translateX\(\s*(-?\d+(?:\.\d+)?)px\s*\)/g, (_, x) => (
+        `translateX(${quantizeMusicDragValue(Number(x))}px)`
+      ))
+      .replace(/translateY\(\s*(-?\d+(?:\.\d+)?)px\s*\)/g, (_, y) => (
+        `translateY(${quantizeMusicDragValue(Number(y))}px)`
+      ));
+  };
+
+  const quantizeWebampWindowPosition = (element) => {
+    quantizePixelStyle(element, 'left');
+    quantizePixelStyle(element, 'top');
+    quantizeTransformTranslate(element);
+  };
+
+  const installWebampDragPixelGrid = (element) => {
+    if (!element || element.dataset.win98MusicDragGrid === 'true') return;
+    element.dataset.win98MusicDragGrid = 'true';
+
+    let pointerId = null;
+    let startX = 0;
+    let startY = 0;
+    let frame = null;
+    let hasMoved = false;
+
+    const flushPosition = () => {
+      frame = null;
+      quantizeWebampWindowPosition(element);
+    };
+
+    const schedulePositionFlush = () => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(flushPosition);
+    };
+
+    const onMove = (event) => {
+      if (event.pointerId !== pointerId) return;
+
+      if (!hasMoved && Math.abs(event.clientX - startX) + Math.abs(event.clientY - startY) > 3) {
+        hasMoved = true;
+        element.classList.add('is-music-dragging-active-window');
+      }
+
+      schedulePositionFlush();
+    };
+
+    const stopDrag = (event) => {
+      if (event.pointerId !== pointerId) return;
+
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+        flushPosition();
+      } else {
+        quantizeWebampWindowPosition(element);
+      }
+
+      element.classList.remove('is-music-dragging-active-window');
+      pointerId = null;
+      hasMoved = false;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', stopDrag);
+      document.removeEventListener('pointercancel', stopDrag);
+      requestLayoutSave();
+    };
+
+    element.addEventListener('pointerdown', (event) => {
+      if (pointerId !== null) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
+      hasMoved = false;
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', stopDrag);
+      document.addEventListener('pointercancel', stopDrag);
+    });
   };
 
   const isMusicVisible = () => {
@@ -264,6 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     getWebampWindows().forEach((element) => {
       element.addEventListener('pointerdown', bringMusicToFront);
+      installWebampDragPixelGrid(element);
     });
 
     if (activate) bringMusicToFront();

@@ -15,8 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const layoutSnapshotVersion = 1;
   const snapEdgeThreshold = 8;
   const touchSnapEdgeThreshold = 28;
-  const dragPositionGrid = 8;
-  const dragCommitInterval = 45;
+  const dragPositionGrid = 16;
 
   let highestZIndex = 10;
   let isInitialLoad = true;
@@ -740,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateMaximizeButton(win);
   }
 
-  function quantizeDragPosition(value) {
+  function quantizeDragOffset(value) {
     return Math.round(value / dragPositionGrid) * dragPositionGrid;
   }
 
@@ -1628,12 +1627,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let dragRestorePlacement = null;
     let maximizedPointerRatioX = 0.5;
     let maximizedTitleGrabOffset = 8;
-    let lastDragCommitTime = 0;
 
     const commitPosition = () => {
       win.style.left = `${pendingLeft}px`;
       win.style.top = `${pendingTop}px`;
-      lastDragCommitTime = performance.now();
     };
 
     const onMove = (event) => {
@@ -1667,12 +1664,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const minLeft = 50 - win.offsetWidth;
       const maxLeft = area.width - 50;
 
-      pendingLeft = clamp(quantizeDragPosition(startLeft + event.clientX - startX), minLeft, maxLeft);
-      pendingTop = clamp(quantizeDragPosition(startTop + event.clientY - startY), minTop, maxTop);
+      pendingLeft = clamp(startLeft + quantizeDragOffset(event.clientX - startX), minLeft, maxLeft);
+      pendingTop = clamp(startTop + quantizeDragOffset(event.clientY - startY), minTop, maxTop);
 
-      if (performance.now() - lastDragCommitTime >= dragCommitInterval) {
-        commitPosition();
-      }
+      commitPosition();
     };
 
     const stopDrag = (event) => {
@@ -1682,6 +1677,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const shouldApplySnap = event.type !== 'pointercancel' && canSnapWindow && pendingSnapTarget;
 
       document.body.classList.remove('is-dragging-window');
+      win.classList.remove('is-dragging-active-window');
       win.style.transition = previousTransition;
       pointerId = null;
       startedMaximized = false;
@@ -1725,10 +1721,10 @@ document.addEventListener('DOMContentLoaded', () => {
       startTop = win.offsetTop;
       pendingLeft = startLeft;
       pendingTop = startTop;
-      lastDragCommitTime = 0;
       previousTransition = win.style.transition || '';
       win.style.transition = 'none';
       document.body.classList.add('is-dragging-window');
+      win.classList.add('is-dragging-active-window');
 
       event.preventDefault();
       event.stopPropagation();

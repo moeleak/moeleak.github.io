@@ -220,6 +220,18 @@ body.windows-desktop {
     display: none;
 }
 
+#window-container > .window.is-dragging-active-window::after,
+:is(#main-window, #playlist-window, #equalizer-window).is-music-dragging-active-window::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    border: 1px dotted #000;
+    outline: 1px dotted #fff;
+    outline-offset: -3px;
+}
+
 .win98-window-animator {
     position: fixed;
     z-index: 20000;
