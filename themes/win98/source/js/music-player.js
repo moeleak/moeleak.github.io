@@ -446,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function () {
             artist: "宋冬野",
             title: "董小姐",
           },
-          url: "https://box.leak.moe/blog/music/%E5%AE%8B%E5%86%AC%E9%87%8E%20-%20%E8%91%A3%E5%B0%8F%E5%A7%90.m4a"
+          url: "https://box.leak.moe/blog/music/%E5%AE%8B%E5%86%AC%E9%87%8E%20-%20%E8%91%A3%E5%B0%8F%E5%A7%90.flac"
         },
       ],
       initialSkin: {
