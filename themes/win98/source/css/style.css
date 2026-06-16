@@ -221,7 +221,7 @@ body.windows-desktop {
 }
 
 #window-container > .window.is-dragging-active-window::after,
-:is(#main-window, #playlist-window, #equalizer-window).is-music-dragging-active-window::after {
+:is(#webamp, #main-window, #playlist-window, #equalizer-window).is-music-dragging-active-window::after {
     content: "";
     position: absolute;
     inset: 0;

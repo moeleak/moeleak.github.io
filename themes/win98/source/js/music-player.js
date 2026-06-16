@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const webampLayoutSelectors = ['#webamp', ...webampWindowSelectors];
   const shakeDuration = 280;
   const musicDragPositionGrid = 16;
+  let activeMusicDragPointerId = null;
 
   const getWebampContainer = () => document.getElementById('webamp-container');
   const getWebampRoot = () => document.getElementById('webamp');
@@ -14,9 +15,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const getWebampWindows = () => webampWindowSelectors
     .map((selector) => document.querySelector(selector))
     .filter(Boolean);
+  const getWebampDragTargets = () => [getWebampRoot(), ...getWebampWindows()]
+    .filter((element, index, elements) => element && elements.indexOf(element) === index);
   const hasMusicUi = () => !!getWebampRoot() || getWebampWindows().length > 0;
   const requestLayoutSave = () => window.Win98Shell?.requestLayoutSave?.();
-  const quantizeMusicDragValue = (value) => Math.round(value / musicDragPositionGrid) * musicDragPositionGrid;
+  const quantizeMusicDragValue = (value) => (
+    Number.isFinite(value) ? Math.round(value / musicDragPositionGrid) * musicDragPositionGrid : value
+  );
 
   const getInlineStyleSnapshot = (element) => ({
     display: element.style.display || '',
@@ -129,15 +134,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const quantizeTransformTranslate = (element) => {
     const transform = element.style.transform;
-    if (!transform || !transform.includes('translate')) return;
+    if (!transform || transform === 'none') return;
 
     element.style.transform = transform
-      .replace(/translate3d\(\s*(-?\d+(?:\.\d+)?)px\s*,\s*(-?\d+(?:\.\d+)?)px\s*,\s*(-?\d+(?:\.\d+)?)px\s*\)/g, (_, x, y, z) => (
-        `translate3d(${quantizeMusicDragValue(Number(x))}px, ${quantizeMusicDragValue(Number(y))}px, ${z}px)`
+      .replace(/translate3d\(\s*(-?\d+(?:\.\d+)?)px\s*,\s*(-?\d+(?:\.\d+)?)px\s*,\s*(-?\d+(?:\.\d+)?)(px)?\s*\)/g, (_, x, y, z, unit = '') => (
+        `translate3d(${quantizeMusicDragValue(Number(x))}px, ${quantizeMusicDragValue(Number(y))}px, ${z}${unit})`
       ))
       .replace(/translate\(\s*(-?\d+(?:\.\d+)?)px\s*,\s*(-?\d+(?:\.\d+)?)px\s*\)/g, (_, x, y) => (
         `translate(${quantizeMusicDragValue(Number(x))}px, ${quantizeMusicDragValue(Number(y))}px)`
       ))
+      .replace(/matrix\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/g, (_, a, b, c, d, x, y) => (
+        `matrix(${a}, ${b}, ${c}, ${d}, ${quantizeMusicDragValue(Number(x))}, ${quantizeMusicDragValue(Number(y))})`
+      ))
+      .replace(/matrix3d\(([^)]+)\)/g, (match, values) => {
+        const parts = values.split(',').map((value) => value.trim());
+        if (parts.length !== 16) return match;
+
+        const x = Number(parts[12]);
+        const y = Number(parts[13]);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return match;
+
+        parts[12] = String(quantizeMusicDragValue(x));
+        parts[13] = String(quantizeMusicDragValue(y));
+        return `matrix3d(${parts.join(', ')})`;
+      })
       .replace(/translateX\(\s*(-?\d+(?:\.\d+)?)px\s*\)/g, (_, x) => (
         `translateX(${quantizeMusicDragValue(Number(x))}px)`
       ))
@@ -164,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const flushPosition = () => {
       frame = null;
-      quantizeWebampWindowPosition(element);
+      getWebampDragTargets().forEach(quantizeWebampWindowPosition);
     };
 
     const schedulePositionFlush = () => {
@@ -195,6 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       element.classList.remove('is-music-dragging-active-window');
       pointerId = null;
+      activeMusicDragPointerId = null;
       hasMoved = false;
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', stopDrag);
@@ -203,10 +224,11 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     element.addEventListener('pointerdown', (event) => {
-      if (pointerId !== null) return;
+      if (pointerId !== null || activeMusicDragPointerId !== null) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
 
       pointerId = event.pointerId;
+      activeMusicDragPointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
       hasMoved = false;
@@ -361,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const manageWebampWindowsZIndex = (options = {}) => {
     const { activate = true } = options;
 
-    getWebampWindows().forEach((element) => {
+    getWebampDragTargets().forEach((element) => {
       element.addEventListener('pointerdown', bringMusicToFront);
       installWebampDragPixelGrid(element);
     });
