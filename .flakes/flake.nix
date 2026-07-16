@@ -24,7 +24,10 @@
         in
         {
           default = pkgs.mkShell {
-            packages = [ pkgs.hexo-cli ];
+            packages = [
+              pkgs.nodejs
+              pkgs.hexo-cli
+            ];
           };
         }
       );

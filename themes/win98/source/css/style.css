@@ -7,9 +7,9 @@
 }
 
 :root {
-  --win98-font: "Zpix", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
-  --win98-system-font: "Zpix", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
-  --win98-code-font: "Win98 VGA", "Zpix", "Fixedsys", "Terminal", "Lucida Console", "Courier New", monospace;
+  --win98-font: "Ark Pixel Page", "Ark Pixel Common", "Ark Pixel Dynamic", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
+  --win98-system-font: "Ark Pixel Page", "Ark Pixel Common", "Ark Pixel Dynamic", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
+  --win98-code-font: "Win98 VGA", "Ark Pixel Page", "Ark Pixel Common", "Ark Pixel Dynamic", "Fixedsys", "Terminal", "Lucida Console", "Courier New", monospace;
   --win98-silver: #C0C0C0;
   --win98-blue: #000080;
   --win98-taskbar-height: 30px;

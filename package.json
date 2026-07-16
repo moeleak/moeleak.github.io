@@ -10,7 +10,7 @@
     "preview": "npm run build && wrangler dev"
   },
   "hexo": {
-    "version": "7.3.0"
+    "version": "8.1.1"
   },
   "dependencies": {
     "hexo": "^8.1.1",
@@ -33,6 +33,7 @@
     "hexo-theme-landscape": "^1.1.0"
   },
   "devDependencies": {
+    "subset-font": "^2.5.0",
     "wrangler": "^4.90.0"
   }
 }
