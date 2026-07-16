@@ -1,3 +1,59 @@
+const zpixDesignSize = 12;
+let appliedZpixDevicePixelRatio = 0;
+
+// Zpix is drawn on a 12px grid. Choose the nearest readable size whose
+// outline pixels map to a whole number of physical display pixels.
+function snapZpixFontSize(targetCssPixels, devicePixelRatio) {
+  const gridScale = Math.max(
+    1,
+    Math.round(targetCssPixels * devicePixelRatio / zpixDesignSize)
+  );
+  return zpixDesignSize * gridScale / devicePixelRatio;
+}
+
+function snapLayoutSize(targetCssPixels, devicePixelRatio) {
+  return Math.round(targetCssPixels * devicePixelRatio) / devicePixelRatio;
+}
+
+function alignedLineHeight(fontSize, gap, devicePixelRatio) {
+  const fontDevicePixels = Math.round(fontSize * devicePixelRatio);
+  let gapDevicePixels = Math.round(gap * devicePixelRatio);
+  if (gapDevicePixels % 2 !== 0) gapDevicePixels += 1;
+  return (fontDevicePixels + gapDevicePixels) / devicePixelRatio;
+}
+
+function applyZpixPixelGrid() {
+  const devicePixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  if (devicePixelRatio === appliedZpixDevicePixelRatio) return;
+  appliedZpixDevicePixelRatio = devicePixelRatio;
+
+  const rootStyle = document.documentElement.style;
+  const baseSize = snapZpixFontSize(16, devicePixelRatio);
+  const largeSize = snapZpixFontSize(16, devicePixelRatio);
+  const heading1Size = snapZpixFontSize(24, devicePixelRatio);
+  const heading2Size = snapZpixFontSize(20, devicePixelRatio);
+  const heading3Size = snapZpixFontSize(16, devicePixelRatio);
+  const heading4Size = snapZpixFontSize(12, devicePixelRatio);
+
+  rootStyle.setProperty('--win98-font-size-base', `${baseSize}px`);
+  rootStyle.setProperty('--win98-font-size-large', `${largeSize}px`);
+  rootStyle.setProperty('--win98-font-size-h1', `${heading1Size}px`);
+  rootStyle.setProperty('--win98-font-size-h2', `${heading2Size}px`);
+  rootStyle.setProperty('--win98-font-size-h3', `${heading3Size}px`);
+  rootStyle.setProperty('--win98-font-size-h4', `${heading4Size}px`);
+  rootStyle.setProperty('--win98-line-height-base', `${alignedLineHeight(baseSize, 12, devicePixelRatio)}px`);
+  rootStyle.setProperty('--win98-line-height-h1', `${alignedLineHeight(heading1Size, 12, devicePixelRatio)}px`);
+  rootStyle.setProperty('--win98-line-height-h2', `${alignedLineHeight(heading2Size, 12, devicePixelRatio)}px`);
+  rootStyle.setProperty('--win98-line-height-h3', `${alignedLineHeight(heading3Size, 12, devicePixelRatio)}px`);
+  rootStyle.setProperty('--win98-line-height-h4', `${alignedLineHeight(heading4Size, 12, devicePixelRatio)}px`);
+  rootStyle.setProperty('--win98-space-compact', `${snapLayoutSize(6, devicePixelRatio)}px`);
+  rootStyle.setProperty('--win98-space-base', `${snapLayoutSize(12, devicePixelRatio)}px`);
+  rootStyle.setProperty('--win98-space-wide', `${snapLayoutSize(18, devicePixelRatio)}px`);
+}
+
+applyZpixPixelGrid();
+window.addEventListener('resize', applyZpixPixelGrid, { passive: true });
+
 document.addEventListener('DOMContentLoaded', () => {
   const windowContainer = document.getElementById('window-container');
   if (!windowContainer) return;

@@ -12,5 +12,7 @@ text. Generated files are WOFF2 and content-hashed so browsers only fetch the
 glyphs they need.
 
 Zpix is designed around a 12px cell. The theme keeps its pixel edges crisp by
-using integer font sizes and raises the previous 11/12/13px scale to
-12/13/14px.
+snapping the larger reading size to whole physical-pixel multiples of that
+12px grid for the current display scale. Line heights, heading sizes, and
+spacing are snapped at the same time, including after browser zoom or moving
+the window between displays.

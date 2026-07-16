@@ -11,8 +11,20 @@
   --win98-system-font: "Zpix Page", "Zpix Common", "Zpix Dynamic", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
   --win98-code-font: "Win98 VGA", "Zpix Page", "Zpix Common", "Zpix Dynamic", "Fixedsys", "Terminal", "Lucida Console", "Courier New", monospace;
   --win98-font-size-small: 12px;
-  --win98-font-size-base: 13px;
-  --win98-font-size-large: 14px;
+  --win98-font-size-base: 12px;
+  --win98-font-size-large: 12px;
+  --win98-font-size-h1: 24px;
+  --win98-font-size-h2: 24px;
+  --win98-font-size-h3: 12px;
+  --win98-font-size-h4: 12px;
+  --win98-line-height-base: 24px;
+  --win98-line-height-h1: 36px;
+  --win98-line-height-h2: 36px;
+  --win98-line-height-h3: 24px;
+  --win98-line-height-h4: 24px;
+  --win98-space-compact: 6px;
+  --win98-space-base: 12px;
+  --win98-space-wide: 18px;
   --win98-silver: #C0C0C0;
   --win98-blue: #000080;
   --win98-taskbar-height: 30px;
@@ -26,6 +38,8 @@ body.windows-desktop {
   height: 100vh;
   margin: 0;
   font-family: var(--win98-font);
+  font-kerning: none;
+  font-synthesis: none;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: unset;
   text-rendering: optimizeSpeed;
@@ -313,7 +327,7 @@ body.windows-desktop {
     padding: 8px;
     min-height: 0;
     font-size: var(--win98-font-size-base);
-    line-height: 1.6;
+    line-height: var(--win98-line-height-base);
     font-family: var(--win98-font);
 }
 
@@ -354,10 +368,26 @@ table > :is(thead, tbody, tfoot) > tr > * {
     font-weight: normal;
     padding: 0;
 }
-#window-container > .window > .window-body:not(.image-popup-body) h1 { font-size: 1.6em; margin: 0.5em 0; }
-#window-container > .window > .window-body:not(.image-popup-body) h2 { font-size: 1.4em; margin: 1em 0 0.4em 0; }
-#window-container > .window > .window-body:not(.image-popup-body) h3 { font-size: 1.2em; margin: 0.8em 0 0.3em 0; }
-#window-container > .window > .window-body:not(.image-popup-body) h4 { font-size: 1.1em; margin: 0.7em 0 0.2em 0; }
+#window-container > .window > .window-body:not(.image-popup-body) h1 {
+    font-size: var(--win98-font-size-h1);
+    line-height: var(--win98-line-height-h1);
+    margin: var(--win98-space-base) 0;
+}
+#window-container > .window > .window-body:not(.image-popup-body) h2 {
+    font-size: var(--win98-font-size-h2);
+    line-height: var(--win98-line-height-h2);
+    margin: var(--win98-space-wide) 0 var(--win98-space-compact);
+}
+#window-container > .window > .window-body:not(.image-popup-body) h3 {
+    font-size: var(--win98-font-size-h3);
+    line-height: var(--win98-line-height-h3);
+    margin: var(--win98-space-base) 0 var(--win98-space-compact);
+}
+#window-container > .window > .window-body:not(.image-popup-body) h4 {
+    font-size: var(--win98-font-size-h4);
+    line-height: var(--win98-line-height-h4);
+    margin: var(--win98-space-base) 0 var(--win98-space-compact);
+}
 
 #window-container > .window > .window-body:not(.image-popup-body) hr {
     height: 0;
@@ -476,7 +506,7 @@ table > :is(thead, tbody, tfoot) > tr > * {
 #window-container .window .window-body:not(.image-popup-body) .markdown-body {
     font-family: var(--win98-font);
     font-size: var(--win98-font-size-large);
-    line-height: 1.6;
+    line-height: var(--win98-line-height-base);
 }
 
 #window-container .window .window-body:not(.image-popup-body) .gt-header-controls-tip {
@@ -866,7 +896,7 @@ body.is-resizing-archive-pane * {
     flex: 1;
     font-family: var(--win98-font);
     font-size: var(--win98-font-size-base);
-    line-height: 1.6;
+    line-height: var(--win98-line-height-base);
     min-height: 0;
     overflow: auto;
     padding: 8px;
