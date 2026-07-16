@@ -2020,6 +2020,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = event.target;
         if (!(target instanceof Element)) return;
 
+        const closeButton = target.closest('.archive-tab-close');
+        if (closeButton && workspace.contains(closeButton)) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const tabToClose = closeButton.closest('.archive-tab-list [role="tab"]');
+          if (tabToClose) removeArchiveTab(workspace, tabToClose);
+          return;
+        }
+
         const tab = target.closest('.archive-tab-list [role="tab"]');
         if (!tab || !workspace.contains(tab)) return;
 
@@ -2153,21 +2163,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tab = document.createElement('li');
     const tabLink = document.createElement('a');
+    const closeButton = document.createElement('button');
     const tabContent = document.createElement('div');
 
     tab.role = 'tab';
     tab.dataset.tabUrl = targetUrl;
     tab.dataset.tabTitle = title;
     tab.setAttribute('aria-selected', 'false');
+    tab.setAttribute('aria-label', title);
     tabLink.href = '#tabs';
     tabLink.draggable = false;
     tabLink.textContent = title;
+    closeButton.type = 'button';
+    closeButton.className = 'archive-tab-close';
+    closeButton.textContent = 'X';
+    closeButton.title = '关闭标签页';
+    closeButton.setAttribute('aria-label', `关闭“${title}”标签页`);
     tabContent.className = 'archive-tab-content';
     tabContent.innerHTML = '<p>加载中...</p>';
     tab._contentElement = tabContent;
     tab._workspace = workspace;
 
-    tab.appendChild(tabLink);
+    tab.append(tabLink, closeButton);
     tabList.appendChild(tab);
     state.tabByUrl.set(targetUrl, tab);
     activateArchiveTab(workspace, tab, options);
@@ -2225,6 +2242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (target.closest('.archive-tab-close')) return;
 
     const tab = target.closest('.archive-tab-list [role="tab"]');
     if (!tab || !workspace.contains(tab)) return;
@@ -2336,21 +2354,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const { updateHistory = true } = options;
     const tabList = workspace.querySelector('.archive-tab-list');
     const tabBody = workspace.querySelector('.archive-tab-body');
+    if (!tabList || !tabBody || !tab || !tabList.contains(tab)) return;
+
     const wasActive = tab.getAttribute('aria-selected') === 'true';
     const nextTab = tab.nextElementSibling || tab.previousElementSibling;
+    const shouldRestoreFocus = tab.contains(document.activeElement);
 
     tab._contentElement?.remove();
     workspace._archiveState?.tabByUrl?.delete(tab.dataset.tabUrl);
     tab.remove();
 
     if (wasActive && nextTab) {
-      activateArchiveTab(workspace, nextTab, { updateHistory });
+      activateArchiveTab(workspace, nextTab, { updateHistory, historyMode: 'replaceState' });
+      if (shouldRestoreFocus) nextTab.querySelector('a')?.focus();
       return;
     }
 
-    if (!tabList?.querySelector('[role="tab"]')) {
+    if (!tabList.querySelector('[role="tab"]')) {
       tabBody.innerHTML = '<p class="archive-empty-message">从左侧树状列表选择文章。</p>';
       setActiveArchiveLink(workspace, null);
+      const win = workspace.closest('.window');
+      if (updateHistory && win) writeHistory(win, 'replaceState');
     }
     scheduleSaveDesktopLayout();
   }

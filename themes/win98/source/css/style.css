@@ -849,8 +849,11 @@ body.is-resizing-archive-pane * {
 }
 
 .archive-tab-list [role="tab"] {
+    align-items: center;
+    display: grid;
     flex: 1 1 0;
     font-family: var(--win98-font) !important;
+    grid-template-columns: minmax(0, 1fr) auto;
     max-width: none;
     min-width: 0;
 }
@@ -881,6 +884,32 @@ body.is-resizing-archive-pane * {
     user-select: none;
     -webkit-user-select: none;
     white-space: nowrap;
+}
+
+.archive-tab-list .archive-tab-close {
+    align-items: center;
+    box-sizing: border-box;
+    display: flex;
+    flex: 0 0 18px;
+    font-family: var(--win98-system-font) !important;
+    font-size: var(--win98-font-size-small);
+    height: 18px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0 5px 0 0;
+    min-height: 18px;
+    min-width: 18px;
+    padding: 0;
+    width: 18px;
+}
+
+.archive-tab-list .archive-tab-close:focus-visible {
+    outline: 1px dotted #000;
+    outline-offset: -4px;
+}
+
+.archive-tab-list .archive-tab-close:active {
+    padding: 1px 0 0 1px;
 }
 
 .archive-tab-list [role="tab"][aria-selected="true"] {
