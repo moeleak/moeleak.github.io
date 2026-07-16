@@ -17,6 +17,7 @@
   --win98-font-size-h2: 24px;
   --win98-font-size-h3: 12px;
   --win98-font-size-h4: 12px;
+  --win98-line-height-small: 18px;
   --win98-line-height-base: 24px;
   --win98-line-height-h1: 36px;
   --win98-line-height-h2: 36px;
@@ -690,6 +691,8 @@ table > :is(thead, tbody, tfoot) > tr > * {
     box-shadow: none;
     contain: paint;
     font-family: var(--win98-font);
+    font-size: var(--win98-font-size-small);
+    line-height: var(--win98-line-height-small);
     box-sizing: border-box;
     height: 100%;
     margin: 0;
@@ -700,7 +703,9 @@ table > :is(thead, tbody, tfoot) > tr > * {
 #window-container .window .window-body:not(.image-popup-body) .archive-tree details > summary {
     display: inline-flex;
     align-items: center;
-    line-height: 1.4;
+    max-width: 100%;
+    line-height: var(--win98-line-height-small);
+    white-space: nowrap;
 }
 
 #window-container .window .window-body:not(.image-popup-body) .archive-tree details > summary::before {
@@ -735,7 +740,6 @@ table > :is(thead, tbody, tfoot) > tr > * {
 }
 
 .archive-tree-pane {
-    container: archive-tree-pane / inline-size;
     flex: 0 0 var(--archive-tree-width, var(--archive-tree-min, 145px));
     max-width: calc(100% - 180px);
     min-width: var(--archive-tree-min, 145px);
@@ -785,34 +789,25 @@ body.is-resizing-archive-pane * {
 
 .archive-post-link {
     align-items: baseline;
-    column-gap: 0.2em;
+    column-gap: 2px;
     max-width: 100%;
+    min-width: 0;
+    line-height: var(--win98-line-height-small);
+    white-space: nowrap;
     text-decoration: none;
 }
 
 .archive-post-link-inline {
-    display: inline-grid;
+    display: grid;
     grid-template-columns: max-content auto minmax(0, 1fr);
+    width: 100%;
 }
 
 .archive-post-link-nested {
-    display: inline-block;
+    display: block;
     max-width: 100%;
     vertical-align: top;
-}
-
-.archive-date-solo > .archive-date-detail {
-    display: none;
-}
-
-@container archive-tree-pane (max-width: 170px) {
-    .archive-date-solo > .archive-post-link-inline {
-        display: none;
-    }
-
-    .archive-date-solo > .archive-date-detail {
-        display: block;
-    }
+    width: 100%;
 }
 
 .archive-post-date {
@@ -823,10 +818,13 @@ body.is-resizing-archive-pane * {
 }
 
 .archive-post-title {
+    display: block;
     min-width: 0;
-    overflow-wrap: anywhere;
-    white-space: normal;
-    word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
 }
 
 .archive-tab-list {

@@ -42,22 +42,11 @@
                     <% group.dateGroups.forEach(function(dateGroup) { %>
                       <% if (dateGroup.posts.length === 1) { var post = dateGroup.posts[0]; %>
                         <li class="archive-date-group archive-date-solo">
-                          <a class="archive-post-link archive-post-link-inline no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>">
+                          <a class="archive-post-link archive-post-link-inline no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>" title="<%= post.title %>">
                             <span class="archive-post-date"><%- date(post.date, config.date_format || 'YYYY-MM-DD') %></span>
                             <span class="archive-post-separator">»</span>
                             <span class="archive-post-title"><%= post.title %></span>
                           </a>
-
-                          <details open class="archive-date-detail">
-                            <summary><span class="archive-post-date"><%- date(post.date, config.date_format || 'YYYY-MM-DD') %></span></summary>
-                            <ul>
-                              <li>
-                                <a class="archive-post-link archive-post-link-nested no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>">
-                                  <span class="archive-post-title"><%= post.title %></span>
-                                </a>
-                              </li>
-                            </ul>
-                          </details>
                         </li>
                       <% } else { %>
                         <li class="archive-date-group">
@@ -66,7 +55,7 @@
                             <ul>
                               <% dateGroup.posts.forEach(function(post) { %>
                                 <li>
-                                  <a class="archive-post-link archive-post-link-nested no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>">
+                                  <a class="archive-post-link archive-post-link-nested no-window" href="<%- url_for(post.path) %>" data-archive-title="<%= post.title %>" title="<%= post.title %>">
                                     <span class="archive-post-title"><%= post.title %></span>
                                   </a>
                                 </li>
