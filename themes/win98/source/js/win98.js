@@ -30,10 +30,11 @@ function applyZpixPixelGrid() {
   const rootStyle = document.documentElement.style;
   const baseSize = snapZpixFontSize(16, devicePixelRatio);
   const largeSize = snapZpixFontSize(16, devicePixelRatio);
-  const heading1Size = snapZpixFontSize(24, devicePixelRatio);
-  const heading2Size = snapZpixFontSize(20, devicePixelRatio);
-  const heading3Size = snapZpixFontSize(16, devicePixelRatio);
-  const heading4Size = snapZpixFontSize(12, devicePixelRatio);
+  const gridStep = zpixDesignSize / devicePixelRatio;
+  const heading2Size = baseSize + gridStep;
+  const heading1Size = heading2Size + gridStep;
+  const heading3Size = baseSize;
+  const heading4Size = baseSize;
 
   rootStyle.setProperty('--win98-font-size-base', `${baseSize}px`);
   rootStyle.setProperty('--win98-font-size-large', `${largeSize}px`);
@@ -41,6 +42,7 @@ function applyZpixPixelGrid() {
   rootStyle.setProperty('--win98-font-size-h2', `${heading2Size}px`);
   rootStyle.setProperty('--win98-font-size-h3', `${heading3Size}px`);
   rootStyle.setProperty('--win98-font-size-h4', `${heading4Size}px`);
+  rootStyle.setProperty('--win98-font-bold-offset', `${1 / devicePixelRatio}px`);
   rootStyle.setProperty('--win98-line-height-base', `${alignedLineHeight(baseSize, 12, devicePixelRatio)}px`);
   rootStyle.setProperty('--win98-line-height-h1', `${alignedLineHeight(heading1Size, 12, devicePixelRatio)}px`);
   rootStyle.setProperty('--win98-line-height-h2', `${alignedLineHeight(heading2Size, 12, devicePixelRatio)}px`);

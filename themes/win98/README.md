@@ -15,4 +15,5 @@ Zpix is designed around a 12px cell. The theme keeps its pixel edges crisp by
 snapping the larger reading size to whole physical-pixel multiples of that
 12px grid for the current display scale. Line heights, heading sizes, and
 spacing are snapped at the same time, including after browser zoom or moving
-the window between displays.
+the window between displays. Headings advance in full grid steps and use a
+one-device-pixel offset for a crisp bold weight.

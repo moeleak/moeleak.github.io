@@ -13,13 +13,14 @@
   --win98-font-size-small: 12px;
   --win98-font-size-base: 12px;
   --win98-font-size-large: 12px;
-  --win98-font-size-h1: 24px;
+  --win98-font-size-h1: 36px;
   --win98-font-size-h2: 24px;
   --win98-font-size-h3: 12px;
   --win98-font-size-h4: 12px;
+  --win98-font-bold-offset: 1px;
   --win98-line-height-small: 18px;
   --win98-line-height-base: 24px;
-  --win98-line-height-h1: 36px;
+  --win98-line-height-h1: 48px;
   --win98-line-height-h2: 36px;
   --win98-line-height-h3: 24px;
   --win98-line-height-h4: 24px;
@@ -366,8 +367,9 @@ table > :is(thead, tbody, tfoot) > tr > * {
 #window-container > .window > .window-body:not(.image-popup-body) h2,
 #window-container > .window > .window-body:not(.image-popup-body) h3,
 #window-container > .window > .window-body:not(.image-popup-body) h4 {
-    font-weight: normal;
+    font-weight: 700;
     padding: 0;
+    text-shadow: var(--win98-font-bold-offset) 0 currentColor;
 }
 #window-container > .window > .window-body:not(.image-popup-body) h1 {
     font-size: var(--win98-font-size-h1);
