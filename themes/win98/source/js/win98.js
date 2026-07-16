@@ -1,16 +1,6 @@
 const zpixDesignSize = 12;
 let appliedZpixDevicePixelRatio = 0;
 
-// Zpix is drawn on a 12px grid. Choose the nearest readable size whose
-// outline pixels map to a whole number of physical display pixels.
-function snapZpixFontSize(targetCssPixels, devicePixelRatio) {
-  const gridScale = Math.max(
-    1,
-    Math.round(targetCssPixels * devicePixelRatio / zpixDesignSize)
-  );
-  return zpixDesignSize * gridScale / devicePixelRatio;
-}
-
 function snapLayoutSize(targetCssPixels, devicePixelRatio) {
   return Math.round(targetCssPixels * devicePixelRatio) / devicePixelRatio;
 }
@@ -28,8 +18,8 @@ function applyZpixPixelGrid() {
   appliedZpixDevicePixelRatio = devicePixelRatio;
 
   const rootStyle = document.documentElement.style;
-  const baseSize = snapZpixFontSize(16, devicePixelRatio);
-  const largeSize = snapZpixFontSize(16, devicePixelRatio);
+  const baseSize = zpixDesignSize;
+  const largeSize = zpixDesignSize;
   const gridStep = zpixDesignSize / devicePixelRatio;
   const heading2Size = baseSize + gridStep;
   const heading1Size = heading2Size + gridStep;

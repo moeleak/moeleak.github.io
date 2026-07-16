@@ -11,9 +11,8 @@ subset, an exact subset for each page, and small on-demand ranges for dynamic
 text. Generated files are WOFF2 and content-hashed so browsers only fetch the
 glyphs they need.
 
-Zpix is designed around a 12px cell. The theme keeps its pixel edges crisp by
-snapping the larger reading size to whole physical-pixel multiples of that
-12px grid for the current display scale. Line heights, heading sizes, and
-spacing are snapped at the same time, including after browser zoom or moving
-the window between displays. Headings advance in full grid steps and use a
-one-device-pixel offset for a crisp bold weight.
+Zpix is designed around a 12px cell. Body copy, window titles, and tabs all use
+that native 12px size. Headings advance in full physical-pixel grid steps for
+the current display scale and use a one-device-pixel offset for a crisp bold
+weight. Line heights and spacing are realigned after browser zoom or moving the
+window between displays.

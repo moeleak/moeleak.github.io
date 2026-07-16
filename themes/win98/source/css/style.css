@@ -296,6 +296,7 @@ body.windows-desktop {
 
 #window-container > .window > .title-bar {
   font-family: var(--win98-font);
+  font-size: var(--win98-font-size-small);
   cursor: grab;
   user-select: none;
   touch-action: none;
@@ -833,6 +834,7 @@ body.is-resizing-archive-pane * {
     display: flex;
     flex-shrink: 0;
     font-family: var(--win98-font) !important;
+    font-size: var(--win98-font-size-small);
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: unset;
     margin: 0 0 -2px 0;
