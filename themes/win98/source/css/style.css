@@ -856,6 +856,8 @@ body.is-resizing-archive-pane * {
 }
 
 .archive-tab-list [role="tab"] {
+    align-items: center;
+    display: flex;
     flex: 0 1 auto;
     font-family: var(--win98-font) !important;
     max-width: 240px;
@@ -872,6 +874,7 @@ body.is-resizing-archive-pane * {
 
 .archive-tab-list [role="tab"] > a {
     display: block;
+    flex: 1 1 auto;
     font-family: var(--win98-font) !important;
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: unset;
@@ -885,9 +888,9 @@ body.is-resizing-archive-pane * {
 
 .archive-tab-controls {
     align-items: center;
-    align-self: stretch;
+    align-self: center;
     flex: 0 0 auto;
-    margin: 0 3px 2px 4px;
+    margin: 0 4px 0 -1px;
 }
 
 .archive-tab-controls[hidden] {

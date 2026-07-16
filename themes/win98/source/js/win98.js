@@ -2208,19 +2208,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function syncArchiveTabControls(workspace) {
-    const controls = workspace.querySelector('.archive-tab-controls');
+    const state = getArchiveState(workspace);
+    const controls = state.closeControls || workspace.querySelector('.archive-tab-controls');
     const closeButton = controls?.querySelector('.archive-tab-close-control');
     const activeTab = workspace.querySelector('.archive-tab-list [role="tab"][aria-selected="true"]');
     if (!controls || !closeButton) return;
 
+    state.closeControls = controls;
     controls.hidden = !activeTab;
     if (!activeTab) {
+      workspace.querySelector('.archive-tab-strip')?.appendChild(controls);
       closeButton.title = '关闭当前标签页';
       closeButton.setAttribute('aria-label', '关闭当前标签页');
       return;
     }
 
     const title = activeTab.dataset.tabTitle || activeTab.textContent.trim() || '文章';
+    activeTab.appendChild(controls);
     closeButton.title = `关闭“${title}”`;
     closeButton.setAttribute('aria-label', `关闭“${title}”标签页`);
   }
