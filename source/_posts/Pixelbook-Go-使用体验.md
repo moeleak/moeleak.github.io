@@ -6,7 +6,7 @@ tags: [tech]
 
 最近在海鲜市场花不到500买了 Pixelbook Go，来简单分享一下使用体验，总的来说比较超出我的预期。
 
-# 刷入 Arch Linux
+## 刷入 Arch Linux
 
 作为赛博洁癖，买来第一件事就是刷入 Arch，不喜欢 chromeOS 的一堆毒瘤软件。
 
