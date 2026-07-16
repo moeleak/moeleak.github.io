@@ -75,7 +75,12 @@
       </aside>
 
       <section class="archive-editor-pane" aria-label="文章阅读区">
-        <menu role="tablist" class="multirows archive-tab-list" aria-label="打开的文章"></menu>
+        <div class="archive-tab-strip">
+          <menu role="tablist" class="archive-tab-list" aria-label="打开的文章"></menu>
+          <div class="title-bar-controls archive-tab-controls" hidden>
+            <button type="button" class="close archive-tab-close-control" aria-label="关闭当前标签页" title="关闭当前标签页"></button>
+          </div>
+        </div>
         <div class="window archive-tab-panel" role="tabpanel">
           <div class="window-body archive-tab-body">
             <p class="archive-empty-message">从左侧树状列表选择文章。</p>

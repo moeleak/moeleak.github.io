@@ -2020,12 +2020,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = event.target;
         if (!(target instanceof Element)) return;
 
-        const closeButton = target.closest('.archive-tab-close');
+        const closeButton = target.closest('.archive-tab-close-control');
         if (closeButton && workspace.contains(closeButton)) {
           event.preventDefault();
           event.stopPropagation();
 
-          const tabToClose = closeButton.closest('.archive-tab-list [role="tab"]');
+          const tabToClose = workspace.querySelector('.archive-tab-list [role="tab"][aria-selected="true"]');
           if (tabToClose) removeArchiveTab(workspace, tabToClose);
           return;
         }
@@ -2163,7 +2163,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tab = document.createElement('li');
     const tabLink = document.createElement('a');
-    const closeButton = document.createElement('button');
     const tabContent = document.createElement('div');
 
     tab.role = 'tab';
@@ -2174,17 +2173,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tabLink.href = '#tabs';
     tabLink.draggable = false;
     tabLink.textContent = title;
-    closeButton.type = 'button';
-    closeButton.className = 'archive-tab-close';
-    closeButton.textContent = 'X';
-    closeButton.title = '关闭标签页';
-    closeButton.setAttribute('aria-label', `关闭“${title}”标签页`);
     tabContent.className = 'archive-tab-content';
     tabContent.innerHTML = '<p>加载中...</p>';
     tab._contentElement = tabContent;
     tab._workspace = workspace;
 
-    tab.append(tabLink, closeButton);
+    tab.appendChild(tabLink);
     tabList.appendChild(tab);
     state.tabByUrl.set(targetUrl, tab);
     activateArchiveTab(workspace, tab, options);
@@ -2206,10 +2200,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tabBody.replaceChildren(tab._contentElement || document.createTextNode(''));
     setActiveArchiveLink(workspace, tab.dataset.tabUrl);
+    syncArchiveTabControls(workspace);
 
     const win = workspace.closest('.window');
     if (updateHistory && win) writeHistory(win, historyMode);
     scheduleSaveDesktopLayout();
+  }
+
+  function syncArchiveTabControls(workspace) {
+    const controls = workspace.querySelector('.archive-tab-controls');
+    const closeButton = controls?.querySelector('.archive-tab-close-control');
+    const activeTab = workspace.querySelector('.archive-tab-list [role="tab"][aria-selected="true"]');
+    if (!controls || !closeButton) return;
+
+    controls.hidden = !activeTab;
+    if (!activeTab) {
+      closeButton.title = '关闭当前标签页';
+      closeButton.setAttribute('aria-label', '关闭当前标签页');
+      return;
+    }
+
+    const title = activeTab.dataset.tabTitle || activeTab.textContent.trim() || '文章';
+    closeButton.title = `关闭“${title}”`;
+    closeButton.setAttribute('aria-label', `关闭“${title}”标签页`);
   }
 
   function setActiveArchiveLink(workspace, targetUrl) {
@@ -2242,7 +2255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
-    if (target.closest('.archive-tab-close')) return;
+    if (target.closest('.archive-tab-close-control')) return;
 
     const tab = target.closest('.archive-tab-list [role="tab"]');
     if (!tab || !workspace.contains(tab)) return;
@@ -2376,6 +2389,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const win = workspace.closest('.window');
       if (updateHistory && win) writeHistory(win, 'replaceState');
     }
+    syncArchiveTabControls(workspace);
     scheduleSaveDesktopLayout();
   }
 
