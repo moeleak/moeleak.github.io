@@ -1,0 +1,10 @@
+Zpix (最像素) v3.1.11
+Copyright SolidZORO
+Official source: https://github.com/SolidZORO/zpix-pixel-font
+Source SHA-256: ed39f02845e8c0b8cdba275432250fb03e8528826f058bc151753bd62b44b744
+
+The owner of this website states that they have authorization from the
+copyright holder to convert and subset Zpix for use on this website.
+
+Zpix is not redistributed under an open-source license. Permission from the
+copyright holder is required for other uses or redistribution.

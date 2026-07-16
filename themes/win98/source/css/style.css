@@ -7,9 +7,12 @@
 }
 
 :root {
-  --win98-font: "Ark Pixel Page", "Ark Pixel Common", "Ark Pixel Dynamic", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
-  --win98-system-font: "Ark Pixel Page", "Ark Pixel Common", "Ark Pixel Dynamic", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
-  --win98-code-font: "Win98 VGA", "Ark Pixel Page", "Ark Pixel Common", "Ark Pixel Dynamic", "Fixedsys", "Terminal", "Lucida Console", "Courier New", monospace;
+  --win98-font: "Zpix Page", "Zpix Common", "Zpix Dynamic", "Tahoma", "Microsoft YaHei", "SimSun", "PingFang SC", sans-serif;
+  --win98-system-font: "Zpix Page", "Zpix Common", "Zpix Dynamic", "MS Sans Serif", "Tahoma", "Microsoft YaHei", sans-serif;
+  --win98-code-font: "Win98 VGA", "Zpix Page", "Zpix Common", "Zpix Dynamic", "Fixedsys", "Terminal", "Lucida Console", "Courier New", monospace;
+  --win98-font-size-small: 12px;
+  --win98-font-size-base: 13px;
+  --win98-font-size-large: 14px;
   --win98-silver: #C0C0C0;
   --win98-blue: #000080;
   --win98-taskbar-height: 30px;
@@ -68,7 +71,7 @@ body.windows-desktop {
 
 .desktop-icon span {
   padding: 1px 3px;
-  font-size: 11px;
+  font-size: var(--win98-font-size-small);
   font-family: var(--win98-font);
 }
 
@@ -93,7 +96,7 @@ body.windows-desktop {
   background: var(--win98-silver);
   box-shadow: inset 0 1px #fff;
   font-family: var(--win98-system-font);
-  font-size: 11px;
+  font-size: var(--win98-font-size-small);
 }
 
 .win98-task-list {
@@ -117,7 +120,7 @@ body.windows-desktop {
   overflow: hidden;
   color: #222;
   font-family: var(--win98-system-font);
-  font-size: 11px;
+  font-size: var(--win98-font-size-small);
   font-weight: normal;
   line-height: 20px;
   text-align: left;
@@ -309,7 +312,7 @@ body.windows-desktop {
     box-sizing: border-box;
     padding: 8px;
     min-height: 0;
-    font-size: 12px;
+    font-size: var(--win98-font-size-base);
     line-height: 1.6;
     font-family: var(--win98-font);
 }
@@ -405,7 +408,7 @@ table > :is(thead, tbody, tfoot) > tr > * {
     align-self: center;
     color: #222;
     font-family: var(--win98-system-font);
-    font-size: 11px;
+    font-size: var(--win98-font-size-small);
     white-space: nowrap;
 }
 
@@ -418,7 +421,7 @@ table > :is(thead, tbody, tfoot) > tr > * {
     width: 100%;
     min-width: 0;
     font-family: var(--win98-font) !important;
-    font-size: 13px !important;
+    font-size: var(--win98-font-size-large) !important;
     min-height: 80px;
     padding: 5px;
     margin-top: 0;
@@ -472,7 +475,7 @@ table > :is(thead, tbody, tfoot) > tr > * {
 #window-container .window .window-body:not(.image-popup-body) .gt-comment-body,
 #window-container .window .window-body:not(.image-popup-body) .markdown-body {
     font-family: var(--win98-font);
-    font-size: 13px;
+    font-size: var(--win98-font-size-large);
     line-height: 1.6;
 }
 
@@ -491,7 +494,7 @@ table > :is(thead, tbody, tfoot) > tr > * {
 #window-container .window .window-body .gt-user {
     position: relative;
     display: inline-block;
-    font-size: 12px;
+    font-size: var(--win98-font-size-base);
 }
 
 #window-container .window .window-body .gt-user-inner {
@@ -575,7 +578,7 @@ table > :is(thead, tbody, tfoot) > tr > * {
     border-top: 1px solid #fff;
     box-shadow: 0 -1px #808080;
     font-family: var(--win98-system-font);
-    font-size: 12px;
+    font-size: var(--win98-font-size-base);
     color: #555;
     white-space: nowrap;
 }
@@ -862,7 +865,7 @@ body.is-resizing-archive-pane * {
     box-sizing: border-box;
     flex: 1;
     font-family: var(--win98-font);
-    font-size: 12px;
+    font-size: var(--win98-font-size-base);
     line-height: 1.6;
     min-height: 0;
     overflow: auto;
@@ -898,7 +901,7 @@ body.is-dragging-archive-tab * {
     color: #000;
     display: flex;
     font-family: var(--win98-font);
-    font-size: 12px;
+    font-size: var(--win98-font-size-base);
     left: 0;
     line-height: 1;
     max-width: 240px;
@@ -1066,7 +1069,7 @@ body.is-dragging-archive-tab * {
     font-weight: normal !important;
     border: 1px solid #808080;
     padding: 1px 4px;
-    font-size: 12px !important;
+    font-size: var(--win98-font-size-base) !important;
 }
 #window-container .window .window-body .gt-comment-body pre {
     background: #fff;
@@ -1119,7 +1122,7 @@ body.is-dragging-archive-tab * {
     background: var(--win98-silver);
     box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px grey, inset 2px 2px #dfdfdf;
     font-family: var(--win98-system-font);
-    font-size: 11px;
+    font-size: var(--win98-font-size-small);
 }
 
 #window-container .window .window-body .gt-comment-reply:hover {
@@ -1193,7 +1196,7 @@ body.is-dragging-archive-tab * {
     justify-content: center;
 
     font-family: var(--win98-system-font);
-    font-size: 11px;
+    font-size: var(--win98-font-size-small);
     font-weight: normal;
 }
 
@@ -1248,7 +1251,7 @@ body.is-dragging-archive-tab * {
     margin: 0;
     color: #222;
     font-family: var(--win98-system-font);
-    font-size: 12px;
+    font-size: var(--win98-font-size-base);
     text-shadow: 1px 1px 0 #fff;
 }
 
@@ -1414,7 +1417,7 @@ body.is-resizing-window * {
 
 .copy-code-button {
   padding: 2px 8px;
-  font-size: 11px;
+  font-size: var(--win98-font-size-small);
   font-family: var(--win98-system-font);
   font-weight: normal;
   user-select: none;
@@ -1432,7 +1435,7 @@ body.is-resizing-window * {
   color: grey;
   text-shadow: 1px 1px 0 #fff;
   font-family: var(--win98-system-font);
-  font-size: 11px;
+  font-size: var(--win98-font-size-small);
   font-weight: normal;
   padding: 0;
   user-select: none;
