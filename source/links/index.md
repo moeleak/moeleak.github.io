@@ -11,7 +11,7 @@ comments: true
 [小桂桂](https://aza.moe)
 [咖啡冰河](https://blog.mysto.cyou)
 [东东](https://blog.yasking.org)
-[Sana](https://www.sana-honoka.top)
+[Sana](https://sana-honoka.top)
 [Guanran928](https://blog.ny4.dev)
 [Taplis](https://taplis.me)
 [LY 的博客](https://Young-Lord.github.io)
