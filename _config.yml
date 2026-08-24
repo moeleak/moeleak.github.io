@@ -44,6 +44,8 @@ post_asset_folder: false
 relative_link: false
 future: true
 syntax_highlighter: highlight.js
+marked:
+  breaks: false
 highlight:
   enable: true
   line_number: false
@@ -119,4 +121,3 @@ feed:
   type: atom
   path: atom.xml
   limit: 20
-
